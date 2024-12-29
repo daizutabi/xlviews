@@ -1,23 +1,36 @@
 """
-マトリックス上にオブジェクトを配置するために，
-FacetGrid, PairGridクラスを定義する．
-Seabornの機能をチャート等にも適用できるようにする．
+マトリックス上にオブジェクトを配置するために、
+FacetGrid, PairGridクラスを定義する。
+Seabornの機能をチャート等にも適用できるようにする。
 """
+
 import pandas as pd
 
 # from xlviews.decorators import wait_updating
 # from xlviews.chart import chart_position
 from xlviews.axes import chart_position
+
 # from spin.pandas import select
 from xlviews.config import rcParams
 
 
-class GridBase(object):
-    def __init__(self, data, sheet=None, cell=None,
-                 left=None, top=None, width=None, height=None,
-                 row=None, column=None, space=0, callback=None):
+class GridBase:
+    def __init__(
+        self,
+        data,
+        sheet=None,
+        cell=None,
+        left=None,
+        top=None,
+        width=None,
+        height=None,
+        row=None,
+        column=None,
+        space=0,
+        callback=None,
+    ):
         """
-        GridBaseを生成する．
+        GridBaseを生成する。
 
         Parameters
         ----------
@@ -28,9 +41,9 @@ class GridBase(object):
         width, height : int, optional
             オブジェクトのサイズ
         row, column : int, optional
-            グリッドの開始位置をセルで指定する．
-            この指定を行うと，シートフレームをグリッド上に配置する．
-            mapで関数を呼び出すとき，func(sheet, row, column, ...)
+            グリッドの開始位置をセルで指定する。
+            この指定を行うと、シートフレームをグリッド上に配置する。
+            mapで関数を呼び出すとき、func(sheet, row, column, ...)
         space : int or list, optional
             グリッド間の間隔
         """
@@ -48,8 +61,8 @@ class GridBase(object):
         else:
             self.is_cellwise = False
             self.left, self.top = chart_position(self.sheet, left, top)
-            self.width = width or int(rcParams['chart.width'])
-            self.height = height or int(rcParams['chart.height'])
+            self.width = width or int(rcParams["chart.width"])
+            self.height = height or int(rcParams["chart.height"])
 
         self.callback = callback
         self.elements = []
@@ -57,12 +70,14 @@ class GridBase(object):
         self.title = None
 
     def get_data(self):
-        if hasattr(self.data, 'columns_names'):
+        if hasattr(self.data, "columns_names"):
             if self.data.columns_names is None:
                 data = self.data
             else:
-                data = pd.DataFrame(self.data.value_columns,
-                                    columns=self.data.columns_names)
+                data = pd.DataFrame(
+                    self.data.value_columns,
+                    columns=self.data.columns_names,
+                )
         else:
             data = self.data  # DataFrame or DataSet
 
@@ -71,6 +86,7 @@ class GridBase(object):
     def __getattr__(self, item):
         def func(*args, **kwargs):
             return self.map(item, *args, **kwargs)
+
         return func
 
     # def columns_list(self, columns):
@@ -81,12 +97,24 @@ class GridBase(object):
 
 
 class FacetGrid(GridBase):
-    def __init__(self, data, x=None, y=None,
-                 sheet=None, left=None, top=None, width=None, height=None,
-                 cell=None, row=None, column=None, space=0,
-                 callback=None):
+    def __init__(
+        self,
+        data,
+        x=None,
+        y=None,
+        sheet=None,
+        left=None,
+        top=None,
+        width=None,
+        height=None,
+        cell=None,
+        row=None,
+        column=None,
+        space=0,
+        callback=None,
+    ):
         """
-        FacetGridを生成する．
+        FacetGridを生成する。
 
         Parameters
         ----------
@@ -98,17 +126,27 @@ class FacetGrid(GridBase):
         width, height : int, optional
             オブジェクトのサイズ
         row, column : int, optional
-            グリッドの開始位置をセルで指定する．
-            この指定を行うと，シートフレームをグリッド上に配置する．
-            mapで関数を呼び出すとき，func(sheet, row, column, ...)
+            グリッドの開始位置をセルで指定する。
+            この指定を行うと、シートフレームをグリッド上に配置する。
+            mapで関数を呼び出すとき、func(sheet, row, column, ...)
         x, y : str, optional
             列/行方向のカラム名
         space : int or list, optional
             グリッド間の間隔
         """
-        super().__init__(data, sheet=sheet, cell=cell, left=left, top=top,
-                         width=width, height=height, row=row, column=column,
-                         space=space, callback=callback)
+        super().__init__(
+            data,
+            sheet=sheet,
+            cell=cell,
+            left=left,
+            top=top,
+            width=width,
+            height=height,
+            row=row,
+            column=column,
+            space=space,
+            callback=callback,
+        )
         # if hasattr(data, 'columns_list'):
         #     self.x = data.columns_list(x) if x else None
         #     self.y = data.columns_list(y) if y else None
@@ -120,21 +158,21 @@ class FacetGrid(GridBase):
 
         self.title = (self.x or []) + (self.y or [])
 
-    def map(self, plot, *args, sel=None, by=None, title='auto', **kwargs):
+    def map(self, plot, *args, sel=None, by=None, title="auto", **kwargs):
         """
-        FacetGridの各データに関数funcを適用する．
-        funcの第一引数にはデータが渡される．
+        FacetGridの各データに関数funcを適用する。
+        funcの第一引数にはデータが渡される。
         """
         data = self.get_data()
 
         if self.y:
             row_df = data[self.y].drop_duplicates()
         else:
-            row_df = pd.DataFrame([[0]], columns=['__dummy__'])
+            row_df = pd.DataFrame([[0]], columns=["__dummy__"])
         if self.x:
             col_df = data[self.x].drop_duplicates()
         else:
-            col_df = pd.DataFrame([[0]], columns=['__dummy__'])
+            col_df = pd.DataFrame([[0]], columns=["__dummy__"])
 
         sel = sel if sel else {}
         if by is None:
@@ -146,34 +184,50 @@ class FacetGrid(GridBase):
             plot = getattr(self.data, plot)
             data_kw = {}
         else:
-            data_kw = {'data': self.data}
+            data_kw = {"data": self.data}
 
-        if title == 'auto':
+        if title == "auto":
             title = self.title
 
         self.elements = []
         self.element_dict = {}
         top = self.top
         for key_y, row_series in row_df.iterrows():
-            if '__dummy__' in row_series:
-                del row_series['__dummy__']
+            if "__dummy__" in row_series:
+                del row_series["__dummy__"]
             row_dict = dict(row_series)
             left = self.left
             row_elements = []
             element = None
             for key_x, col_series in col_df.iterrows():
-                if '__dummy__' in col_series:
-                    del col_series['__dummy__']
+                if "__dummy__" in col_series:
+                    del col_series["__dummy__"]
                 col_dict = dict(col_series)
                 sel_ = dict(**sel, **col_dict, **row_dict)
                 if self.is_cellwise:
-                    element = plot(self.sheet, top, left, sel=sel_,
-                                   title=title, **kwargs, **data_kw)
+                    element = plot(
+                        self.sheet,
+                        top,
+                        left,
+                        sel=sel_,
+                        title=title,
+                        **kwargs,
+                        **data_kw,
+                    )
                 else:
-                    element = plot(*args, sel=sel_, by=by, left=left, top=top,
-                                   width=self.width, height=self.height,
-                                   title=title, sheet=self.sheet, **kwargs,
-                                   **data_kw)
+                    element = plot(
+                        *args,
+                        sel=sel_,
+                        by=by,
+                        left=left,
+                        top=top,
+                        width=self.width,
+                        height=self.height,
+                        title=title,
+                        sheet=self.sheet,
+                        **kwargs,
+                        **data_kw,
+                    )
                     if element is None:
                         continue
                 if self.is_cellwise:
@@ -198,12 +252,24 @@ class FacetGrid(GridBase):
 
 
 class PairGrid(GridBase):
-    def __init__(self, data, x_vars=None, y_vars=None,
-                 sheet=None, left=None, top=None, width=None, height=None,
-                 cell=None, row=None, column=None, space=0,
-                 callback=None):
+    def __init__(
+        self,
+        data,
+        x_vars=None,
+        y_vars=None,
+        sheet=None,
+        left=None,
+        top=None,
+        width=None,
+        height=None,
+        cell=None,
+        row=None,
+        column=None,
+        space=0,
+        callback=None,
+    ):
         """
-        PairGridを生成する．
+        PairGridを生成する。
 
         Parameters
         ----------
@@ -214,40 +280,58 @@ class PairGrid(GridBase):
         width, height : int, optional
             オブジェクトのサイズ
         row, column : int, optional
-            グリッドの開始位置をセルで指定する．
-            この指定を行うと，シートフレームをグリッド上に配置する．
-            mapで関数を呼び出すとき，func(sheet, row, column, ...)
+            グリッドの開始位置をセルで指定する。
+            この指定を行うと、シートフレームをグリッド上に配置する。
+            mapで関数を呼び出すとき、func(sheet, row, column, ...)
         x_vars, y_vars : str, optional
             x, y のカラム名
         space : int or list, optional
             グリッド間の間隔
         """
-        super().__init__(data, sheet=sheet, cell=cell, left=left, top=top,
-                         width=width, height=height, row=row, column=column,
-                         space=space, callback=callback)
-        if hasattr(data, 'columns_list'):
+        super().__init__(
+            data,
+            sheet=sheet,
+            cell=cell,
+            left=left,
+            top=top,
+            width=width,
+            height=height,
+            row=row,
+            column=column,
+            space=space,
+            callback=callback,
+        )
+        if hasattr(data, "columns_list"):
             self.x_vars = data.columns_list(x_vars) if x_vars else None
             self.y_vars = data.columns_list(y_vars) if y_vars else None
         else:
             self.x_vars = [x_vars] if isinstance(x_vars, str) else x_vars
             self.y_vars = [y_vars] if isinstance(y_vars, str) else y_vars
 
-    def map(self, plot, *args, sel=None, by=None, title='auto',
-            transpose=False, **kwargs):
+    def map(
+        self,
+        plot,
+        *args,
+        sel=None,
+        by=None,
+        title="auto",
+        transpose=False,
+        **kwargs,
+    ):
         """
-        PairGridの各データに関数funcを適用する．
-        funcの第一引数にはデータが渡される．
+        PairGridの各データに関数funcを適用する。
+        funcの第一引数にはデータが渡される。
         """
         data = self.get_data()
 
         if self.y:
             row_df = data[self.y].drop_duplicates()
         else:
-            row_df = pd.DataFrame([[0]], columns=['__dummy__'])
+            row_df = pd.DataFrame([[0]], columns=["__dummy__"])
         if self.x:
             col_df = data[self.x].drop_duplicates()
         else:
-            col_df = pd.DataFrame([[0]], columns=['__dummy__'])
+            col_df = pd.DataFrame([[0]], columns=["__dummy__"])
 
         sel = sel if sel else {}
         if by is None:
@@ -259,32 +343,48 @@ class PairGrid(GridBase):
             plot = getattr(self.data, plot)
             data_kw = {}
         else:
-            data_kw = {'data': self.data}
+            data_kw = {"data": self.data}
 
-        if title == 'auto':
+        if title == "auto":
             title = self.title
 
         self.elements = []
         top = self.top
         for key_y, row_series in row_df.iterrows():
-            if '__dummy__' in row_series:
-                del row_series['__dummy__']
+            if "__dummy__" in row_series:
+                del row_series["__dummy__"]
             row_dict = dict(row_series)
             left = self.left
             row_elements = []
             element = None
             for key_x, col_series in col_df.iterrows():
-                if '__dummy__' in col_series:
-                    del col_series['__dummy__']
+                if "__dummy__" in col_series:
+                    del col_series["__dummy__"]
                 col_dict = dict(col_series)
                 sel_ = dict(**sel, **col_dict, **row_dict)
                 if self.is_cellwise:
-                    element = plot(self.sheet, top, left, sel=sel_,
-                                   title=title, **kwargs, **data_kw)
+                    element = plot(
+                        self.sheet,
+                        top,
+                        left,
+                        sel=sel_,
+                        title=title,
+                        **kwargs,
+                        **data_kw,
+                    )
                 else:
-                    element = plot(*args, sel=sel_, by=by, left=left, top=top,
-                                   width=self.width, height=self.height,
-                                   title=title, **kwargs, **data_kw)
+                    element = plot(
+                        *args,
+                        sel=sel_,
+                        by=by,
+                        left=left,
+                        top=top,
+                        width=self.width,
+                        height=self.height,
+                        title=title,
+                        **kwargs,
+                        **data_kw,
+                    )
                     if element is None:
                         continue
                 if self.is_cellwise:
@@ -310,5 +410,5 @@ def main():
     print(sf)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

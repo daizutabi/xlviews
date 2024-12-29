@@ -104,11 +104,22 @@ def test_range_int_int(book: Book):
     assert cells.shape == (1, 1)
 
 
+def test_range_str_int_int(book: Book):
+    from xlviews.common import get_range
+
+    cells = get_range("get_range_str_int_int", 30, 40, book=book)
+
+    assert cells.row == 30
+    assert cells.column == 40
+    assert cells.shape == (1, 1)
+    assert cells.sheet.name == "get_range_str_int_int"
+
+
 def test_range_error():
     from xlviews.common import get_range
 
     with pytest.raises(ValueError, match="Invalid number of arguments: 3"):
-        get_range(1, 2, 3)
+        get_range("", 1, 2, 3)
 
 
 def test_create_book(app: App, tmp_path: Path):

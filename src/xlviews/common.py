@@ -78,6 +78,10 @@ def get_range(
             sheet = sheet or get_sheet(book=book, app=app)
             return sheet.range(*args)
 
+        case 3:
+            sheet = get_sheet(args[0], book=book, app=app)
+            return get_range(args[1:], sheet=sheet)
+
         case _:
             msg = f"Invalid number of arguments: {len(args)}"
             raise ValueError(msg)

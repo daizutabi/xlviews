@@ -82,78 +82,12 @@ def rgb(
     raise ValueError("Invalid color format. Expected #xxxxxx.")
 
 
-def _add_app_and_sheet(name: str | None = None) -> Sheet:
-    from xlviews.style import hide_gridlines
-
-    xw.apps.add()
-    sheet = xw.sheets.active
-
-    hide_gridlines(sheet)
-
-    sheet.range("A1").column_width = 1
-    sheet.range("B2").select()
-
-    if name:
-        sheet.name = name
-
-    return sheet
-
-
-def get_sheet_cell_row_column(*args):
-    """Return the sheet, cell, row, and column.
-
-    Examples:
-        >>> get_sheet_cell_row_column(sheet, row, column) # doctest: +SKIP
-        >>> get_sheet_cell_row_column(sheet, (row, column)) # doctest: +SKIP
-        >>> get_sheet_cell_row_column(row, column) # doctest: +SKIP
-        >>> get_sheet_cell_row_column((row, column)) # doctest: +SKIP
-        >>> get_sheet_cell_row_column(cell) # doctest: +SKIP
-        >>> get_sheet_cell_row_column() # doctest: +SKIP
-    """
-    # if not xw.apps:
-    #     name = args[0] if len(args) == 1 else None
-    # sheet = _add_app_and_sheet(args[]) if not xw.apps else xw.sheets.active
-
-    if len(args) == 3:
-        sheet, row, column = args
-    elif len(args) == 2:
-        if isinstance(args[0], int):
-            row, column = args
-        else:
-            sheet, (row, column) = args
-    elif len(args) == 1:
-        if isinstance(args[0], str):
-            cell = sheet.range(args[0])
-            row, column = cell.row, cell.column
-        elif isinstance(args[0], tuple):
-            row, column = args[0]
-        else:
-            cell = args[0]
-            sheet = cell.sheet
-            row, column = cell.row, cell.column
-    elif len(args) == 0:
-        cell = sheet.book.selection
-        row, column = cell.row, cell.column
-    else:
-        raise ValueError("引数の長さが4以上", len(args))
-
-    if isinstance(sheet, str):
-        book = xw.books.active
-        try:
-            sheet = book.sheets(sheet)
-        except Exception:
-            sheet = book.sheets.add(sheet, after=book.sheets[-1])
-
-    cell = sheet.range(row, column)
-    return sheet, cell, row, column
-
-
 def array_index(values, sel=None):
     """
-    値が存在する位置を辞書で返す．
-    辞書のキーは，valuesの値．辞書の値は，そのキーが存在する位置のリストで，
+    値が存在する位置を辞書で返す。
+    辞書のキーは、valuesの値。辞書の値は、そのキーが存在する位置のリストで、
     [[start1, end1], [start2, end2], ...]
-    の形式．endは要素の位置そのもので，スライス表記とは異なる．
+    の形式。endは要素の位置そのもので、スライス表記とは異なる。
 
     Parameters
     ----------
@@ -161,12 +95,12 @@ def array_index(values, sel=None):
         値の位置を走査する配列
     sel : list of bool, optional
         そもそも値を検出するかを指定する
-        この値がFalseのindexは除外される．
+        この値がFalseのindexは除外される。
 
     Returns
     -------
     dict
-        値が存在する位置を格納した辞書．
+        値が存在する位置を格納した辞書。
 
     Examples
     --------
@@ -205,12 +139,12 @@ def array_index(values, sel=None):
 
 def multirange(sheet, row, column):
     """
-    飛び地Rangeを作成する．
+    飛び地Rangeを作成する。
     rowとcolumnのいずれかはint.
-    intでない方をindexとしたとき，indexはlist.
+    intでない方をindexとしたとき、indexはlist.
     indexが(int, int)の場合は単純なRange
-    それ以外のときは，indexの各要素は，int or (int, int)で
-    それらを連結して，非連続なRangeを作製して返す．
+    それ以外のときは、indexの各要素は、int or (int, int)で
+    それらを連結して、非連続なRangeを作製して返す。
 
     Parameters
     ----------
@@ -228,7 +162,7 @@ def multirange(sheet, row, column):
         axis = 1
         index = row  # type: list
     else:
-        raise ValueError("rowとcolumnのどちらかはintでなければならない．")
+        raise ValueError("rowとcolumnのどちらかはintでなければならない。")
 
     if isinstance(index, int):
         return sheet.range(row, column).api
@@ -256,7 +190,7 @@ def multirange(sheet, row, column):
 
 def multirange_indirect(sheet, row, column):
     """
-    不連続範囲でもSLOPE関数などが扱えるようにする．
+    不連続範囲でもSLOPE関数などが扱えるようにする。
     戻り値はstr
     """
     ranges = multirange(sheet, row, column)
@@ -266,8 +200,8 @@ def multirange_indirect(sheet, row, column):
 
 def reference(sheet, cell):
     """
-    Sheetのセルへの参照を返す．
-    cellが文字列であればそのまま返す．
+    Sheetのセルへの参照を返す。
+    cellが文字列であればそのまま返す。
     """
     if isinstance(cell, tuple):
         # TODO: tupleのときどの要素使う？連結する？
@@ -342,7 +276,7 @@ def add_validation(cell, value, default=None):
 
 def outline_group(sheet, start: int, end: int, axis=0):
     """
-    セルをグループする．
+    セルをグループする。
     """
     outline = sheet.api.Outline
     if axis == 0:
@@ -374,7 +308,7 @@ def outline_levels(sheet, levels: int, axis=0):
 
 def label_func_from_list(columns, post=None):
     """
-    カラム名のリストからラベル関数を作成して返す．
+    カラム名のリストからラベル関数を作成して返す。
 
     Parameters
     ----------
@@ -438,26 +372,18 @@ def format_label(data, fmt, sel=None, default=None):
     for key in keys:
         if key not in dict_:
             warnings.warn(
-                f"タイトル文字列に含まれる'{key}'が，"
-                "dfに含まれないか，単一ではない．",
+                f"タイトル文字列に含まれる'{key}'が、"
+                "dfに含まれないか、単一ではない。",
             )
             dict_[key] = "XXX"
     return fmt.format(**dict_)
 
 
-def Excel(visible=True):
-    if len(xw.apps) == 0:
-        return xw.App(visible=visible)
-    if visible is xw.apps.active.visible:
-        return xw.apps.active
-    return xw.App(visible=visible)
-
-
 def columns_list(df, columns):
     """
-    ':column' or '::column' 形式を通常のカラム名のリストに変換する．
-    ':column'はcolumnを含める，'::column'はcolumnの一つ前まで.
-    文字列の場合はリストにする．
+    ':column' or '::column' 形式を通常のカラム名のリストに変換する。
+    ':column'はcolumnを含める、'::column'はcolumnの一つ前まで.
+    文字列の場合はリストにする。
 
     Parameters
     ----------
@@ -489,7 +415,7 @@ def columns_list(df, columns):
 
 def delete_charts(sheet=None):
     """
-    シート内のすべてのチャートを削除する．
+    シート内のすべてのチャートを削除する。
 
     Parameters
     ----------
@@ -513,9 +439,9 @@ def set_axis_dimension(key, label=None, ticks=None, format=None):
 def autofilter(list_object, *args, **field_criteria):
     """
     キーワード引数で指定される条件に応じてフィルタリングする
-    キーワード引数のキーはカラム名，値は条件．条件は以下のものが指定できる．
-       - list : 要素を指定する．
-       - tuple : 値の範囲を指定する．
+    キーワード引数のキーはカラム名、値は条件。条件は以下のものが指定できる。
+       - list : 要素を指定する。
+       - tuple : 値の範囲を指定する。
        - None : 設定されているフィルタをクリアする
        - 他 : 値の一致
 

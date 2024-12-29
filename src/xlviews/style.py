@@ -5,6 +5,7 @@ import itertools
 import pywintypes
 import seaborn as sns
 import xlwings as xw
+from xlwings import Range
 
 from xlviews.config import rcParams
 from xlviews.decorators import api, wait_updating
@@ -73,7 +74,7 @@ def set_series_style(
 ):
     """
     Seriesのスタイルを設定する.
-    Noneが有効な指定であるため，指定しないことを示すデフォルト値をFalseとする．
+    Noneが有効な指定であるため、指定しないことを示すデフォルト値をFalseとする。
     """
     # size = 10
     # edge_width = 3
@@ -114,7 +115,7 @@ def set_series_style(
         series.MarkerSize = size
 
     # 以下の通りの順番に実行することが重要！！
-    # edge を指定すると，lineの変わってしまうため覚えておく
+    # edge を指定すると、lineの変わってしまうため覚えておく
     line_style = border.LineStyle
 
     if fill_color is not False:
@@ -130,8 +131,8 @@ def set_series_style(
         edge.BackColor.RGB = rgb(edge_color)
     if edge_alpha is not False:
         edge.Transparency = edge_alpha
-        # lineとedgeの透明度は独立に指定する方法が分からない．そのため，
-        # lineの透明度を指定したときにはマーカーのエッジを消す．
+        # lineとedgeの透明度は独立に指定する方法が分からない。そのため、
+        # lineの透明度を指定したときにはマーカーのエッジを消す。
         line_width_ = border.Weight
         edge.Weight = 0
         border.Weight = line_width_
@@ -154,8 +155,8 @@ def set_series_style(
         border.Color = rgb(line_color)
     if line_alpha is not False:
         edge.Transparency = line_alpha
-        # lineとedgeの透明度は独立に指定する方法が分からない．そのため，
-        # lineの透明度を指定したときにはマーカーのエッジを消す．
+        # lineとedgeの透明度は独立に指定する方法が分からない。そのため、
+        # lineの透明度を指定したときにはマーカーのエッジを消す。
         line_width_ = border.Weight
         edge.Weight = 0
         border.Weight = line_width_
@@ -243,7 +244,7 @@ def set_border(
     edge_color=0,
     inside_color=rgb(140, 140, 140),
 ):
-    # 非表示セルでも罫線が表示されるように，xlInsideを使う．
+    # 非表示セルでも罫線が表示されるように、xlInsideを使う。
     sheet = range_.sheet
     if edge_width:
         if isinstance(edge_width, int):
@@ -385,14 +386,12 @@ def hide_unique(range_, length, color=rgb(100, 100, 100)):
     condition.StopIfTrue = False
 
 
-@api
-def set_number_format(range, format):
-    range.NumberFormatLocal = format
+def set_number_format(rng: Range, fmt: str) -> None:
+    rng.api.NumberFormatLocal = fmt
 
 
-@api
-def get_number_format(range):
-    return range.NumberFormatLocal
+def get_number_format(rng: Range) -> str:
+    return rng.api.NumberFormatLocal
 
 
 @wait_updating
@@ -402,6 +401,7 @@ def set_frame_style(
     columns_level,
     length,
     columns,
+    *,
     autofit=False,
     alignment="center",
     border=True,
@@ -413,7 +413,7 @@ def set_frame_style(
     font_size=None,
 ):
     """
-    SheetFrameの装飾をする．
+    SheetFrameの装飾をする。
 
     Parameters
     ----------
@@ -444,7 +444,7 @@ def set_frame_style(
     gray : bool
         グレーモードにするか
     font_size : int, optional
-        フォントサイズを直に指定する．
+        フォントサイズを直に指定する。
     """
 
     def set_style(start, end, name):

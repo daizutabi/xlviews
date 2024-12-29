@@ -38,8 +38,10 @@ def api(func: Callable) -> Callable:
 
     @wraps(func)
     def _func(obj: object, *args, **kwargs):  # noqa: ANN202
-        if hasattr(obj, "api"):
+        try:  # noqa: SIM105
             obj = obj.api  # type: ignore
+        except Exception:  # noqa: BLE001, S110
+            pass
 
         return func(obj, *args, **kwargs)
 

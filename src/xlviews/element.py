@@ -13,13 +13,13 @@ from xlviews.utils import format_label, label_func_from_list
 
 def split_style(handle):
     """
-    色指定などで，辞書を使うときの対応．
+    色指定などで、辞書を使うときの対応。
     color=('column', {'a': 'red', 'b': 'blue'})などを
-    'column' と {('a',): 'red', 'b': 'blue'}に分割する．
-    辞書のキーがタプルになっているのは，第一引数が最終的には
-    リストになるため．
-    color=('column', ['a', 'b', 'c'])の場合は，第2要素を順番に
-    パレットから値を設定する．
+    'column' と {('a',): 'red', 'b': 'blue'}に分割する。
+    辞書のキーがタプルになっているのは、第一引数が最終的には
+    リストになるため。
+    color=('column', ['a', 'b', 'c'])の場合は、第2要素を順番に
+    パレットから値を設定する。
     """
     if isinstance(handle, tuple):
         handle, style = handle
@@ -36,10 +36,10 @@ def split_style(handle):
 
 def combine_handle(by, *handles, columns=None):
     """
-    marker，colorなどをhandleをbyに追加する．
-    なおかつ，リストでないものはリストにする．
-    columnsを指定すると，marker, colorなどが直に形状や色を
-    指定している場合を除外するために，columnsに含まれるものに限る．
+    marker、colorなどをhandleをbyに追加する。
+    なおかつ、リストでないものはリストにする。
+    columnsを指定すると、marker, colorなどが直に形状や色を
+    指定している場合を除外するために、columnsに含まれるものに限る。
     """
 
     def norm(x):
@@ -65,7 +65,7 @@ def combine_handle(by, *handles, columns=None):
 
 
 def get_label_name(label, by, key, **const_dict):
-    """labelキーワード引数から凡例を作成する．"""
+    """labelキーワード引数から凡例を作成する。"""
     if label and by:
         by_key = dict(zip(by, key, strict=False))
         for by_, key_ in const_dict.items():
@@ -87,14 +87,14 @@ def get_label_name(label, by, key, **const_dict):
 
 def autohandle(func):
     """
-    マーカーや色のキーワード引数を処理する．
-    この関数内で指定する任意のキーワード引数がhanldeになれる．
-    これらのキーワード引数は，
-      1. 'blue', 'o', など値を直に指定する．
-      2. 'cad', 'pulse'などのようにカラム名で系列を分ける．
-      3. ['cad', 'pulse']のように複数カラムで系列を分ける．
+    マーカーや色のキーワード引数を処理する。
+    この関数内で指定する任意のキーワード引数がhanldeになれる。
+    これらのキーワード引数は、
+      1. 'blue', 'o', など値を直に指定する。
+      2. 'cad', 'pulse'などのようにカラム名で系列を分ける。
+      3. ['cad', 'pulse']のように複数カラムで系列を分ける。
       4. ('cad', {'Y60': 'blue', 'Y70': 'red'})のように指定したスタイルで
-          系列を分ける．
+          系列を分ける。
     """
 
     @wraps(func)
@@ -111,7 +111,11 @@ def autohandle(func):
             columns = self.data.columns_names
 
         by, marker, color, alpha = combine_handle(
-            by, marker, color, alpha, columns=columns
+            by,
+            marker,
+            color,
+            alpha,
+            columns=columns,
         )
         self.set_handle(marker=marker, color=color, alpha=alpha)
 
@@ -122,7 +126,7 @@ def autohandle(func):
 
 def autolegend(func):
     """
-    凡例の処理を行う．
+    凡例の処理を行う。
     """
 
     @wraps(func)
@@ -202,7 +206,7 @@ class Element:
 
     def set_const_dict(self, **const_dict):
         self.const_dict = const_dict.copy() if const_dict else {}
-        # テールを持つシートフレームの場合は，そのデータを定数辞書に加える．
+        # テールを持つシートフレームの場合は、そのデータを定数辞書に加える。
         if self.data.tail:
             self.const_dict.update(dict(self.data.tail.data.iloc[:, 0]))
 
@@ -298,16 +302,16 @@ class Element:
             系列を分けるシートフレームのカラム名
         label : str
             ラベル文字列 '{cad}'などでシートフレームのカラムを含めることが
-            できる．
+            できる。
         sel : dict
-            シートフレームを選別する．
+            シートフレームを選別する。
         sheet : xlwings.Sheet, optional
         left, top, width, height : int, optional
             チャートの位置と大きさ
         row, column : int, optional
             チャートのセル位置
         axes : xlviews.axes.Axes, optional
-            重ね書きするときに指定する．
+            重ね書きするときに指定する。
         title : str, optional
             タイトル
         line : bool, optional
@@ -362,8 +366,8 @@ class Element:
             and not isinstance(x, tuple)
             and not isinstance(y, tuple)
         ):
-            # Wide-format のデータフレーム．
-            # 横方向にx軸，y軸をとる．
+            # Wide-format のデータフレーム。
+            # 横方向にx軸、y軸をとる。
             by = data.index_columns
             if x in data.wide_columns and y in data.wide_columns:
                 header = "both"
@@ -391,7 +395,8 @@ class Element:
                 row = start + k
                 if sel[k]:
                     key = data.sheet.range(
-                        (row, column), (row, column + data.index_level)
+                        (row, column),
+                        (row, column + data.index_level),
                     ).value
                     series_name = get_label_name(label, by, key, **self.const_dict)
                     by_key = dict(zip(by, key, strict=False))
@@ -400,7 +405,8 @@ class Element:
                         index = data.sheet.range((row, index_x[0]), (row, index_x[-1]))
                         # Values
                         columns = data.sheet.range(
-                            (row, index_y[0]), (row, index_y[-1])
+                            (row, index_y[0]),
+                            (row, index_y[-1]),
                         )
                     elif header == "x":
                         columns = [data.cell.row, row]
@@ -420,7 +426,7 @@ class Element:
                 self.add_series(index, columns, series_name)
                 self.by_key.append(by_key)
         else:
-            # 波形など，unstackしたデータフレーム
+            # 波形など、unstackしたデータフレーム
             start = data.row + data.columns_level
             index = [start, start + len(data) - 1]
 
@@ -444,18 +450,18 @@ class Element:
                             if xcol is None:
                                 xcol = col
                             else:
-                                raise ValueError("重複したカラムあり．byを指定")
+                                raise ValueError("重複したカラムあり。byを指定")
                         if y == item:
                             if ycol is None:
                                 ycol = col
                             else:
-                                raise ValueError("重複したカラムあり．byを指定")
+                                raise ValueError("重複したカラムあり。byを指定")
                     if xcol and ycol:
                         xycols.extend([xcol - offset, ycol - offset])
                         self.add_series(index, [xcol, ycol], series_name)
                         self.by_key.append(by_key)
-            # カラムがマルチインデックスの場合には，タイトル文字列用に
-            # カラムインデックスからデータフレームを作成する．
+            # カラムがマルチインデックスの場合には、タイトル文字列用に
+            # カラムインデックスからデータフレームを作成する。
             if title or name:
                 data = pd.DataFrame(data.columns, columns=data.columns_names)
                 data = data.iloc[xycols]
@@ -506,7 +512,7 @@ class Element:
 
     def add_series(self, index, columns, name, axis=1):
         """
-        シリーズを追加する．
+        シリーズを追加する。
 
         Parameters
         ----------
@@ -514,9 +520,9 @@ class Element:
             データインデックス
             See also: xlviews.utils.multirange
         columns : int or list or xlwings.Range
-            intの場合，yの値のみ，listの場合(x, y)の値
+            intの場合、yの値のみ、listの場合(x, y)の値
         name : tuple or str
-            tuple の場合，(row, col)
+            tuple の場合、(row, col)
         axis : int
             データの方向
 
@@ -542,8 +548,8 @@ class Element:
     @property
     def series_styles(self):
         """
-        series_collectionに対応するスタイルのリストを返す．
-        各要素はseriesに対応し，値は，{handle: style}の辞書である．
+        series_collectionに対応するスタイルのリストを返す。
+        各要素はseriesに対応し、値は、{handle: style}の辞書である。
         """
         handles = self.handle.keys()
         styles = [self._series_styles(handle) for handle in handles]
@@ -554,7 +560,7 @@ class Element:
 
     def _series_styles(self, handle):
         """
-        series_styleから呼ばれる内部関数で，handleごとのスタイルを生成する
+        series_styleから呼ばれる内部関数で、handleごとのスタイルを生成する
         ジェネレータ
         """
         handles = self.handle[handle]
@@ -575,7 +581,10 @@ class Element:
         if not isinstance(style, dict):
             style = dict(zip(style, palette(handle, len(style)), strict=False))
         for series, by_key, default in zip(
-            self.series_collection, self.by_key, defaults, strict=False
+            self.series_collection,
+            self.by_key,
+            defaults,
+            strict=False,
         ):
             key = tuple(by_key[self.by[index]] for index in indexes)
             if key not in style:
@@ -586,7 +595,9 @@ class Element:
 
     def apply_style(self, **kwargs):
         for series, style in zip(
-            self.series_collection, self.series_styles, strict=False
+            self.series_collection,
+            self.series_styles,
+            strict=False,
         ):
             set_series_style(series, **style, **kwargs)
 
@@ -634,7 +645,8 @@ class Bar(Element):
         if xs:
             sheet = self.data.sheet
             xvalues = sheet.range(
-                self.data.range(xs[0])[0], self.data.range(xs[-1], -1)[-1]
+                self.data.range(xs[0])[0],
+                self.data.range(xs[-1], -1)[-1],
             )
             self.series_collection[0].XValues = xvalues.api
             self.axes.set_xlabel(None)

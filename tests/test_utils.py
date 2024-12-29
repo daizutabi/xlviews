@@ -1,5 +1,4 @@
 import pytest
-from xlwings import Sheet
 
 
 @pytest.mark.parametrize(
@@ -7,7 +6,12 @@ from xlwings import Sheet
     [
         ("ChartType.xlXYScatter", -4169),
         ("BordersIndex.EdgeTop", 8),
+        ("Bottom", -4107),
+        ("Center", -4108),
+        ("Left", -4131),
         ("None", -4142),
+        ("Right", -4152),
+        ("Top", -4160),
     ],
 )
 def test_constant(name: str, value: int):
@@ -48,15 +52,3 @@ def test_rgb_error(name):
 
     with pytest.raises(ValueError, match="Invalid color format"):
         rgb(name)
-
-
-def test_get_sheet(sheet: Sheet):
-    print(sheet.range("A1"))
-    print(sheet.range(1, 1))
-    print(sheet.range(1, 12))
-    print(sheet["A1"])
-    print(sheet["A1:E3"])
-    assert 0
-    # from xlviews.utils import get_sheet
-
-    # assert get_sheet(sheet.book, sheet.name) is sheet

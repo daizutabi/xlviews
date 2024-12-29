@@ -165,13 +165,13 @@ class Axes:
                 データインデックス
                 See also: xlviews.utils.multirange
             columns : int or list or xlwings.Range, optional
-                intの場合，yの値のみ，listの場合(x, y)の値
+                intの場合、yの値のみ、listの場合(x, y)の値
             name : tuple or str
-                tuple の場合，(row, col)
+                tuple の場合、(row, col)
             sheet : str
                 データソースのあるシート名
             series : Excelチャートのシリーズ
-                指定したばあい，すでに存在するシリーズを変更する．
+                指定したばあい、すでに存在するシリーズを変更する。
             axis : int
                 データの方向
             chart_type : int or str, optional
@@ -210,7 +210,7 @@ class Axes:
             series.XValues = _multirange(index, columns[0])
             series.Values = _multirange(index, columns[1])
         else:
-            raise ValueError("columnsが指定されていない．")
+            raise ValueError("columnsが指定されていない。")
 
         if chart_type and self.chart_type != chart_type:
             if isinstance(chart_type, str):
@@ -225,12 +225,12 @@ class Axes:
 
     def set_title(self, title=None, name=None, size=None, sheet=None, **kwargs):
         """
-        チャートのタイトルを設定する．
+        チャートのタイトルを設定する。
 
         Parameters
         ----------
         title : str or list or range
-            文字列で直接設定するか，[row, column]の参照
+            文字列で直接設定するか、[row, column]の参照
         name : str
             フォント名
         size : int
@@ -317,7 +317,7 @@ class Axes:
             x = (x + 1) / 2
             y = (1 - y) / 2
 
-            # マージン分だけInsideAreaを縮小する．
+            # マージン分だけInsideAreaを縮小する。
             inside_left = plot_area.InsideLeft + margin
             inside_top = plot_area.InsideTop + margin
             inside_width = plot_area.InsideWidth - 2 * margin
@@ -360,7 +360,7 @@ class Axes:
         return self.chart.api[0]
 
     def tight_layout(self, title_height_scale=0.7):
-        # TODO : タイトル，軸ラベルがない場合でもtight_layout可能にする．
+        # TODO : タイトル、軸ラベルがない場合でもtight_layout可能にする。
         if not (
             self.chart.api[1].HasTitle and self.xaxis.HasTitle and self.yaxis.HasTitle
         ):
@@ -397,7 +397,7 @@ class Axes:
         )
 
     def set_plot_area_style(self):
-        # Major罫線に線を書く．
+        # Major罫線に線を書く。
         # msoElementPrimaryCategoryGridLinesMajor = 334
         self.chart.api[1].SetElement(334)
         # msoElementPrimaryValueGridLinesMajor == 330

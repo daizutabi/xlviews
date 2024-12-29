@@ -1,23 +1,36 @@
+from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
 import xlwings as xw
-from collections import OrderedDict
 
 from xlviews.decorators import wait_updating
+from xlviews.formula import AGGREGATE_FUNCTION, aggregate
 from xlviews.frame import SheetFrame
-from xlviews.formula import aggregate, AGGREGATE_FUNCTION
-from xlviews.utils import constant, outline_group, outline_levels, multirange
-from xlviews.style import (set_font, set_number_format, set_alignment,
-                           get_number_format)
+from xlviews.style import get_number_format, set_alignment, set_font, set_number_format
+from xlviews.utils import constant, multirange, outline_group, outline_levels
 
 
 class StatsFrame(SheetFrame):
     @wait_updating
-    def __init__(self, parent, by=None, stats=None, group=False, link=False,
-                 autofilter=True, table=True, wrap=None, na=False,
-                 null=False, default='median', succession=False, **kwargs):
+    def __init__(
+        self,
+        parent,
+        by=None,
+        stats=None,
+        group=False,
+        link=False,
+        autofilter=True,
+        table=True,
+        wrap=None,
+        na=False,
+        null=False,
+        default="median",
+        succession=False,
+        **kwargs,
+    ):
         """
-        統計値シートフレームを作成する．
+        統計値シートフレームを作成する。
 
         Parameters
         ----------
@@ -26,33 +39,33 @@ class StatsFrame(SheetFrame):
         by : str, list of str, optional
             集計をグルーピングするカラム名
         stats : str, list of str, dict, optional
-            集計関数を指定する．指定できる関数は以下：
+            集計関数を指定する。指定できる関数は以下：
                 'count', 'sum', 'min', 'max', 'mean', 'median', 'std', 'soa%'
-            Noneとするとデフォルト関数を使う．
+            Noneとするとデフォルト関数を使う。
         group : bool
             エクセルのグループ機能を使うかどうか
         link : bool
-            Trueのとき，統計関数をセル参照で表現する．
+            Trueのとき、統計関数をセル参照で表現する。
         autofilter : bool
-            Trueのとき，表示される関数を所定のものに制限する．
+            Trueのとき、表示される関数を所定のものに制限する。
         table : bool
-            Trueのとき，エクセルの表形式にする．
+            Trueのとき、エクセルの表形式にする。
         wrap : str or dict, optional
-            統計関数をラップする文字列．format形式で{}が統計関数に
-            置き換えられる．
+            統計関数をラップする文字列。format形式で{}が統計関数に
+            置き換えられる。
         na : bool
-            Trueのとき，self.wrap = 'IFERROR({},NA())'となる．
+            Trueのとき、self.wrap = 'IFERROR({},NA())'となる。
         null : bool
-            Trueのとき，self.wrap = 'IFERROR({},"")'となる．
+            Trueのとき、self.wrap = 'IFERROR({},"")'となる。
         default : str or None
             statsが辞書のときに指定されないカラムのデフォルト関数
         succession : bool, optional
             連続インデックスを隠すか
         **kwargs
-            SheetFrame.__init__関数に渡される．
+            SheetFrame.__init__関数に渡される。
         """
         self.by = parent.columns_list(by)
-        self.func_column = 'func'
+        self.func_column = "func"
         self.func = AGGREGATE_FUNCTION.copy()
         self.link = link
         self.grouped = None
@@ -60,7 +73,7 @@ class StatsFrame(SheetFrame):
         self.wrap = None
 
         if na is True:
-            self.wrap = 'IFERROR({},NA())'
+            self.wrap = "IFERROR({},NA())"
         elif null is True:
             self.wrap = 'IFERROR({},"")'
         elif wrap:
@@ -70,7 +83,7 @@ class StatsFrame(SheetFrame):
             if na:
                 nas = [na] if isinstance(na, str) else na  # type: list
                 for na in nas:
-                    self.wrap[na] = 'IFERROR({},NA())'
+                    self.wrap[na] = "IFERROR({},NA())"
             if null:
                 nulls = [null] if isinstance(null, str) else null  # type: list
                 for null in nulls:
@@ -82,7 +95,7 @@ class StatsFrame(SheetFrame):
             if isinstance(stats, str):
                 stats = [stats]
             if isinstance(stats, dict):
-                self.func = {'__dummy__': -1}
+                self.func = {"__dummy__": -1}
                 stats_ = {}
                 for key, value in stats.items():
                     if key not in parent.value_columns:
@@ -97,8 +110,8 @@ class StatsFrame(SheetFrame):
                         self.func.pop(key)
             self.column_func = stats
         else:
-            self.func.pop('sum')
-            self.func.pop('std')
+            self.func.pop("sum")
+            self.func.pop("std")
             self.column_func = list(self.func.keys())
 
         df = self.dummy_dataframe(parent)
@@ -106,7 +119,8 @@ class StatsFrame(SheetFrame):
         start_ = parent.row
         parent_header = parent.sheet.range(
             parent.cell.offset(-1),
-            parent.cell.offset(-1, len(parent.columns)))
+            parent.cell.offset(-1, len(parent.columns)),
+        )
         if any(parent_header.value):
             start = start_ - 1
             end = start + len(df) + 2
@@ -116,16 +130,23 @@ class StatsFrame(SheetFrame):
             end = start + len(df) + 1
 
         sheet = parent.sheet
-        rows = parent.sheet.api.Rows(f'{start}:{end}')
-        rows.Insert(Shift=constant('Direction.xlDown'))
+        rows = parent.sheet.api.Rows(f"{start}:{end}")
+        rows.Insert(Shift=constant("Direction.xlDown"))
 
         column = parent.column
         if not isinstance(self.column_func, dict):
             column -= 1
 
-        super().__init__(sheet, start_, column, data=df,
-                         index=parent.index_level > 0, autofit=False,
-                         style=False, **kwargs)
+        super().__init__(
+            sheet,
+            start_,
+            column,
+            data=df,
+            index=parent.index_level > 0,
+            autofit=False,
+            style=False,
+            **kwargs,
+        )
         self.parent = parent
 
         # オフセット
@@ -140,18 +161,18 @@ class StatsFrame(SheetFrame):
         if table:
             self.astable(autofit=False, header=True)
 
-        # 罫線を正しく表示させるために，テーブル化の後にスタイル設定をする．
+        # 罫線を正しく表示させるために、テーブル化の後にスタイル設定をする。
         self.set_style(autofit=False, succession=succession)
 
         if not isinstance(self.column_func, dict):
             self.set_value_style()
 
         if table:
-            self.set_columns_alignment('left')
+            self.set_columns_alignment("left")
 
         if table and autofilter and not isinstance(self.column_func, dict):
             if stats is None:
-                func = 'median'
+                func = "median"
             else:
                 func = stats[0]
             self.autofilter(func=func)
@@ -168,9 +189,9 @@ class StatsFrame(SheetFrame):
             if ref.value:
                 wide_columns.append(ref.value)
                 header = self.cell.offset(-1, self.index_level + k)
-                header.value = '=' + ref.get_address()
-                set_font(header, bold=True, color='#002255')
-                set_alignment(header, horizontal_alignment='center')
+                header.value = "=" + ref.get_address()
+                set_font(header, bold=True, color="#002255")
+                set_alignment(header, horizontal_alignment="center")
         for column in wide_columns:
             ref = parent.range(column, 0)[0]
             column = self.range(column, 0)
@@ -188,19 +209,18 @@ class StatsFrame(SheetFrame):
             columns = [self.func_column] + parent.columns
             array = np.zeros((self.length * len(self.func), len(columns)))
             df = pd.DataFrame(array, columns=columns)
-            df[self.func_column] = [agg for _ in range(self.length)
-                                    for agg in self.func]
+            df[self.func_column] = [
+                agg for _ in range(self.length) for agg in self.func
+            ]
             if parent.index_level:
-                df.set_index([self.func_column] + parent.index_columns,
-                             inplace=True)
+                df.set_index([self.func_column] + parent.index_columns, inplace=True)
             return df
-        else:
-            columns = parent.columns
-            array = np.zeros((self.length, len(columns)))
-            df = pd.DataFrame(array, columns=columns)
-            if parent.index_level:
-                df.set_index(parent.index_columns, inplace=True)
-            return df
+        columns = parent.columns
+        array = np.zeros((self.length, len(columns)))
+        df = pd.DataFrame(array, columns=columns)
+        if parent.index_level:
+            df.set_index(parent.index_columns, inplace=True)
+        return df
 
     def get_group_start_and_end(self):
         if self.by:
@@ -215,8 +235,10 @@ class StatsFrame(SheetFrame):
         by_ = self.by if self.by else []
         parent_columns = self.parent.columns
         parent_index_columns = self.parent.index_columns
-        values = np.empty((self.length * len(self.func),
-                           len(parent_columns)), dtype=str)
+        values = np.empty(
+            (self.length * len(self.func), len(parent_columns)),
+            dtype=str,
+        )
         values = pd.DataFrame(values)
         start_end = list(self.get_group_start_and_end())
         if not isinstance(self.column_func, dict):
@@ -231,15 +253,17 @@ class StatsFrame(SheetFrame):
                 if column in by_:
                     ref = self.sheet.range(start, column_index)
                     ref = ref.get_address()
-                    formula = f'{ref}'
+                    formula = f"{ref}"
                 else:
                     if column in parent_index_columns:
                         continue
                         # formula = const(ref)
                     refs = []
                     for start, end in start_end_:
-                        ref = self.sheet.range((start, column_index),
-                                               (end, column_index))
+                        ref = self.sheet.range(
+                            (start, column_index),
+                            (end, column_index),
+                        )
                         refs.append(ref)
                     formula = refs
                 for r, func in enumerate(self.func):
@@ -255,12 +279,12 @@ class StatsFrame(SheetFrame):
                         formula_ = aggregate(func, *formula)
                         if self.wrap and formula_:
                             if isinstance(self.wrap, dict):
-                                wrap = self.wrap.get(column, '{}')
+                                wrap = self.wrap.get(column, "{}")
                             else:
                                 wrap = self.wrap
                             formula_ = wrap.format(formula_)
                     if formula_:
-                        values.loc[index, j] = '=' + formula_
+                        values.loc[index, j] = "=" + formula_
         column_offset = 0 if isinstance(self.column_func, dict) else 1
         self.cell.offset(1, column_offset).value = values.values
 
@@ -277,75 +301,78 @@ class StatsFrame(SheetFrame):
         start = self.column + self.index_level
         end = self.column + len(self.columns)
         func_index = self.index(self.func_column)
-        value_columns = ['median', 'min', 'mean', 'max', 'std', 'sum']
-        grouped = self.groupby('func')
+        value_columns = ["median", "min", "mean", "max", "std", "sum"]
+        grouped = self.groupby("func")
         columns = [func_index] + list(range(start, end))
-        formats = [self.parent.get_number_format(column)
-                   for column in self.value_columns]
+        formats = [
+            self.parent.get_number_format(column) for column in self.value_columns
+        ]
         formats = [None] + formats
         for func, rows in grouped.items():
-            for column, format_ in zip(columns, formats):
+            for column, format_ in zip(columns, formats, strict=False):
                 cell = multirange(self.sheet, rows, column)
                 if func in value_columns:
                     set_number_format(cell, format_)
-                if func == 'soa':
+                if func == "soa":
                     if column != func_index:
-                        set_number_format(cell, '0.0%')
-                    set_font(cell, color='#5555FF', italic=True)
-                elif func == 'min':
-                    set_font(cell, color='#7777FF')
-                elif func == 'mean':
-                    set_font(cell, color='#33aa33')
-                elif func == 'max':
-                    set_font(cell, color='#FF7777')
-                elif func == 'sum':
-                    set_font(cell, color='purple', italic=True)
-                elif func == 'std':
-                    set_font(cell, color='#aaaaaa')
-                elif func == 'count':
-                    set_font(cell, color='gray')
-        set_font(self.range('func', -1), italic=True)
+                        set_number_format(cell, "0.0%")
+                    set_font(cell, color="#5555FF", italic=True)
+                elif func == "min":
+                    set_font(cell, color="#7777FF")
+                elif func == "mean":
+                    set_font(cell, color="#33aa33")
+                elif func == "max":
+                    set_font(cell, color="#FF7777")
+                elif func == "sum":
+                    set_font(cell, color="purple", italic=True)
+                elif func == "std":
+                    set_font(cell, color="#aaaaaa")
+                elif func == "count":
+                    set_font(cell, color="gray")
+        set_font(self.range("func", -1), italic=True)
 
 
 def main():
-    import mtj
     import time
+
+    import mtj
+
     import xlviews as xv
 
     xw.apps.add()
     book = xw.books[0]
     sheet = book.sheets[0]
 
-    directory = mtj.get_directory('local', 'Data')
-    run = mtj.get_paths_dataframe(directory, 'S6544', 'IB01-06')
+    directory = mtj.get_directory("local", "Data")
+    run = mtj.get_paths_dataframe(directory, "S6544", "IB01-06")
     series = run.iloc[0]
     path = mtj.get_path(directory, series)
     with mtj.data(path) as data:
         data.merge_device()
-        df = data.get(['wafer', 'cad', 'sx', 'sy', 'dx', 'dy', 'id',
-                       'Rmin', 'Rmax', 'TMR'], sx=(4, 6), sy=(3, 4))
-        df.set_index(['wafer', 'cad', 'sx', 'sy', 'dx', 'dy', 'id'],
-                     inplace=True)
+        df = data.get(
+            ["wafer", "cad", "sx", "sy", "dx", "dy", "id", "Rmin", "Rmax", "TMR"],
+            sx=(4, 6),
+            sy=(3, 4),
+        )
+        df.set_index(["wafer", "cad", "sx", "sy", "dx", "dy", "id"], inplace=True)
         sf = xv.SheetFrame(sheet, 2, 3, data=df, sort_index=True)
-        sf.set_number_format(Rmin='0.00', TMR='0.0')
+        sf.set_number_format(Rmin="0.00", TMR="0.0")
     sf.astable()
 
     start_time = time.time()
-    StatsFrame(sf, by=':sy', stats={'Rmin': 'max', 'Rmax': 'count'},
-               default=None)
+    StatsFrame(sf, by=":sy", stats={"Rmin": "max", "Rmax": "count"}, default=None)
     # , autofilter=True)
     # sf.autofilter('func')
     # sf.autofilter(func='median')
     elapsed_time = time.time() - start_time
-    print("elapsed_time:{0}".format(elapsed_time) + "[sec]")
+    print(f"elapsed_time:{elapsed_time}" + "[sec]")
 
 
 def process():
     sf = SheetFrame(3, 3, index_level=7, style=False)
-    StatsFrame(sf, by=':sy', stats={'abc': 'count'},
-               default=None)
+    StatsFrame(sf, by=":sy", stats={"abc": "count"}, default=None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # main()
     process()
