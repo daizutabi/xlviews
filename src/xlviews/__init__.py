@@ -1,10 +1,7 @@
-"""
-How to install:
-    $ cd <path_to>/win32com/client
-    $ python makepy.py
+from xlviews.main import open_or_create
 
-    select *** Office Library
-"""
+__all__ = ["open_or_create"]
+
 # import win32com.client
 
 # import matplotlib as mpl

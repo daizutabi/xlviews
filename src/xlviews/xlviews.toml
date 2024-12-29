@@ -1,0 +1,45 @@
+[chart]
+width = 200
+height = 200
+font.name = "Meiryo UI"
+
+[chart.title]
+font.size = 9
+font.bold = true
+
+[chart.legend]
+font.size = 8
+
+[chart.axis.title]
+font.size = 9
+
+[chart.axis.ticklabels]
+font.size = 8
+
+[frame]
+font.size = 9
+
+[frame.index.name]
+fill.color = "#ffffaa"
+font.color = "#333300"
+font.bold = true
+
+[frame.index]
+fill.color = "#ffffee"
+font.color = "#111100"
+font.bold = false
+
+[frame.columns.name]
+fill.color = "#88eeff"
+font.color = "#002244"
+font.bold = true
+
+[frame.columns]
+fill.color = "#ccffff"
+font.color = "#004455"
+font.bold = true
+
+[frame.values]
+fill.color = "#ffffff"
+font.color = "#001122"
+font.bold = false

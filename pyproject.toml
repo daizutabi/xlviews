@@ -15,8 +15,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-requires-python = ">=3.10"
-dependencies = ["pywin32>=308"]
+requires-python = ">=3.11"
+dependencies = [
+    "pywin32>=308",
+    "xlwings>=0.33",
+    "pandas>=2",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+]
 
 [project.urls]
 Documentation = "https://daizutabi.github.io/xlviews/"
@@ -28,7 +34,6 @@ dev-dependencies = [
     "pytest-clarity>=1",
     "pytest-cov>=6.0",
     "pytest-randomly>=3.16",
-    "pytest-xdist>=3.6",
     "ruff>=0.8",
 ]
 

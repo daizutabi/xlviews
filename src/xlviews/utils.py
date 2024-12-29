@@ -1,76 +1,88 @@
+from __future__ import annotations
+
 import os
 import re
 import warnings
 from collections import OrderedDict
 
-import matplotlib
+import matplotlib as mpl
 import pandas as pd
 import xlwings as xw
 
 from xlviews.config import rcParams
 
 
-def constant(type_, name=None):
-    """
-    エクセル定数を返す．
+def constant(type_: str, name: str | None = None) -> int:
+    """Return the Excel constant.
 
-    Parameters
-    ----------
-    type_ : str
-        型名
-    name : str
-        名前
+    Args:
+        type_ (str): The type name.
+        name (str): The name.
 
-    Examples
-    --------
-    >>> constant('BordersIndex', 'EdgeTop')
-    8
+    Examples:
+        >>> constant("BordersIndex", "EdgeTop")
+        8
     """
     if name is None:
-        if '.' in type_:
-            type_, name = type_.split('.')
+        if "." in type_:
+            type_, name = type_.split(".")
         else:
-            type_, name = 'Constants', type_
-    if not name.startswith('xl'):
-        name = 'xl' + name[0].upper() + name[1:]
+            type_, name = "Constants", type_
+
+    if not name.startswith("xl"):
+        name = "xl" + name[0].upper() + name[1:]
+
     type_ = getattr(xw.constants, type_)
+
     return getattr(type_, name)
 
 
-def rgb(color, green=None, blue=None):
-    """
-    RGBの色関数．
+def rgb(
+    color: int | tuple[int, int, int] | str,
+    green: int | None = None,
+    blue: int | None = None,
+) -> int:
+    """Return the RGB color integer.
 
-    Parameters
-    ----------
-    color : int, list, or str
-    green: int
-    blue: int
+    Args:
+        color (int, tuple[int, int, int], or str): The color.
+        green (int): The green value.
+        blue (int): The blue value.
 
-    Examples
-    --------
-    >>> rgb(4)
-    4
-    >>> rgb([100, 200, 40])
-    2672740
-    >>> rgb('pink')
-    13353215
-    >>> rgb('#123456')
-    5649426
+    Examples:
+        >>> rgb(4)
+        4
+
+        >>> rgb((100, 200, 40))
+        2672740
+
+        >>> rgb("pink")
+        13353215
+
+        >>> rgb("#123456")
+        5649426
     """
-    if green is not None:
-        red = color
-    elif isinstance(color, int):
+    if isinstance(color, int) and green is None and blue is None:
         return color
-    elif isinstance(color, str):
-        color = matplotlib.colors.cnames.get(color, color)
-        if not color.startswith('#') or len(color) != 7:
-            raise ValueError('colorが文字列のときは，#xxxxxxの形式．')
+
+    if isinstance(color, str):
+        color = mpl.colors.cnames.get(color, color)
+
+        if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
+            raise ValueError("Invalid color format. Expected #xxxxxx.")
+
         red = int(color[1:3], 16)
         green = int(color[3:5], 16)
         blue = int(color[5:7], 16)
-    else:
+
+    elif isinstance(color, tuple):
         red, green, blue = color
+
+    else:
+        if not isinstance(blue, int) or not isinstance(green, int):
+            raise TypeError("Invalid color format. Expected #xxxxxx or (r, g, b).")
+
+        red = color
 
     return red + green * 256 + blue * 256 * 256
 
@@ -155,7 +167,7 @@ def multirange(sheet, row, column):
         axis = 1
         index = row  # type: list
     else:
-        raise ValueError('rowとcolumnのどちらかはintでなければならない．')
+        raise ValueError("rowとcolumnのどちらかはintでなければならない．")
 
     if isinstance(index, int):
         return sheet.range(row, column).api
@@ -167,11 +179,9 @@ def multirange(sheet, row, column):
             start, end = start_end
         if axis == 0:
             return sheet.range((row, start), (row, end))
-        else:
-            return sheet.range((start, column), (end, column))
+        return sheet.range((start, column), (end, column))
 
-    if (len(index) == 2 and isinstance(index[0], int) and
-            isinstance(index[1], int)):
+    if len(index) == 2 and isinstance(index[0], int) and isinstance(index[1], int):
         index = [index]
 
     ranges = [_range(i).api for i in index]
@@ -189,8 +199,8 @@ def multirange_indirect(sheet, row, column):
     戻り値はstr
     """
     ranges = multirange(sheet, row, column)
-    address = ','.join(['"' + range_.Address + '"' for range_ in ranges])
-    return 'N(INDIRECT({' + address + '}))'
+    address = ",".join(['"' + range_.Address + '"' for range_ in ranges])
+    return "N(INDIRECT({" + address + "}))"
 
 
 def reference(sheet, cell):
@@ -203,67 +213,8 @@ def reference(sheet, cell):
         cell = cell[0]
     if not isinstance(cell, str):
         cell = sheet.range(*cell).get_address(include_sheetname=True)
-        cell = '=' + cell
+        cell = "=" + cell
     return cell
-
-
-def open_or_create(path, app=None, sheetname=None, visible=True):
-    """
-    pathのエクセルファイルが存在すれば開く．なければ新規ワークブックを作成
-    する．
-
-    Parameters
-    ----------
-    path : str
-        ファイルパス
-    app : xw.App
-        アプリケーションを指定する．
-    sheetname : str
-        シート名. 指定されるとSheetオブジェクトが返される．
-    visible : bool
-        可視かどうか
-
-    Returns
-    -------
-    book_or_sheet : xw.Book, xw.Sheet
-    """
-    app = app or xw.apps.active
-    if app is None:
-        created = True
-        app = xw.apps.add()
-    else:
-        created = False
-
-    if os.path.exists(path):
-        book = app.books.open(path)
-        if created:
-            app.books[0].close()
-        created = False
-    else:
-        if created:
-            book = app.books[0]
-        else:
-            book = app.books.add()
-        book.save(path)
-        created = True
-    app.visible = visible
-
-    if sheetname is None:
-        return book
-
-    if created:
-        sheet = book.sheets[0]
-        sheet.name = sheetname
-        book.save()
-        return sheet
-    else:
-        sheet = None
-        for sheet in book.sheets:
-            if sheet.name == sheetname:
-                return sheet
-        sheet = book.sheets.add(sheetname, after=sheet)
-        book.save()
-        return sheet
 
 
 def get_sheet_cell_row_column(*args):
@@ -284,9 +235,10 @@ def get_sheet_cell_row_column(*args):
         xw.apps.add()
         sheet = xw.sheets.active
         from xlviews.style import hide_gridlines
+
         hide_gridlines(sheet)
-        sheet.range('A1').column_width = 1
-        sheet.range('B2').select()
+        sheet.range("A1").column_width = 1
+        sheet.range("B2").select()
         if args and isinstance(args[0], str):
             sheet.name = args[0]
     else:
@@ -313,7 +265,7 @@ def get_sheet_cell_row_column(*args):
         cell = sheet.book.selection
         row, column = cell.row, cell.column
     else:
-        raise ValueError('引数の長さが4以上', len(args))
+        raise ValueError("引数の長さが4以上", len(args))
 
     if isinstance(sheet, str):
         book = xw.books.active
@@ -362,29 +314,28 @@ def copy_chart(book_from, sheet_to, name):
     # sheet_to.api.Paste()
     # sheet_to.activate()
     # sheet_to.range('A1').api.Select()
-    sheet_to.api.PasteSpecial(Format='図 (PNG)', Link=False,
-                              DisplayAsIcon=False)
+    sheet_to.api.PasteSpecial(Format="図 (PNG)", Link=False, DisplayAsIcon=False)
     sheet_to.pictures[-1].name = name
 
 
 def copy_range(book_from, sheet_to, name, title=False):
-    range_ = get_range(book_from, name.replace('-', '__'), title=title)
+    range_ = get_range(book_from, name.replace("-", "__"), title=title)
     range_.api.CopyPicture()  # Appearance:=xlScreen, Format:=xlPicture)
     # sheet_to.activate()
     # sheet_to.range('A1').api.Select()
     sheet_to.api.Paste()
-    sheet_to.pictures[-1].name = name.replace('__', '-')
+    sheet_to.pictures[-1].name = name.replace("__", "-")
 
 
 def add_validation(cell, value, default=None):
     if default:
         cell.value = default
     if isinstance(value, list):
-        type_ = constant('DVType.xlValidateList')
-        operator = constant('FormatConditionOperator.xlEqual')
-        value = ','.join([str(x) for x in value])
+        type_ = constant("DVType.xlValidateList")
+        operator = constant("FormatConditionOperator.xlEqual")
+        value = ",".join([str(x) for x in value])
     else:
-        raise ValueError('未実装')
+        raise ValueError("未実装")
 
     cell.api.Validation.Add(Type=type_, Operator=operator, Formula1=value)
 
@@ -395,19 +346,19 @@ def outline_group(sheet, start: int, end: int, axis=0):
     """
     outline = sheet.api.Outline
     if axis == 0:
-        outline.SummaryRow = constant('SummaryRow.xlSummaryAbove')
+        outline.SummaryRow = constant("SummaryRow.xlSummaryAbove")
         sheet.range((start, 1), (end, 1)).api.EntireRow.Group()
     else:
-        outline.SummaryColumn = constant('SummaryColumn.xlSummaryOnLeft')
+        outline.SummaryColumn = constant("SummaryColumn.xlSummaryOnLeft")
         sheet.range((1, start), (1, end)).api.EntireRow.Group()
 
 
 def show_group(start: int, axis=0, show=True):
     app = xw.apps.active
     if axis == 0:
-        app.api.ExecuteExcel4Macro(f'SHOW.DETAIL(1,{start},{show})')
+        app.api.ExecuteExcel4Macro(f"SHOW.DETAIL(1,{start},{show})")
     else:
-        raise ValueError('未実装')
+        raise ValueError("未実装")
 
 
 def hide_group(start: int, axis=0):
@@ -436,12 +387,12 @@ def label_func_from_list(columns, post=None):
     -------
     callable
     """
+
     def get_format(t):
-        name_ = f'column.label.{t}'
+        name_ = f"column.label.{t}"
         if name_ in rcParams:
             return rcParams[name_]
-        else:
-            return '{' + t + '}'
+        return "{" + t + "}"
 
     fmt_dict = OrderedDict()
     for column in columns:
@@ -456,7 +407,7 @@ def label_func_from_list(columns, post=None):
             else:
                 label = fmt(key)
             labels.append(label)
-        return '_'.join(labels) + ('_' + post if post else '')
+        return "_".join(labels) + ("_" + post if post else "")
 
     return func
 
@@ -475,31 +426,31 @@ def format_label(data, fmt, sel=None, default=None):
             if len(values) == 1:
                 dict_[column] = values[0]
         return fmt(**dict_)
-    else:
-        keys = re.findall(r'{([\w.]+)(?:}|:)', fmt)
-        for column in keys:
-            if column in data.columns:
-                values = data[column]
-                if sel is not None:
-                    values = values[sel]
-                values = values.unique()
-                if len(values) == 1:
-                    dict_[column] = values[0]
-        for key in keys:
-            if key not in dict_:
-                warnings.warn("タイトル文字列に含まれる'{}'が，"
-                              "dfに含まれないか，単一ではない．".format(key))
-                dict_[key] = 'XXX'
-        return fmt.format(**dict_)
+    keys = re.findall(r"{([\w.]+)(?:}|:)", fmt)
+    for column in keys:
+        if column in data.columns:
+            values = data[column]
+            if sel is not None:
+                values = values[sel]
+            values = values.unique()
+            if len(values) == 1:
+                dict_[column] = values[0]
+    for key in keys:
+        if key not in dict_:
+            warnings.warn(
+                f"タイトル文字列に含まれる'{key}'が，"
+                "dfに含まれないか，単一ではない．",
+            )
+            dict_[key] = "XXX"
+    return fmt.format(**dict_)
 
 
 def Excel(visible=True):
     if len(xw.apps) == 0:
         return xw.App(visible=visible)
-    elif visible is xw.apps.active.visible:
+    if visible is xw.apps.active.visible:
         return xw.apps.active
-    else:
-        return xw.App(visible=visible)
+    return xw.App(visible=visible)
 
 
 def columns_list(df, columns):
@@ -526,10 +477,10 @@ def columns_list(df, columns):
 
     def gen():
         for column in columns:
-            if column.startswith('::'):
-                yield from columns_[:columns_.index(column[2:])]
-            elif column.startswith(':'):
-                yield from columns_[:columns_.index(column[1:]) + 1]
+            if column.startswith("::"):
+                yield from columns_[: columns_.index(column[2:])]
+            elif column.startswith(":"):
+                yield from columns_[: columns_.index(column[1:]) + 1]
             else:
                 yield column
 
@@ -552,11 +503,11 @@ def delete_charts(sheet=None):
 
 def set_axis_dimension(key, label=None, ticks=None, format=None):
     if label:
-        rcParams[f'axis.label.{key}'] = label
+        rcParams[f"axis.label.{key}"] = label
     if ticks:
-        rcParams[f'axis.ticks.{key}'] = ticks
+        rcParams[f"axis.ticks.{key}"] = ticks
     if format:
-        rcParams[f'axis.format.{key}'] = format
+        rcParams[f"axis.format.{key}"] = format
 
 
 def autofilter(list_object, *args, **field_criteria):
@@ -569,7 +520,7 @@ def autofilter(list_object, *args, **field_criteria):
        - 他 : 値の一致
 
     """
-    for field, criteria in zip(args[::2], args[1::2]):
+    for field, criteria in zip(args[::2], args[1::2], strict=False):
         field_criteria[field] = criteria
 
     filter_ = list_object.Range.AutoFilter
@@ -580,18 +531,25 @@ def autofilter(list_object, *args, **field_criteria):
         field_index = columns.index(field) + 1
         if isinstance(criteria, list):
             criteria = list(map(str, criteria))
-            filter_(Field=field_index, Criteria1=criteria,
-                    Operator=operator.xlFilterValues)
+            filter_(
+                Field=field_index,
+                Criteria1=criteria,
+                Operator=operator.xlFilterValues,
+            )
         elif isinstance(criteria, tuple):
-            filter_(Field=field_index, Criteria1=f'>={criteria[0]}',
-                    Operator=operator.xlAnd, Criteria2=f'<={criteria[1]}')
+            filter_(
+                Field=field_index,
+                Criteria1=f">={criteria[0]}",
+                Operator=operator.xlAnd,
+                Criteria2=f"<={criteria[1]}",
+            )
         elif criteria is None:
             filter_(Field=field_index)
         else:
-            filter_(Field=field_index, Criteria1=f'{criteria}')
+            filter_(Field=field_index, Criteria1=f"{criteria}")
 
 
 def main():
     sheet = xw.sheets.active
-    list_object = sheet.api.ListObjects('テーブル1')
+    list_object = sheet.api.ListObjects("テーブル1")
     autofilter(list_object, TMR=(100, 150))
