@@ -44,7 +44,12 @@ exclude = ["/.github", "/docs"]
 packages = ["src/xlviews"]
 
 [tool.pytest.ini_options]
-addopts = ["--doctest-modules", "--cov=xlviews", "--cov-report=lcov:lcov.info"]
+addopts = [
+    "--doctest-modules",
+    "--cov=xlviews",
+    "--cov-report=lcov:lcov.info",
+    "-p no:faulthandler",
+]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
 filterwarnings = []
 
@@ -72,13 +77,14 @@ ignore = [
     "D203",
     "D213",
     "EM101",
+    "TD",
     "ERA001",
     "FBT001",
     "FBT002",
     "PD901",
     "PERF401",
     "PGH003",
-    "PLR2004",
+    "PLR",
     "SIM102",
     "TRY003",
 ]

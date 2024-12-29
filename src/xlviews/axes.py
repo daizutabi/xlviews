@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import xlwings as xw
 
 from xlviews.config import rcParams
@@ -12,66 +16,85 @@ from xlviews.style import (
 )
 from xlviews.utils import constant, multirange, reference
 
-first_position = {"left": 50, "top": 80}
+if TYPE_CHECKING:
+    from xlwings import Chart, Sheet
+    from xlwings._xlwindows import COMRetryObjectWrapper
+
+    from xlviews.frame import SheetFrame
+
+FIRST_POSITION = {"left": 50, "top": 80}
 
 
-def set_first_position(sf, pos="right"):
+def set_first_position(sf: SheetFrame, pos: str = "right") -> None:
     if pos == "right":
         cell = sf.get_adjacent_cell(offset=0)
-        first_position["left"] = cell.left
-        first_position["top"] = cell.top
+        FIRST_POSITION["left"] = cell.left
+        FIRST_POSITION["top"] = cell.top
+
     elif pos == "inside":
         cell = sf.cell.offset(sf.columns_level, sf.index_level)
-        first_position["left"] = cell.left + 30
-        first_position["top"] = cell.top + 30
+        FIRST_POSITION["left"] = cell.left + 30
+        FIRST_POSITION["top"] = cell.top + 30
+
     elif pos == "bottom":
         cell = sf.cell.offset(sf.columns_level + len(sf) + 1)
-        first_position["left"] = cell.left
-        first_position["top"] = cell.top
+        FIRST_POSITION["left"] = cell.left
+        FIRST_POSITION["top"] = cell.top
 
 
-def chart_position(sheet, left, top):
-    """
-    チャートの位置を自動で設定するための関数．
-    left == 0 かつ top is None の場合に，改行する．
-    left == None かつ top == Noneのときは右隣に配置する．
+def chart_position(sheet: Sheet, left: int | None, top: int | None) -> tuple[int, int]:
+    """Return the position of the chart.
+
+    If left is 0 and top is None, it will create a new row.
+    If left is None and top is None, it will be placed to the right.
     """
     if left is not None and top is not None:
         return left, top
+
     if not sheet.charts:
-        return first_position["left"], first_position["top"]
-    elif left == 0 and top is None:  # チャートの改行
-        top = 0
-        left = 1e100
+        return FIRST_POSITION["left"], FIRST_POSITION["top"]
+
+    if left == 0 and top is None:  # New row
+        left = FIRST_POSITION["left"]
+        top = FIRST_POSITION["top"]
+
         for chart in sheet.charts:
             top = max(top, chart.top)
-            left = min(left, chart.left)
+            left = chart.left if left < 0 else min(left, chart.left)
+
         for chart in sheet.charts:
             if chart.top == top:
                 top = max(top, chart.top + chart.height)
-    else:  # チャートの右つなぎ
-        chart = sheet.charts[-1]
-        left = chart.left + chart.width
-        top = chart.top
-    return left, top
+
+        return left, top
+
+    chart = sheet.charts[-1]
+    return chart.left + chart.width, chart.top
 
 
-class Axes(object):
+class Axes:
+    sheet: Sheet
+    chart: Chart
+    chart_type: str
+    series_collection: list[COMRetryObjectWrapper]
+    labels: list[str]
+
     def __init__(
         self,
-        sheet=None,
-        left=None,
-        top=None,
-        width=None,
-        height=None,
-        row=None,
-        column=None,
-        visible_only=True,
-        border_width=0,
-        has_legend=True,
-        include_in_layout=False,
-    ):
-        self.sheet = sheet if sheet else xw.sheets.active
+        left: int | None = None,
+        top: int | None = None,
+        width: int = 0,
+        height: int = 0,
+        *,
+        row: int | None = None,
+        column: int | None = None,
+        sheet: Sheet | None = None,
+        border_width: int = 0,
+        visible_only: bool = True,
+        has_legend: bool = True,
+        include_in_layout: bool = False,
+    ) -> None:
+        self.sheet = sheet or xw.sheets.active
 
         if row:
             top = self.sheet.range(row, 1).top
@@ -79,13 +102,12 @@ class Axes(object):
             left = self.sheet.range(1, column).left
 
         left, top = chart_position(self.sheet, left, top)
+
         width = width or rcParams["chart.width"]
         height = height or rcParams["chart.height"]
+        self.chart = self.sheet.charts.add(left, top, width, height)
 
-        self.chart = self.sheet.charts.add(
-            left=left, top=top, width=width, height=height
-        )
-        self.chart_type = None
+        self.chart_type = ""
 
         # self.chart.api[0].Placement = xw.constants.Placement.xlMove
         self.chart.api[0].Placement = xw.constants.Placement.xlFreeFloating
@@ -101,24 +123,32 @@ class Axes(object):
         self.series_collection = []
         self.labels = []
 
-    def set_chart_type(self, chart_type):
-        """
-        チャートの種類を設定する．
+    @property
+    def xaxis(self) -> COMRetryObjectWrapper:
+        chart = self.chart.api[1]
+        return chart.Axes(xw.constants.AxisType.xlCategory)
 
-        Parameters
-        ----------
-        chart_type : str
-            XYScatterなどの文字列
-            xlwings.constants.ChartTypeのメンバを指定する．
-            先頭の'xl'は省略する．
+    @property
+    def yaxis(self) -> COMRetryObjectWrapper:
+        chart = self.chart.api[1]
+        return chart.Axes(xw.constants.AxisType.xlValue)
+
+    @property
+    def legend(self) -> COMRetryObjectWrapper:
+        return self.chart.api[1].Legend
+
+    def set_chart_type(self, chart_type: str) -> None:
+        """Set the chart type.
+
+        Args:
+            chart_type (str): Specify the members of `xlwings.constants.ChartType`
+                as strings such as XYScatter. Omit the leading `xl`.
         """
         chart = self.chart.api[1]
         self.chart_type = chart_type
-        if isinstance(chart_type, str):
-            chart_type = constant("ChartType", chart_type)
-        chart.ChartType = chart_type
+        chart.ChartType = constant("ChartType", chart_type)
 
-    def add_series(
+    def add_series(  # noqa: C901
         self,
         index=None,
         columns=None,
@@ -128,26 +158,24 @@ class Axes(object):
         axis=1,
         chart_type=None,
     ):
-        """
-        シリーズを追加する．
+        """Add a series to the chart.
 
-        Parameters
-        ----------
-        index : list or xlwings.Range
-            データインデックス
-            See also: xlviews.utils.multirange
-        columns : int or list or xlwings.Range, optional
-            intの場合，yの値のみ，listの場合(x, y)の値
-        name : tuple or str
-            tuple の場合，(row, col)
-        sheet : str
-            データソースのあるシート名
-        series : Excelチャートのシリーズ
-            指定したばあい，すでに存在するシリーズを変更する．
-        axis : int
-            データの方向
-        chart_type : int or str, optional
-            チャートタイプ
+        Args:
+            index : list or xlwings.Range
+                データインデックス
+                See also: xlviews.utils.multirange
+            columns : int or list or xlwings.Range, optional
+                intの場合，yの値のみ，listの場合(x, y)の値
+            name : tuple or str
+                tuple の場合，(row, col)
+            sheet : str
+                データソースのあるシート名
+            series : Excelチャートのシリーズ
+                指定したばあい，すでに存在するシリーズを変更する．
+            axis : int
+                データの方向
+            chart_type : int or str, optional
+                チャートタイプ
 
         Returns
         -------
@@ -159,6 +187,7 @@ class Axes(object):
         if series is None:
             chart = self.chart.api[1]
             series = chart.SeriesCollection().NewSeries()
+            print(series)
             self.series_collection.append(series)
             self.labels.append(name)
         if name:
@@ -189,6 +218,10 @@ class Axes(object):
             series.ChartType = chart_type
 
         return series
+
+    @property
+    def title(self):
+        return self.chart.api[1].ChartTitle
 
     def set_title(self, title=None, name=None, size=None, sheet=None, **kwargs):
         """
@@ -238,17 +271,16 @@ class Axes(object):
             self.legend.Delete()
         if not legend:
             return
-        else:
-            # 表示されないLegendEntryのHeightやWidthを取得できないため
-            self.chart.api[1].HasLegend = True
-            self.legend.IncludeInLayout = False
+        # 表示されないLegendEntryのHeightやWidthを取得できないため
+        self.chart.api[1].HasLegend = True
+        self.legend.IncludeInLayout = False
 
-            legend_entries = list(self.legend.LegendEntries())
-            labels = [label for label in self.labels if label != "__trendline__"]
-            labels += [None for label in self.labels if label == "__trendline__"]
-            for entry, label in zip(legend_entries, labels):
-                if label is None:
-                    entry.Delete()
+        legend_entries = list(self.legend.LegendEntries())
+        labels = [label for label in self.labels if label != "__trendline__"]
+        labels += [None for label in self.labels if label == "__trendline__"]
+        for entry, label in zip(legend_entries, labels, strict=False):
+            if label is None:
+                entry.Delete()
 
         if size is None:
             size = rcParams["chart.legend.font.size"]
@@ -295,37 +327,6 @@ class Axes(object):
             top = inside_top + y * inside_height - y * legend.Height
             set_dimensions(self.legend, left, top)
 
-    def get_axis(self, axis):
-        chart = self.chart.api[1]
-        if axis == "x":
-            return chart.Axes(xw.constants.AxisType.xlCategory)
-        elif axis == "y":
-            return chart.Axes(xw.constants.AxisType.xlValue)
-
-    @property
-    def xaxis(self):
-        return self.get_axis("x")
-
-    @property
-    def yaxis(self):
-        return self.get_axis("y")
-
-    @property
-    def title(self):
-        return self.chart.api[1].ChartTitle
-
-    @property
-    def plot_area(self):
-        return self.chart.api[1].PlotArea
-
-    @property
-    def graph_area(self):
-        return self.chart.api[0]
-
-    @property
-    def legend(self):
-        return self.chart.api[1].Legend
-
     def set_xscale(self, scale=None, **kwargs):
         set_scale(self.xaxis, scale, **kwargs)
 
@@ -349,6 +350,14 @@ class Axes(object):
 
     def set_yticklabels(self, *args, **kwargs):
         set_ticklabels(self.yaxis, *args, **kwargs)
+
+    @property
+    def plot_area(self):
+        return self.chart.api[1].PlotArea
+
+    @property
+    def graph_area(self):
+        return self.chart.api[0]
 
     def tight_layout(self, title_height_scale=0.7):
         # TODO : タイトル，軸ラベルがない場合でもtight_layout可能にする．

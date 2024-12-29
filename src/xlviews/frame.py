@@ -4,30 +4,32 @@ When there are names in the columns, they are ignored unless the index
 is unnamed.
 """
 
+from __future__ import annotations
+
 import re
 from itertools import chain, product
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import xlwings as xw
+from pandas import DataFrame
 
+from xlviews.axes import set_first_position
 from xlviews.decorators import wait_updating
-
-# from xlviews.axes import set_first_position
-# from xlviews.element import Bar, Plot, Scatter
-# from xlviews.formula import aggregate, const
-# from xlviews.grid import FacetGrid
-# from xlviews.shotmap import ShotMap
-# from xlviews.style import (
-#     get_number_format,
-#     set_alignment,
-#     set_border,
-#     set_fill,
-#     set_font,
-#     set_frame_style,
-#     set_number_format,
-#     set_table_style,
-# )
+from xlviews.element import Bar, Plot, Scatter
+from xlviews.formula import aggregate, const
+from xlviews.grid import FacetGrid
+from xlviews.style import (
+    get_number_format,
+    set_alignment,
+    set_border,
+    set_fill,
+    set_font,
+    set_frame_style,
+    set_number_format,
+    set_table_style,
+)
 from xlviews.utils import (
     add_validation,
     array_index,
@@ -36,34 +38,38 @@ from xlviews.utils import (
     multirange,
 )
 
+if TYPE_CHECKING:
+    from xlviews.dist import DistFrame
+    from xlviews.stats import StatsFrame
+
 
 class SheetFrame:
-    """
-    エクセルのシート上に存在するデータフレーム
+    """Data frame on an Excel sheet."""
 
-    frame.index_level : インデックスの階層数
-    frame.columns_level : カラムの階層数
-    """
+    parent: SheetFrame | None
+    head: SheetFrame | None
+    stats: StatsFrame | None
+    dist: DistFrame | None
 
     @wait_updating
-    def __init__(
+    def __init__(  # noqa: C901
         self,
         *args,
-        data=None,
-        index=True,
-        index_level=1,
-        columns_level=1,
-        sort_index=False,
-        parent=None,
-        head=None,
-        style=True,
-        gray=False,
-        autofit=True,
+        data: DataFrame | None = None,
+        index: bool | str = True,
+        index_level: int = 1,
+        columns_level: int = 1,
+        sort_index: bool = False,
+        parent: SheetFrame | None = None,
+        head: SheetFrame | None = None,
+        style: bool = True,
+        gray: bool = False,
+        autofit: bool = True,
         number_format=None,
         name=None,
         font_size=None,
         **kwargs,
-    ):
+    ) -> None:
         """
         エクセルのシート上のデータフレームを作成する．
 
@@ -105,23 +111,25 @@ class SheetFrame:
             - SheetFrame((row, column))
             - SheetFrame(cell)
         """
-        if sort_index:
+        if data is not None and sort_index:
             data = data.sort_index()
 
-        self.parent = None
-        self.head = None
+        self.parent = parent
+        self.head = head
         self.stats = None
         self.dist = None
-        if parent:  # 別のシートフレームの右側に配置する．
-            self.parent = parent
+
+        if self.parent:  # Locate the child frame to the right of the parent frame.
             self.cell = self.parent.get_child_cell()
             self.sheet = self.cell.sheet
             self.parent.add_child(self)
-        elif head:  # 別のシートフレームの下側に配置する．
-            self.head = head
-            self.cell = head.cell.offset(len(head) + head.columns_level + 1, 0)
+
+        elif self.head:  # Locate the child frame below the head frame.
+            row_offset = len(self.head) + self.head.columns_level + 1
+            self.cell = self.head.cell.offset(row_offset, 0)
             self.sheet = self.cell.sheet
-            head.tail = self
+            self.head.tail = self
+
         else:
             self.sheet, self.cell = get_sheet_cell_row_column(*args)[:2]
 
@@ -818,9 +826,6 @@ class SheetFrame:
             for cell in reversed(self.range(column, -1)[1:]):
                 if cell.value == cell.offset(-1).value:
                     cell.value = ""
-
-    def shotmap(self, *args, **kwargs):
-        return ShotMap(*args, data=self, **kwargs)
 
     def grid(self, *args, **kwargs):
         return FacetGrid(self, *args, **kwargs)

@@ -1,6 +1,7 @@
-from xlviews.main import open_or_create
+from xlviews.common import open_or_create
+from xlviews.utils import constant
 
-__all__ = ["open_or_create"]
+__all__ = ["constant", "open_or_create"]
 
 # import win32com.client
 

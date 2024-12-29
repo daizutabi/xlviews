@@ -9,6 +9,44 @@ if TYPE_CHECKING:
     from xlwings import App, Book, Sheet
 
 
+def get_app() -> App:
+    return xw.apps.active or xw.apps.add()
+
+
+def get_book(name: str | None = None, app: App | None = None) -> Book:
+    app = app or get_app()
+
+    if not name:
+        if app.books:
+            return app.books.active
+
+        return app.books.add()
+
+    for book in app.books:
+        if book.name == name:
+            return book
+
+    msg = f"Book {name!r} not found"
+    raise ValueError(msg)
+
+
+def get_sheet(
+    name: str | None = None,
+    book: Book | None = None,
+    app: App | None = None,
+) -> Sheet:
+    book = book or get_book(app=app)
+
+    if not name:
+        return book.sheets.active
+
+    for sheet in book.sheets:
+        if sheet.name == name:
+            return sheet
+
+    return book.sheets.add(name, after=sheet)
+
+
 @overload
 def open_or_create(
     file: str | Path,
@@ -47,7 +85,7 @@ def open_or_create(
     Returns:
         Book | Sheet: The book or sheet.
     """
-    app = app or xw.apps.active or xw.apps.add()
+    app = app or get_app()
 
     if Path(file).exists():
         book = app.books.open(file)
@@ -64,17 +102,13 @@ def open_or_create(
         return book
 
     if created:
-        sheet: Sheet = book.sheets[0]
+        sheet = book.sheets[0]
         sheet.name = sheet_name
         book.save()
 
         return sheet
 
-    for sheet in book.sheets:
-        if sheet.name == sheet_name:
-            return sheet
-
-    sheet = book.sheets.add(sheet_name, after=sheet)
+    sheet = get_sheet(sheet_name, book)
     book.save()
 
     return sheet

@@ -1,9 +1,6 @@
-"""
-Markerなどのスタイルを設定する.
-"""
-from collections import OrderedDict
-from itertools import cycle
-from typing import Dict
+"""Set styles such as Marker."""
+
+import itertools
 
 import pywintypes
 import seaborn as sns
@@ -14,53 +11,66 @@ from xlviews.decorators import api, wait_updating
 from xlviews.utils import constant, rgb
 
 
-def color_palette(n):
-    """長さnの色リストを返す．"""
+def color_palette(n: int) -> list[tuple[int, int, int]]:
+    """Return a list of colors of length n."""
     palette = sns.color_palette()
-    if n <= len(palette):
-        palette = palette[:n]
-    else:
-        palette = sns.husl_palette(n, l=0.5)
-    return [tuple(c * 255 for c in p) for p in palette]
+    palette = palette[:n] if n <= len(palette) else sns.husl_palette(n, l=0.5)
+    return [tuple(int(c * 255) for c in p) for p in palette]  # type: ignore
 
 
-MARKER_DICT: Dict[str, str] = OrderedDict(
-    [('o', 'circle'), ('^', 'triangle'), ('s', 'square'), ('d', 'diamond'),
-     ('+', 'plus'), ('x', 'x'), ('.', 'dot'), ('-', 'dash'), ('*', 'star')])
-LINE_DICT: Dict[str, str] = OrderedDict([('-', 'continuous'), ('--', 'dash'),
-                                         ('-.', 'dashDot'), ('.', 'Dot')])
+MARKER_DICT: dict[str, str] = {
+    "o": "circle",
+    "^": "triangle",
+    "s": "square",
+    "d": "diamond",
+    "+": "plus",
+    "x": "x",
+    ".": "dot",
+    "-": "dash",
+    "*": "star",
+}
+
+LINE_DICT: dict[str, str] = {
+    "-": "continuous",
+    "--": "dash",
+    "-.": "dashDot",
+    ".": "Dot",
+}
 
 
-def marker_palette(n):
-    """長さnのマーカーリストを返す．"""
-    return [marker for _, marker in zip(range(n), cycle(MARKER_DICT.keys()))]
+def marker_palette(n: int) -> list[str]:
+    """Return a list of markers of length n."""
+    return list(itertools.islice(itertools.cycle(MARKER_DICT), n))
 
 
-def palette(name, n):
-    if name == 'color':
+def palette(name: str, n: int) -> list[str] | list[tuple[int, int, int]] | list[None]:
+    if name == "color":
         return color_palette(n)
-    elif name == 'marker':
+
+    if name == "marker":
         return marker_palette(n)
-    else:
-        return [None] * n
+
+    return [None] * n
 
 
 @api
-def set_series_style(series,
-                     marker=False,
-                     size=False,
-                     line=False,
-                     color=False,
-                     fill_color=False,
-                     edge_color=False,
-                     line_color=False,
-                     width=False,
-                     edge_width=False,
-                     line_width=False,
-                     alpha=False,
-                     fill_alpha=False,
-                     edge_alpha=False,
-                     line_alpha=False):
+def set_series_style(
+    series,
+    marker=False,
+    size=False,
+    line=False,
+    color=False,
+    fill_color=False,
+    edge_color=False,
+    line_color=False,
+    width=False,
+    edge_width=False,
+    line_width=False,
+    alpha=False,
+    fill_alpha=False,
+    edge_alpha=False,
+    line_alpha=False,
+):
     """
     Seriesのスタイルを設定する.
     Noneが有効な指定であるため，指定しないことを示すデフォルト値をFalseとする．
@@ -71,11 +81,10 @@ def set_series_style(series,
     edge = series.Format.Line
     border = series.Border
 
-    has_line = (line or
-                border.LineStyle != xw.constants.LineStyle.xlLineStyleNone)
+    has_line = line or border.LineStyle != xw.constants.LineStyle.xlLineStyleNone
     has_marker = (
-        marker or
-        series.MarkerStyle != xw.constants.MarkerStyle.xlMarkerStyleNone)
+        marker or series.MarkerStyle != xw.constants.MarkerStyle.xlMarkerStyleNone
+    )
 
     # 'is not False' は 0 が有効な指定であるため
     if color is not False and color is not None:
@@ -98,7 +107,7 @@ def set_series_style(series,
         series.MarkerStyle = xw.constants.MarkerStyle.xlMarkerStyleNone
     elif marker:
         marker = MARKER_DICT.get(marker, marker)
-        marker = 'xlMarkerStyle' + marker[0].upper() + marker[1:]
+        marker = "xlMarkerStyle" + marker[0].upper() + marker[1:]
         marker = getattr(xw.constants.MarkerStyle, marker)
         series.MarkerStyle = marker
     if size:
@@ -137,7 +146,7 @@ def set_series_style(series,
         border.LineStyle = xw.constants.LineStyle.xlLineStyleNone
     elif line:
         line = LINE_DICT.get(line, line)
-        line = 'xl' + line[0].upper() + line[1:]
+        line = "xl" + line[0].upper() + line[1:]
         line = getattr(xw.constants.LineStyle, line)
         border.LineStyle = line
 
@@ -161,9 +170,9 @@ def set_series_style(series,
 def set_scale(axis, scale):
     if not scale:
         return
-    if scale == 'log':
+    if scale == "log":
         axis.ScaleType = xw.constants.ScaleType.xlScaleLogarithmic
-    elif scale == 'linear':
+    elif scale == "linear":
         axis.ScaleType = xw.constants.ScaleType.xlScaleLinear
 
 
@@ -176,20 +185,21 @@ def set_label(axis, label, size=None, name=None, **kwargs):
     axis_title = axis.AxisTitle
     axis_title.Text = label
     if size is None:
-        size = rcParams['chart.axis.title.font.size']
+        size = rcParams["chart.axis.title.font.size"]
     set_font(axis_title, size=size, name=name, **kwargs)
 
 
 @api
-def set_ticks(axis,
-              *args,
-              min=None,
-              max=None,
-              major=None,
-              minor=None,
-              gridlines=True,
-              **kwargs):
-
+def set_ticks(
+    axis,
+    *args,
+    min=None,
+    max=None,
+    major=None,
+    minor=None,
+    gridlines=True,
+    **kwargs,
+):
     args = (list(args) + [None, None, None, None])[:4]
     min = min or args[0]
     max = max or args[1]
@@ -219,18 +229,20 @@ def set_ticks(axis,
 @api
 def set_ticklabels(axis, name=None, size=None, format=None):
     if size is None:
-        size = rcParams['chart.axis.ticklabels.font.size']
+        size = rcParams["chart.axis.ticklabels.font.size"]
     set_font(axis.TickLabels, name=name, size=size)
     # set_font(axis.Format.TextFrame2.TextRange, name=name, size=size)
     if format:
         axis.TickLabels.NumberFormatLocal = format
 
 
-def set_border(range_,
-               edge_width=2,
-               inside_width=1,
-               edge_color=0,
-               inside_color=rgb(140, 140, 140)):
+def set_border(
+    range_,
+    edge_width=2,
+    inside_width=1,
+    edge_color=0,
+    inside_color=rgb(140, 140, 140),
+):
     # 非表示セルでも罫線が表示されるように，xlInsideを使う．
     sheet = range_.sheet
     if edge_width:
@@ -239,28 +251,22 @@ def set_border(range_,
         else:
             el, er, et, eb = edge_width
         start, end = range_[0], range_[-1]
-        left = sheet.range((start.row, start.column - 1),
-                           (end.row, start.column))
-        set_border_line(
-            left.api, 'xlInsideVertical', width=el, color=edge_color)
+        left = sheet.range((start.row, start.column - 1), (end.row, start.column))
+        set_border_line(left.api, "xlInsideVertical", width=el, color=edge_color)
         right = sheet.range((start.row, end.column), (end.row, end.column + 1))
-        set_border_line(
-            right.api, 'xlInsideVertical', width=er, color=edge_color)
-        top = sheet.range((start.row - 1, start.column),
-                          (start.row, end.column))
-        set_border_line(
-            top.api, 'xlInsideHorizontal', width=et, color=edge_color)
-        bottom = sheet.range((end.row, start.column),
-                             (end.row + 1, end.column))
-        set_border_line(
-            bottom.api, 'xlInsideHorizontal', width=eb, color=edge_color)
+        set_border_line(right.api, "xlInsideVertical", width=er, color=edge_color)
+        top = sheet.range((start.row - 1, start.column), (start.row, end.column))
+        set_border_line(top.api, "xlInsideHorizontal", width=et, color=edge_color)
+        bottom = sheet.range((end.row, start.column), (end.row + 1, end.column))
+        set_border_line(bottom.api, "xlInsideHorizontal", width=eb, color=edge_color)
     if inside_width:
-        for inside in ['Vertical', 'Horizontal']:
+        for inside in ["Vertical", "Horizontal"]:
             set_border_line(
                 range_,
-                'xlInside' + inside,
+                "xlInside" + inside,
                 width=inside_width,
-                color=inside_color)
+                color=inside_color,
+            )
 
 
 @api
@@ -285,7 +291,7 @@ def set_fill(obj, color=None):
 def set_font(obj, name=None, size=None, bold=None, italic=None, color=None):
     font = obj.Font
     if name is None:
-        name = rcParams['chart.font.name']
+        name = rcParams["chart.font.name"]
     font.Name = name
     if size:
         font.Size = size
@@ -306,22 +312,24 @@ def set_alignment(obj, horizontal_alignment=None, vertical_alignment=None):
 
 
 @api
-def set_banding(range,
-                axis=0,
-                even_color=rgb(240, 250, 255),
-                odd_color=rgb(255, 255, 255)):
-
+def set_banding(
+    range,
+    axis=0,
+    even_color=rgb(240, 250, 255),
+    odd_color=rgb(255, 255, 255),
+):
     def banding(mod, color):
         if axis == 0:
-            formula = f'=MOD(ROW(), 2)={mod}'
+            formula = f"=MOD(ROW(), 2)={mod}"
         else:
-            formula = f'=MOD(COLUMN(), 2)={mod}'
+            formula = f"=MOD(COLUMN(), 2)={mod}"
         condition = range.FormatConditions.Add(
             Type=xw.constants.FormatConditionType.xlExpression,
-            Formula1=formula)
+            Formula1=formula,
+        )
         condition.SetFirstPriority()
         interior = condition.Interior
-        interior.PatternColorIndex = constant('automatic')
+        interior.PatternColorIndex = constant("automatic")
         interior.Color = color
         interior.TintAndShade = 0
         condition.StopIfTrue = False
@@ -334,17 +342,23 @@ def hide_succession(range_, color=rgb(200, 200, 200)):
     cell = range_[0].get_address(row_absolute=False, column_absolute=False)
     start = range_[0].offset(-2).get_address(column_absolute=False)
     column = range_[0].offset(-1)
-    column = ':'.join([
-        column.get_address(column_absolute=False),
-        column.get_address(row_absolute=False, column_absolute=False)
-    ])
-    ref = (f'INDIRECT(ADDRESS(MAX(INDEX(SUBTOTAL(3,OFFSET({start},'
-           f'ROW(INDIRECT("1:"&ROWS({column}))),))*ROW({column}),)),'
-           f'COLUMN({column})))')
-    formula = f'={cell}={ref}'
+    column = ":".join(
+        [
+            column.get_address(column_absolute=False),
+            column.get_address(row_absolute=False, column_absolute=False),
+        ],
+    )
+    ref = (
+        f"INDIRECT(ADDRESS(MAX(INDEX(SUBTOTAL(3,OFFSET({start},"
+        f'ROW(INDIRECT("1:"&ROWS({column}))),))*ROW({column}),)),'
+        f"COLUMN({column})))"
+    )
+    formula = f"={cell}={ref}"
 
     condition = range_.api.FormatConditions.Add(
-        Type=xw.constants.FormatConditionType.xlExpression, Formula1=formula)
+        Type=xw.constants.FormatConditionType.xlExpression,
+        Formula1=formula,
+    )
     condition.SetFirstPriority()
     font = condition.Font
     font.Color = color
@@ -352,7 +366,6 @@ def hide_succession(range_, color=rgb(200, 200, 200)):
 
 
 def hide_unique(range_, length, color=rgb(100, 100, 100)):
-
     def address(r):
         return r.get_address(row_absolute=False, column_absolute=False)
 
@@ -360,9 +373,11 @@ def hide_unique(range_, length, color=rgb(100, 100, 100)):
     end = range_[0, 0].offset(length, 0)
     cell = address(xw.Range(start, end))
     ref = address(start)
-    formula = f'=countif({cell}, {ref}) = {length}'
+    formula = f"=countif({cell}, {ref}) = {length}"
     condition = range_.api.FormatConditions.Add(
-        Type=xw.constants.FormatConditionType.xlExpression, Formula1=formula)
+        Type=xw.constants.FormatConditionType.xlExpression,
+        Formula1=formula,
+    )
     condition.SetFirstPriority()
     font = condition.Font
     font.Color = color
@@ -381,20 +396,22 @@ def get_number_format(range):
 
 
 @wait_updating
-def set_frame_style(cell,
-                    index_level,
-                    columns_level,
-                    length,
-                    columns,
-                    autofit=False,
-                    alignment='center',
-                    border=True,
-                    font=True,
-                    fill=True,
-                    banding=False,
-                    succession=False,
-                    gray=False,
-                    font_size=None):
+def set_frame_style(
+    cell,
+    index_level,
+    columns_level,
+    length,
+    columns,
+    autofit=False,
+    alignment="center",
+    border=True,
+    font=True,
+    fill=True,
+    banding=False,
+    succession=False,
+    gray=False,
+    font_size=None,
+):
     """
     SheetFrameの装飾をする．
 
@@ -433,32 +450,33 @@ def set_frame_style(cell,
     def set_style(start, end, name):
         range = xw.Range(start, end)
         if border:
-            set_border(range, edge_color='#aaaaaa' if gray else 0)
+            set_border(range, edge_color="#aaaaaa" if gray else 0)
         if fill:
-            if gray and name != 'values':
-                color = '#eeeeee'
+            if gray and name != "values":
+                color = "#eeeeee"
             else:
-                color = rcParams['frame.{}.fill.color'.format(name)]
+                color = rcParams[f"frame.{name}.fill.color"]
             set_fill(range, color=color)
         if font:
             if gray:
-                color = '#aaaaaa'
+                color = "#aaaaaa"
             else:
-                color = rcParams['frame.{}.font.color'.format(name)]
+                color = rcParams[f"frame.{name}.font.color"]
             set_font(
                 range,
                 color=color,
-                bold=rcParams['frame.{}.font.bold'.format(name)],
-                size=font_size or rcParams['frame.font.size'])
+                bold=rcParams[f"frame.{name}.font.bold"],
+                size=font_size or rcParams["frame.font.size"],
+            )
 
     if index_level > 0:
         start = cell
         end = cell.offset(columns_level - 1, index_level - 1)
-        set_style(start, end, 'index.name')
+        set_style(start, end, "index.name")
 
         start = cell.offset(columns_level, 0)
         end = cell.offset(columns_level + length - 1, index_level - 1)
-        set_style(start, end, 'index')
+        set_style(start, end, "index")
 
         if succession:
             # range = xw.Range(start, end)
@@ -472,22 +490,22 @@ def set_frame_style(cell,
     if columns_level > 1:
         start = cell.offset(0, index_level)
         end = cell.offset(columns_level - 2, index_level + columns - 1)
-        set_style(start, end, 'columns.name')
+        set_style(start, end, "columns.name")
 
     start = cell.offset(columns_level - 1, index_level)
     end = cell.offset(columns_level - 1, index_level + columns - 1)
-    set_style(start, end, 'columns')
+    set_style(start, end, "columns")
 
     start = cell.offset(columns_level, index_level)
     end = cell.offset(columns_level + length - 1, index_level + columns - 1)
-    set_style(start, end, 'values')
+    set_style(start, end, "values")
     range = xw.Range(start, end)
     if border:
-        set_border(range, edge_color='#aaaaaa' if gray else 0)
+        set_border(range, edge_color="#aaaaaa" if gray else 0)
     if banding and not gray:
         set_banding(range)
     if gray:
-        set_font(range, color='#aaaaaa')
+        set_font(range, color="#aaaaaa")
 
     range = xw.Range(cell, end)
     if border:
@@ -495,21 +513,20 @@ def set_frame_style(cell,
             range,
             edge_width=2 if gray else 3,
             inside_width=0,
-            edge_color='#aaaaaa' if gray else 0)
+            edge_color="#aaaaaa" if gray else 0,
+        )
     if autofit:
         range.columns.autofit()
     if alignment:
         set_alignment(range, alignment)
 
 
-def set_table_style(table,
-                    even_color=rgb(240, 250, 255),
-                    odd_color=rgb(255, 255, 255)):
+def set_table_style(table, even_color=rgb(240, 250, 255), odd_color=rgb(255, 255, 255)):
     book = table.Range.Parent.Parent
     try:
-        style = book.TableStyles('phoenix')
+        style = book.TableStyles("phoenix")
     except pywintypes.com_error:
-        style = book.TableStyles.Add('phoenix')
+        style = book.TableStyles.Add("phoenix")
         odd_type = xw.constants.TableStyleElementType.xlRowStripe1
         style.TableStyleElements(odd_type).Interior.Color = odd_color
         even_type = xw.constants.TableStyleElementType.xlRowStripe2

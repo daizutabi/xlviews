@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 import warnings
 from collections import OrderedDict
@@ -8,6 +7,7 @@ from collections import OrderedDict
 import matplotlib as mpl
 import pandas as pd
 import xlwings as xw
+from xlwings import Sheet
 
 from xlviews.config import rcParams
 
@@ -45,7 +45,7 @@ def rgb(
     """Return the RGB color integer.
 
     Args:
-        color (int, tuple[int, int, int], or str): The color.
+        color (int, tuple[int, int, int], or str): The color or red value.
         green (int): The green value.
         blue (int): The blue value.
 
@@ -65,26 +65,87 @@ def rgb(
     if isinstance(color, int) and green is None and blue is None:
         return color
 
+    if all(isinstance(x, int) for x in [color, green, blue]):
+        return color + green * 256 + blue * 256 * 256  # type: ignore
+
     if isinstance(color, str):
-        color = mpl.colors.cnames.get(color, color)
+        color = mpl.colors.cnames.get(color, color)  # type: ignore
 
         if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
             raise ValueError("Invalid color format. Expected #xxxxxx.")
 
-        red = int(color[1:3], 16)
-        green = int(color[3:5], 16)
-        blue = int(color[5:7], 16)
+        return rgb(int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16))
 
-    elif isinstance(color, tuple):
-        red, green, blue = color
+    if isinstance(color, tuple):
+        return rgb(*color)
 
+    raise ValueError("Invalid color format. Expected #xxxxxx.")
+
+
+def _add_app_and_sheet(name: str | None = None) -> Sheet:
+    from xlviews.style import hide_gridlines
+
+    xw.apps.add()
+    sheet = xw.sheets.active
+
+    hide_gridlines(sheet)
+
+    sheet.range("A1").column_width = 1
+    sheet.range("B2").select()
+
+    if name:
+        sheet.name = name
+
+    return sheet
+
+
+def get_sheet_cell_row_column(*args):
+    """Return the sheet, cell, row, and column.
+
+    Examples:
+        >>> get_sheet_cell_row_column(sheet, row, column) # doctest: +SKIP
+        >>> get_sheet_cell_row_column(sheet, (row, column)) # doctest: +SKIP
+        >>> get_sheet_cell_row_column(row, column) # doctest: +SKIP
+        >>> get_sheet_cell_row_column((row, column)) # doctest: +SKIP
+        >>> get_sheet_cell_row_column(cell) # doctest: +SKIP
+        >>> get_sheet_cell_row_column() # doctest: +SKIP
+    """
+    # if not xw.apps:
+    #     name = args[0] if len(args) == 1 else None
+    # sheet = _add_app_and_sheet(args[]) if not xw.apps else xw.sheets.active
+
+    if len(args) == 3:
+        sheet, row, column = args
+    elif len(args) == 2:
+        if isinstance(args[0], int):
+            row, column = args
+        else:
+            sheet, (row, column) = args
+    elif len(args) == 1:
+        if isinstance(args[0], str):
+            cell = sheet.range(args[0])
+            row, column = cell.row, cell.column
+        elif isinstance(args[0], tuple):
+            row, column = args[0]
+        else:
+            cell = args[0]
+            sheet = cell.sheet
+            row, column = cell.row, cell.column
+    elif len(args) == 0:
+        cell = sheet.book.selection
+        row, column = cell.row, cell.column
     else:
-        if not isinstance(blue, int) or not isinstance(green, int):
-            raise TypeError("Invalid color format. Expected #xxxxxx or (r, g, b).")
+        raise ValueError("引数の長さが4以上", len(args))
 
-        red = color
+    if isinstance(sheet, str):
+        book = xw.books.active
+        try:
+            sheet = book.sheets(sheet)
+        except Exception:
+            sheet = book.sheets.add(sheet, after=book.sheets[-1])
 
-    return red + green * 256 + blue * 256 * 256
+    cell = sheet.range(row, column)
+    return sheet, cell, row, column
 
 
 def array_index(values, sel=None):
@@ -215,67 +276,6 @@ def reference(sheet, cell):
         cell = sheet.range(*cell).get_address(include_sheetname=True)
         cell = "=" + cell
     return cell
-
-
-def get_sheet_cell_row_column(*args):
-    """
-    諸関数の位置引数に指定される引数からシート，セル，ロー，
-    カラムを取得する．
-
-    *argsに指定できる方法は以下の通り
-      - sheet, row, column
-      - sheet, (row, columm)
-      - row, column
-      - (row, column)
-      - cell
-      - ()
-      - 'A1'
-    """
-    if not xw.apps:
-        xw.apps.add()
-        sheet = xw.sheets.active
-        from xlviews.style import hide_gridlines
-
-        hide_gridlines(sheet)
-        sheet.range("A1").column_width = 1
-        sheet.range("B2").select()
-        if args and isinstance(args[0], str):
-            sheet.name = args[0]
-    else:
-        sheet = xw.sheets.active
-
-    if len(args) == 3:
-        sheet, row, column = args
-    elif len(args) == 2:
-        if isinstance(args[0], int):
-            row, column = args
-        else:
-            sheet, (row, column) = args
-    elif len(args) == 1:
-        if isinstance(args[0], str):
-            cell = sheet.range(args[0])
-            row, column = cell.row, cell.column
-        elif isinstance(args[0], tuple):
-            row, column = args[0]
-        else:
-            cell = args[0]
-            sheet = cell.sheet
-            row, column = cell.row, cell.column
-    elif len(args) == 0:
-        cell = sheet.book.selection
-        row, column = cell.row, cell.column
-    else:
-        raise ValueError("引数の長さが4以上", len(args))
-
-    if isinstance(sheet, str):
-        book = xw.books.active
-        try:
-            sheet = book.sheets(sheet)
-        except Exception:
-            sheet = book.sheets.add(sheet, after=book.sheets[-1])
-
-    cell = sheet.range(row, column)
-    return sheet, cell, row, column
 
 
 def get_sheet(book, name):
