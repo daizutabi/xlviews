@@ -23,8 +23,6 @@ def test_book():
     assert get_book().name == book.name
     assert get_book(book.name).name == book.name
 
-    book.close()
-
 
 def test_book_error():
     from xlviews.common import get_book
@@ -39,18 +37,78 @@ def test_sheet():
     sheet = get_sheet()
 
     assert isinstance(sheet, Sheet)
-    assert sheet.name == "Sheet1"
+    assert get_sheet().name == sheet.name
+    assert get_sheet(sheet.name).name == sheet.name
+    assert get_sheet("New").name == "New"
 
-    sheet = get_sheet()
-    assert sheet.name == "Sheet1"
 
-    sheet = get_sheet("Sheet1")
-    assert sheet.name == "Sheet1"
+def test_range(book: Book):
+    from xlviews.common import get_range
 
-    sheet = get_sheet("Sheet2")
-    assert sheet.name == "Sheet2"
+    cells = get_range(book=book)
 
-    sheet.book.close()
+    assert cells.row == 1
+    assert cells.column == 1
+    assert cells.shape == (1, 1)
+
+
+def test_range_str(book: Book):
+    from xlviews.common import get_range
+
+    cells = get_range("B4:D10", book=book)
+
+    assert cells.row == 4
+    assert cells.column == 2
+    assert cells.shape == (7, 3)
+
+
+def test_range_tuple(book: Book):
+    from xlviews.common import get_range
+
+    cells = get_range((4, 6), book=book)
+
+    assert cells.row == 4
+    assert cells.column == 6
+    assert cells.shape == (1, 1)
+
+
+def test_range_str_tuple(book: Book):
+    from xlviews.common import get_range
+
+    cells = get_range("get_range_str_tuple", (6, 8), book=book)
+
+    assert cells.row == 6
+    assert cells.column == 8
+    assert cells.shape == (1, 1)
+    assert cells.sheet.name == "get_range_str_tuple"
+
+
+def test_range_str_str(book: Book):
+    from xlviews.common import get_range
+
+    cells = get_range("get_range_str_str", "E12:H20", book=book)
+
+    assert cells.row == 12
+    assert cells.column == 5
+    assert cells.shape == (9, 4)
+    assert cells.sheet.name == "get_range_str_str"
+
+
+def test_range_int_int(book: Book):
+    from xlviews.common import get_range
+
+    cells = get_range(30, 40, book=book)
+
+    assert cells.row == 30
+    assert cells.column == 40
+    assert cells.shape == (1, 1)
+
+
+def test_range_error():
+    from xlviews.common import get_range
+
+    with pytest.raises(ValueError, match="Invalid number of arguments: 3"):
+        get_range(1, 2, 3)
 
 
 def test_create_book(app: App, tmp_path: Path):
