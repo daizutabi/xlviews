@@ -304,12 +304,16 @@ def set_font(obj, name=None, size=None, bold=None, italic=None, color=None):
         font.Color = rgb(color)
 
 
-@api
-def set_alignment(obj, horizontal_alignment=None, vertical_alignment=None):
-    if horizontal_alignment is not None:
-        obj.HorizontalAlignment = constant(horizontal_alignment)
-    if vertical_alignment is not None:
-        obj.VerticalAlignment = constant(vertical_alignment)
+def set_alignment(
+    rng: Range,
+    horizontal_alignment: str | None = None,
+    vertical_alignment: str | None = None,
+) -> None:
+    if horizontal_alignment:
+        rng.api.HorizontalAlignment = constant(horizontal_alignment)
+
+    if vertical_alignment:
+        rng.api.VerticalAlignment = constant(vertical_alignment)
 
 
 @api

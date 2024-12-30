@@ -80,37 +80,31 @@ class SheetFrame:
         font_size: int | None = None,
         **kwargs,
     ) -> None:
-        """
-        エクセルのシート上のデータフレームを作成する。
+        """Create a DataFrame on an Excel sheet.
 
-        Parameters
-        ----------
-        sheet : xlwings.main.Sheet
-            シートオブジェクト
-        row, column : int
-            左上のセルの位置
-        cell : xlwings.main.Range
-            左上のセルのRange
-        data : pandas.DataFrame, optional
-            データフレームを指定すると、シートに書き出す。
-        index : bool or str
-            データフレームのインデックスを出力するか。
-        index_level : int
-            すでにシート上にあるデータを取り込むときのインデックスの深さ
-        column_level : int
-            すでにシート上にあるデータを取り込むときのカラムの深さ
-        parent : SheetFrame
-            親シートフレームを指定する。
-            自分自身のシートフレームは親フレームの右横に配置される。
-            親フレームから抽出した情報を表す。
-        head : SheetFrame
-            上位シートフレームを指定する。
-            自分自身のシートフレームは上位フレームの下に配置される。
-            上位シートフレームの補足情報を付け加えることが目的。
-        style : bool
-            シートフレームを装飾するか
-        gray : bool
-            グレー装飾にするか
+        Args:
+            sheet (Sheet): The sheet object.
+            row, column (int): The position of the top-left cell.
+            cell (Range): The Range of the top-left cell.
+            data (DataFrame, optional): The DataFrame to write to the sheet.
+            index (bool): Whether to output the index of the DataFrame.
+            index_level (int): The depth of the index when importing data
+                from the sheet.
+            column_level (int): The depth of the columns when importing data
+                from the sheet.
+            parent (SheetFrame): The parent SheetFrame.
+                The child SheetFrame is placed to the right of the parent SheetFrame.
+                The parent SheetFrame represents the information extracted
+                from the parent.
+            head (SheetFrame): The upper SheetFrame.
+                The child SheetFrame is placed below the upper SheetFrame.
+                The upper SheetFrame represents the additional information
+                of the parent.
+            style (bool): Whether to decorate the SheetFrame.
+            gray (bool): Whether to decorate the SheetFrame in gray.
+            autofit (bool): Whether to autofit the SheetFrame.
+            number_format (str): The number format of the SheetFrame.
+            font_size (int): The font size of the SheetFrame.
         """
         self.name = name
         self.parent = parent
@@ -253,17 +247,19 @@ class SheetFrame:
 
     @property
     def row(self) -> int:
+        """Return the row of the top-left cell."""
         self.update_cell()
         return self.cell.row
 
     @property
     def column(self) -> int:
+        """Return the column of the top-left cell."""
         self.update_cell()
         return self.cell.column
 
     @property
     def columns(self) -> list[str | tuple[str, ...] | None]:
-        """Return the column names. This is equivalent to pd.DataFrame.columns."""
+        """Return the column names. This is equivalent to `DataFrame.columns`."""
         if self.columns_level == 1:
             values = self.expand("right").value
             if values is None:
@@ -766,53 +762,59 @@ class SheetFrame:
         if columns_alignment:
             self.set_columns_alignment(columns_alignment)
 
-    def autofit(self):
+    def autofit(self) -> None:
+        """Autofits the width of the SheetFrame."""
         self.range().columns.autofit()
 
-    def set_adjacent_column_width(self, width):
-        """隣接する空列の幅を設定する。"""
+    def set_adjacent_column_width(self, width: float) -> None:
+        """Set the width of the adjacent empty column."""
         column = self.column + len(self.columns)
         self.sheet.range(1, column).column_width = width
 
     def hide(self, *, hidden: bool = True) -> None:
+        """Hide the SheetFrame."""
         start = self.column
         end = start + len(self.columns)
         column = self.sheet.range((1, start), (1, end)).api.EntireColumn
         column.Hidden = hidden
 
     def unhide(self) -> None:
+        """Unhide the SheetFrame."""
         self.hide(hidden=False)
 
     def add_child(self, child: SheetFrame) -> None:
+        """Add a child SheetFrame."""
         self.children.append(child)
         child.parent = self
 
     def get_child_cell(self) -> Range:
+        """Get the cell of the child SheetFrame."""
         offset = len(self.columns) + 1
         offset += sum(len(child.columns) + 1 for child in self.children)
         return self.cell.offset(0, offset)
 
-    def get_adjacent_cell(self, offset=0):
+    def get_adjacent_cell(self, offset: int = 0) -> Range:
+        """Get the adjacent cell of the SheetFrame."""
         if self.children:
             return self.get_child_cell()
+
         return self.cell.offset(0, len(self.columns) + 1).offset(0, offset)
 
-    def to_series(self):
+    def to_series(self) -> Series:
         df = self.data
+
         if len(df.columns) != 1:
-            raise ValueError("カラムの数が1ではない。")
+            raise ValueError("This sheetframe has more than one column.")
+
         return df[df.columns[0]]
 
-    def set_columns_alignment(self, alignment):
+    def set_columns_alignment(self, alignment: str) -> None:
         start = self.cell
         end = start.offset(0, len(self.columns) - 1)
-        columns = self.sheet.range(start, end)
-        set_alignment(columns, alignment)
+        rng = self.sheet.range(start, end)
+        set_alignment(rng, alignment)
 
     def astable(self, header=True, autofit=False):
-        """
-        オートフィルタを設定する。
-        """
         if self.columns_level != 1:
             return None
         self.set_columns_alignment("left")
@@ -836,19 +838,17 @@ class SheetFrame:
         set_table_style(table)
         return table
 
-    def unlist(self):
+    def unlist(self) -> None:
+        """Unlist the SheetFrame."""
         if self.table:
             self.table.Unlist()
             self.filtered_header(clear=True)
 
-    def filtered_header(self, clear=False):
-        """
-        列名の上に、フィルターされた要素が一種類の場合にその値を書き出す。
+    def filtered_header(self, clear: bool = False) -> None:
+        """Write the filtered element above the header.
 
-        Parameters
-        ----------
-        clear : bool, optional
-            Trueのときは、消去。
+        Args:
+            clear (bool, optional): If True, clear the header.
         """
         start = self.cell.offset(self.columns_level)
         end = start.offset(len(self) - 1)
@@ -863,7 +863,6 @@ class SheetFrame:
             set_font(header, size=8, italic=True, color="blue")
             set_alignment(header, "center")
 
-    # chart関連 --------------------------------------------------------------
     def scatter(self, *args, **kwargs):
         return Scatter(*args, data=self, **kwargs)
 
@@ -1340,11 +1339,7 @@ class SheetFrame:
         range_ = self.range(column, -1)
         set_fill(range_, "yellow")
 
-    def rename(self, columns):
-        """
-        Parameters
-        ----------
-        columns : dict
-        """
-        for column, new_column in columns.items():
-            self.range(column, 0).value = new_column
+    def rename(self, columns: dict[str, str]) -> None:
+        """Rename the columns of the SheetFrame."""
+        for old, new in columns.items():
+            self.range(old, 0).value = new
