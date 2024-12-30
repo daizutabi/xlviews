@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 def multirange(
     sheet: Sheet,
-    row: int | list[int] | tuple[int, int],
-    column: int | list[int] | tuple[int, int],
+    row: int | list[int | tuple[int, int]],
+    column: int | list[int | tuple[int, int]],
 ) -> Range:
     """Create a discontinuous range.
 
@@ -33,56 +33,48 @@ def multirange(
     if isinstance(row, int) and isinstance(column, int):
         return sheet.range(row, column)
 
-    if isinstance(row, int):
+    if isinstance(row, int) and isinstance(column, list):
         axis = 0
-        index = column  # type: ignore
-    elif isinstance(column, int):
+        index = column
+    elif isinstance(column, int) and isinstance(row, list):
         axis = 1
-        index = row  # type: ignore
+        index = row
     else:
         msg = "Either row or column must be an integer."
         raise TypeError(msg)
 
-    def _range(start_end):
+    def get_range(start_end: int | tuple[int, int]) -> Range:
         if isinstance(start_end, int):
             start = end = start_end
         else:
             start, end = start_end
+
         if axis == 0:
             return sheet.range((row, start), (row, end))
+
         return sheet.range((start, column), (end, column))
 
+    # TODO: Delete
     if len(index) == 2 and isinstance(index[0], int) and isinstance(index[1], int):
-        index = [index]
+        index = [tuple(index)]
 
-    ranges = [_range(i).api for i in index]
     union = sheet.book.app.api.Union
-    range_ = ranges[0]
-    for r in ranges[1:]:
-        range_ = union(range_, r)
 
-    return range_
+    apis = [get_range(i).api for i in index]
+    api = apis[0]
 
+    for r in apis[1:]:
+        api = union(api, r)
 
-def multirange_indirect(sheet, row, column):
-    """
-    不連続範囲でもSLOPE関数などが扱えるようにする。
-    戻り値はstr
-    """
-    ranges = multirange(sheet, row, column)
-    address = ",".join(['"' + range_.Address + '"' for range_ in ranges])
-    return "N(INDIRECT({" + address + "}))"
+    return sheet.range(api.Address)
 
 
-def reference(sheet, cell):
-    """
-    Sheetのセルへの参照を返す。
-    cellが文字列であればそのまま返す。
-    """
+def reference(sheet: Sheet, cell: str | Range) -> str:
+    """Return a reference to a cell."""
+    if isinstance(cell, str):
+        return cell
+
     if isinstance(cell, tuple):
-        # TODO: tupleのときどの要素使う？連結する？
         cell = cell[0]
-    if not isinstance(cell, str):
-        cell = sheet.range(*cell).get_address(include_sheetname=True)
-        cell = "=" + cell
-    return cell
+
+    return "=" + sheet.range(*cell).get_address(include_sheetname=True)
