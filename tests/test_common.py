@@ -118,7 +118,7 @@ def test_range_str_int_int(book: Book):
 def test_range_error():
     from xlviews.common import get_range
 
-    with pytest.raises(ValueError, match="Invalid number of arguments: 3"):
+    with pytest.raises(ValueError, match="Invalid number of arguments: 4"):
         get_range("", 1, 2, 3)
 
 

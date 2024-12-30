@@ -24,6 +24,15 @@ def book(app: App):
     return app.books.add()
 
 
+@pytest.fixture(scope="module")
+def sheet_module(book: Book):
+    sheet = book.sheets.add()
+
+    yield sheet
+
+    sheet.delete()
+
+
 @pytest.fixture
 def sheet(book: Book):
     sheet = book.sheets.add()

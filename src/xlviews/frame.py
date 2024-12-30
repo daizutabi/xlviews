@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import re
 from itertools import chain, product
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 import numpy as np
 import pandas as pd
 import xlwings as xw
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews import common
@@ -35,6 +35,10 @@ from xlviews.style import (
 from xlviews.utils import add_validation, array_index, columns_list, multirange
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable, Iterator
+    from typing import Literal
+
+    from numpy.typing import NDArray
     from xlwings import Range
 
     from xlviews.dist import DistFrame
@@ -241,38 +245,97 @@ class SheetFrame:
     def __contains__(self, item: str) -> bool:
         return item in self.columns
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self.range()).replace("<Range ", "<SheetFrame ")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.range()).replace("<Range ", "<SheetFrame ")
 
-    def index(
-        self,
-        column: str | list[str] | dict | tuple[str, str],
-        *,
-        relative: bool = False,
-    ) -> int | list[int]:
+    @property
+    def row(self) -> int:
+        self.update_cell()
+        return self.cell.row
+
+    @property
+    def column(self) -> int:
+        self.update_cell()
+        return self.cell.column
+
+    @property
+    def columns(self) -> list[str | tuple[str, ...] | None]:
+        """Return the column names. This is equivalent to pd.DataFrame.columns."""
+        if self.columns_level == 1:
+            values = self.expand("right").value
+            if values is None:
+                return []
+
+            if isinstance(values, str):
+                return [values]
+
+            return values
+
+        # TODO: when self.columns_names is None
+
+        columns_ = []
+        for k in range(self.columns_level):
+            cell = self.cell.offset(k)
+            columns_.append(cell.expand("right").value)
+
+        return [tuple(column) for column in zip(*columns_, strict=False)]
+
+    @property
+    def value_columns(self) -> list[str | tuple[str, ...] | None]:
+        columns = self.columns
+        index_level = self.index_level
+        return columns[index_level:]
+
+    @property
+    def index_columns(self) -> list[str | tuple[str, ...] | None]:
+        columns = self.columns
+        index_level = self.index_level
+        return columns[:index_level]
+
+    @property
+    def wide_columns(self):
+        start = self.cell.offset(-1, self.index_level)
+        end = start.offset(0, len(self.columns) - self.index_level - 1)
+        values = self.sheet.range(start, end).value
+        if values:
+            return [value for value in values if value]
+        return []
+
+    def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
+        return iter(self.columns)
+
+    @overload
+    def index(self, column: str | tuple, *, relative: bool = False) -> int: ...
+    @overload
+    def index(self, column: list[str], *, relative: bool = False) -> list[int]: ...
+    def index(self, column: str | tuple | list[str], *, relative: bool = False):  # noqa: C901
         """Return the column index.
 
         If the column is a hierarchical index and the column name is specified,
         return the row index. If relative is True, return the relative position
         from `self.cell`.
         """
-        columns = self.columns
-        offset = 1 if relative else self.column
         if isinstance(column, list):
-            # return [columns.index(c) + offset for c in column]
             return [self.index(c, relative=relative) for c in column]
+
         if isinstance(column, dict):
             return self.index_multicolumn(column, relative=relative)
+
+        columns = self.columns
+        offset = 1 if relative else self.column
+
         if column in columns:
             return columns.index(column) + offset
+
         if self.columns_level > 1:  # 積層カラムのカラム名指定
             row = columns[0].index(column)
             if relative:
                 return row + 1
             return row + self.row
+
         # wide column
         if relative:
             offset = self.index_level + 1
@@ -321,188 +384,122 @@ class SheetFrame:
             return [c - self.column + 1 for c in column[0]]
         return column[0]
 
-    def __getitem__(self, column):
-        """
-        カラムデータを返す。
-        columnが文字列の場合は、Series、
-        columnがリストの場合は、DataFrameを返す。
-
-        インデックスは無視される。
-        """
-        if column == slice(None, None, None):
-            df = self.data
-            if self.has_index and self.index_level:
-                df.reset_index(inplace=True)
-            return df
-        if isinstance(column, str) or isinstance(column, tuple):
-            row = self.row + self.columns_level
-            name, column = column, self.index(column)
-            start = self.sheet.range(row, column)
-            if len(self) == 1:
-                array = [start.value]
-            else:
-                end = start.offset(len(self) - 1, 0)
-                range_ = self.sheet.range(start, end)
-                array = range_.options(np.array).value
-            return pd.Series(array, name=name)
-        values = []
-        for c in column:
-            values.append(self[c])
-        values = list(zip(*values, strict=False))
-        df = pd.DataFrame(values, columns=column)
-        return df
-
-    def __setitem__(self, column, value):
-        """
-        列を値を設定する。
-
-        Parameters
-        ----------
-        column : str
-            カラム名
-        value : str or list or tuple
-            カラムの値
-        """
-        if self.columns_level > 1:
-            raise ValueError("未実装")
-        if not isinstance(column, str):
-            raise ValueError("未実装")
-        try:
-            range_ = self.range(column, -1)
-        except IndexError:
-            column_ = self.column + len(self.columns)
-            cell = self.sheet.range(self.row, column_)
-            cell.value = column
-            range_ = self.range(column, -1)
-        if (isinstance(value, str) and value.startswith("=")) or isinstance(
-            value,
-            tuple,
-        ):
-            self.add_formula_column(range_, value, column)
-        else:
-            range_.options(transpose=True).value = value
-
-    def update_cell(self):
-        """
-        cell.row, cell.column, cell.expandのバグ対策
-        """
+    def update_cell(self) -> None:  # for bug fix in cell.row, cell.column, cell.expand
         self.cell = self.cell.offset(0, 0)
 
-    @property
-    def row(self) -> int:
+    def expand(self, mode: str = "table") -> Range:
         self.update_cell()
-        return self.cell.row
+        return self.cell.expand(mode)
 
     @property
-    def column(self) -> int:
-        self.update_cell()
-        return self.cell.column
+    def data(self) -> DataFrame:
+        """Return the data as a DataFrame."""
+        df = self.expand().options(DataFrame, index=False).value
 
-    @property
-    def columns(self) -> list[str | tuple[str, ...] | None]:
-        """Return the column names. This is equivalent to pd.DataFrame.columns."""
-        if self.columns_level == 1:
-            values = self.expand("right").value
-            if isinstance(values, str):
-                return [values]
+        if not isinstance(df, DataFrame):
+            raise NotImplementedError
 
-            return values
-
-        # TODO: when self.columns_names is None
-
-        columns_ = []
-        for k in range(self.columns_level):
-            cell = self.cell.offset(k)
-            columns_.append(cell.expand("right").value)
-
-        return [tuple(column) for column in zip(*columns_, strict=False)]
-
-    @property
-    def wide_columns(self):
-        start = self.cell.offset(-1, self.index_level)
-        end = start.offset(0, len(self.columns) - self.index_level - 1)
-        values = self.sheet.range(start, end).value
-        if values:
-            return [value for value in values if value]
-        return []
-
-    @property
-    def value_columns(self):
-        columns = self.columns
-        index_level = self.index_level
-        return columns[index_level:]
-
-    @property
-    def index_columns(self):
-        columns = self.columns
-        index_level = self.index_level
-        return columns[:index_level]
-
-    @property
-    def data(self):
-        """データフレームを返す。"""
-        df = self.expand().options(pd.DataFrame, index=False).value
-        # for pandas-0.21.0
         if self.columns_level == 1 and isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
+
         if self.has_index and self.index_level:
-            df.set_index(list(df.columns[: self.index_level]), inplace=True)
+            df = df.set_index(list(df.columns[: self.index_level]))
+
         return df
 
     @property
-    def visible_data(self):
+    def visible_data(self) -> DataFrame:
         self.update_cell()
         start = self.cell.offset(1, 0)
         end = start.offset(len(self) - 1, len(self.columns) - 1)
         range_ = self.sheet.range(start, end)
         data = range_.api.SpecialCells(xw.constants.CellType.xlCellTypeVisible)
         value = [row.Value[0] for row in data.Rows]
-        df = pd.DataFrame(value, columns=self.columns)
+        df = DataFrame(value, columns=self.columns)
+
         if self.has_index and self.index_level:
-            df.set_index(list(df.columns[: self.index_level]), inplace=True)
+            df = df.set_index(list(df.columns[: self.index_level]))
+
         return df
 
-    def expand(self, direction=None):
-        self.update_cell()
-        if direction:
-            return self.cell.expand(direction)
-        return self.cell.expand()
+    def range_all(self) -> Range:
+        start = self.cell
+        row_offset = self.columns_level + len(self) - 1
+        column_offset = self.index_level + len(self.value_columns) - 1
+        end = start.offset(row_offset, column_offset)
 
-    def range(self, column=None, start=None, end=None):
+        return self.sheet.range(start, end)
+
+    def range_index(
+        self,
+        start: int | Literal[False] | None = None,
+        end: int | None = None,
+    ) -> Range:
+        """Return the range of the index."""
+        if self.index_level != 1:
+            raise NotImplementedError
+
+        if start is None:
+            return self.cell.offset(self.columns_level)
+
+        match start:
+            case False:
+                cell_start = self.cell
+                cell_end = cell_start.offset(self.columns_level + len(self) - 1)
+
+            case 0:
+                cell_start = self.cell
+                cell_end = cell_start.offset(self.columns_level - 1)
+
+            case -1:
+                cell_start = self.cell.offset(self.columns_level)
+                cell_end = cell_start.offset(len(self) - 1)
+
+            case _:
+                column = self.cell.column
+                cell_start = self.sheet.range(start, column)
+                if end is None:
+                    return cell_start
+                cell_end = self.sheet.range(end, column)
+
+        return self.sheet.range(cell_start, cell_end)
+
+    def range(
+        self,
+        column=None,
+        start: int | Literal[False] | None = None,
+        end=None,
+    ) -> Range:
+        """Return the range of the column.
+
+        If the column is a hierarchical index and the column name is specified,
+        return the range of the column.
+
+        Args:
+            column (str or tuple or dict, optional): The name of the column.
+                If omitted, return the range of the entire SheetFrame.
+                If a dict is specified, filter by the hierarchical column.
+            start (int, optional):
+                - None: first row
+                - 0: column row
+                - -1: entire row data without column row
+                - False: entire row with column row
+                - other: specified row
+            end (int, optional):
+                - None : same as start.
+                - other: specified row
         """
-        カラムの範囲を返す。
-        カラムが階層インデックスで、columnが文字列の場合は、カラム列の範囲を返す。
+        if column is None:
+            return self.range_all()
 
-        Parameters
-        ----------
-        column : str or tuple or dict, optional
-            カラム名。省略するとSheetFrame全体を返す。
-            dictのとき、積層カラムでのフィルタリング
-        start : int, optional
-            -1: カラムデータ全体
-            0: カラム行
-            None: 最初の行
-            all: カラム全体
-            それ以外：指定行
-        end : int, optional
-            None : startと同じ
-            それ以外: 指定の行
+        if column == "index":
+            return self.range_index(start, end)
 
-        Returns
-        -------
-        xlwingws.range
-        """
-        if start is all:
+        if start is False:
             header = self.range(column, 0)
             values = self.range(column, -1)
             return self.sheet.range(header[0], values[-1])
-        if column is None:
-            start = self.cell
-            end = start.offset(
-                self.columns_level + len(self) - 1,
-                self.index_level + len(self.value_columns) - 1,
-            )
-            return self.sheet.range(start, end)
+
         if self.columns_level == 1 or isinstance(column, tuple):
             if start == 0:
                 start = self.row
@@ -528,16 +525,6 @@ class SheetFrame:
                 return start
             end = self.sheet.range(end, column_end)
             return self.sheet.range(start, end)
-        if self.index_level == 1 and column == "index":
-            if start == 0:
-                start = self.cell
-                end = start.offset(self.columns_level - 1)
-            elif start is None:
-                return self.cell.offset(self.columns_level)
-            elif start == -1:
-                start = self.cell.offset(self.columns_level)
-                end = start.offset(len(self) - 1)
-            return self.sheet.range(start, end)
         # 階層カラムのカラム名指定
         columns = self.columns
         if start == 0:
@@ -554,45 +541,109 @@ class SheetFrame:
         end = self.sheet.range(row, end)
         return self.sheet.range(start, end)
 
-    def select(self, **kwargs):
-        """
-        キーワード引数で指定される条件に応じて各要素が選択されるか否かを
-        True, Falseのアレイで返す。
+    @overload
+    def __getitem__(self, column: str | tuple) -> Series: ...
+    @overload
+    def __getitem__(self, column: slice | list[str]) -> DataFrame: ...
+    def __getitem__(
+        self,
+        column: str | tuple | slice | list[str],
+    ) -> Series | DataFrame:
+        """Return the column data.
 
-        キーワード引数のキーはカラム名、値は条件。条件は以下のものが指定できる。
-           - list : 要素を指定する。
-           - tuple : 値の範囲を指定する。
-           - 他 : 値の一致
+        If column is a string, return a Series. If column is a list,
+        return a DataFrame. The index is ignored.
         """
+        if isinstance(column, list):
+            return DataFrame({c: self[c] for c in column})
 
-        def filter_(sel_, array_, value_):
-            if isinstance(value_, list):
-                sel_ &= array_.isin(value_)
-            elif isinstance(value_, tuple):
-                sel_ &= (array_ >= value_[0]) & (array_ <= value_[1])
+        if column == slice(None, None, None):
+            df = self.data
+
+            if self.has_index and self.index_level:
+                df = df.reset_index()
+
+            return df
+
+        if isinstance(column, str | tuple):
+            row = self.row + self.columns_level
+            name, column_index = column, self.index(column)
+            start = self.sheet.range(row, column_index)
+
+            if len(self) == 1:
+                array = [start.value]
             else:
-                sel_ &= array_ == value_
-            return sel_
+                end = start.offset(len(self) - 1, 0)
+                rng = self.sheet.range(start, end)
+                array = rng.options(np.array).value
+
+            return Series(array, name=name)
+
+        raise NotImplementedError
+
+    def __setitem__(self, column: str, value: str | list | tuple) -> None:
+        if self.columns_level > 1 or not isinstance(column, str):
+            raise NotImplementedError
+
+        if column not in self:
+            column_int = self.column + len(self.columns)
+            cell = self.sheet.range(self.row, column_int)
+            cell.value = column
+
+        rng = self.range(column, -1)
+
+        starts_eq = isinstance(value, str) and value.startswith("=")
+        if starts_eq or isinstance(value, tuple):
+            self.add_formula_column(rng, value, column)
+        else:
+            rng.options(transpose=True).value = value
+
+    def select(self, **kwargs) -> NDArray[np.bool_]:
+        """Return the selection of the SheetFrame.
+
+        Keyword arguments are column names and values. The conditions are as follows:
+           - list : the specified elements are selected.
+           - tuple : the range of the value.
+           - other : the value is selected if it matches.
+        """
+
+        def filter_(
+            sel: NDArray[np.bool_],
+            array: Series,
+            value: str | list | tuple,
+        ) -> None:
+            if isinstance(value, list):
+                sel &= array.isin(value)
+            elif isinstance(value, tuple):
+                sel &= (array >= value[0]) & (array <= value[1])
+            else:
+                sel &= array == value
 
         if self.columns_names is None:
-            # 縦方向に選択
-            sel = np.array([True] * len(self))
+            # vertical selection
+            sel = np.ones(len(self), dtype=bool)
+
             for key, value in kwargs.items():
-                array = self[key]
-                sel = filter_(sel, array, value)
+                filter_(sel, self[key], value)
+
             return sel
-        # 横方向に選択
-        sel = np.array([True] * len(self.value_columns))
-        df = pd.DataFrame(self.value_columns, columns=self.columns_names)
+
+        # horizontal selection
+        columns = self.value_columns
+        sel = np.ones(len(columns), dtype=bool)
+        df = DataFrame(columns, columns=self.columns_names)
+
         for key, value in kwargs.items():
-            array = df[key]
-            sel = filter_(sel, array, value)
+            filter_(sel, df[key], value)
+
         return sel
 
-    def groupby(self, by, sel=None):
-        """
-        グルーピングして、キーとその行番号の辞書を返す。
-        """
+    def groupby(
+        self,
+        by: str | list[str] | None,
+        sel: NDArray[np.bool_] | None = None,
+    ) -> dict[Hashable, list[list[int]]]:
+        """Group by the specified column and return the group key and row number."""
         if by is None:
             if self.columns_names is None:
                 values = [None] * len(self)
@@ -600,27 +651,21 @@ class SheetFrame:
                 values = [None] * len(self.columns)
         elif self.columns_names is None:
             if isinstance(by, list) or ":" in by:
-                by = self.columns_list(by)
+                by = columns_list(self, by)
             values = self[by]
         else:
-            df = pd.DataFrame(self.value_columns, columns=self.columns_names)
+            df = DataFrame(self.value_columns, columns=self.columns_names)
             values = df[by]
 
         index = array_index(values, sel)
 
-        # オフセットの調整
-        if self.columns_names is None:
-            # 縦方向
-            row = self.row + self.columns_level
-            for key, value in index.items():
-                value = [[y + row for y in x] for x in value]
-                index[key] = value
-        else:
-            # 横方向
-            column = self.column + self.index_level
-            for key, value in index.items():
-                value = [[y + column for y in x] for x in value]
-                index[key] = value
+        if self.columns_names is None:  # vertical
+            offset = self.row + self.columns_level
+        else:  # horizontal
+            offset = self.column + self.index_level
+
+        for key, value in index.items():
+            index[key] = [[x + offset for x in v] for v in value]
 
         return index
 
@@ -818,25 +863,6 @@ class SheetFrame:
             set_font(header, size=8, italic=True, color="blue")
             set_alignment(header, "center")
 
-    def columns_list(self, columns):
-        """
-        ':column' or '::column' 形式を通常のカラム名のリストに変換する。
-        ':column'はcolumnを含める、'::column'はcolumnの一つ前まで.
-        文字列の場合はリストにする。
-
-        Parameters
-        ----------
-        columns : str or list of str
-            カラム名
-
-        Returns
-        -------
-        columns : list of str
-            カラム名のリスト
-
-        """
-        return columns_list(self, columns)
-
     # chart関連 --------------------------------------------------------------
     def scatter(self, *args, **kwargs):
         return Scatter(*args, data=self, **kwargs)
@@ -1009,7 +1035,7 @@ class SheetFrame:
         if columns is None:
             columns = self.columns
         else:
-            columns = self.columns_list(columns)
+            columns = columns_list(self, columns)
 
         index_columns = self.index_columns
         for index_level, column in enumerate(columns):
