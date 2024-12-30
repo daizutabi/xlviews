@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import xlwings as xw
 
 from xlviews.config import rcParams
+from xlviews.range import multirange, reference
 from xlviews.style import (
     set_area,
     set_dimensions,
@@ -14,7 +15,7 @@ from xlviews.style import (
     set_ticklabels,
     set_ticks,
 )
-from xlviews.utils import constant, multirange, reference
+from xlviews.utils import constant
 
 if TYPE_CHECKING:
     from xlwings import Chart, Sheet

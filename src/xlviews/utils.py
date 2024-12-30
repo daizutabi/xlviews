@@ -3,13 +3,19 @@ from __future__ import annotations
 import re
 import warnings
 from collections import OrderedDict
+from collections.abc import Hashable
+from typing import TYPE_CHECKING
 
 import matplotlib as mpl
-import pandas as pd
 import xlwings as xw
-from xlwings import Sheet
+from pandas import DataFrame, Series
+from xlwings import Range, Sheet
 
 from xlviews.config import rcParams
+
+if TYPE_CHECKING:
+    import numpy as np
+    from numpy.typing import NDArray
 
 
 def constant(type_: str, name: str | None = None) -> int:
@@ -82,134 +88,67 @@ def rgb(
     raise ValueError("Invalid color format. Expected #xxxxxx.")
 
 
-def array_index(values, sel=None):
+def array_index(
+    values: list | NDArray | DataFrame | Series,
+    sel: list[bool] | NDArray[np.bool_] | None = None,
+) -> dict[Hashable, list[list[int]]]:
+    """Return a dictionary indicating the positions where values exist.
+
+    The keys of the dictionary are the values in `values`. The values of the
+    dictionary are lists of positions where the keys exist, in the format:
+
+        [[start1, end1], [start2, end2], ...]
+
+    The `end` is the inclusive position of the element, different from slice
+    notation.
+
+    Args:
+        values (listable): Array to scan for value positions.
+        sel (list of bool, optional): Specifies whether to detect values or not.
+            Indices where this value is False are excluded.
+
+    Returns:
+        dict: Dictionary storing the positions where values exist.
+
+    Examples:
+        >>> values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
+        >>> index = array_index(values)
+        >>> index[(1, 2)]
+        [[0, 1], [4, 4]]
+        >>> index[(3, 4)]
+        [[2, 3], [5, 6]]
+
+        >>> sel = [True, False, True, False, True, False, False]
+        >>> index = array_index(values, sel=sel)
+        >>> index[(1, 2)]
+        [[0, 0], [4, 4]]
+        >>> index[(3, 4)]
+        [[2, 2]]
     """
-    値が存在する位置を辞書で返す。
-    辞書のキーは、valuesの値。辞書の値は、そのキーが存在する位置のリストで、
-    [[start1, end1], [start2, end2], ...]
-    の形式。endは要素の位置そのもので、スライス表記とは異なる。
-
-    Parameters
-    ----------
-    values : listable
-        値の位置を走査する配列
-    sel : list of bool, optional
-        そもそも値を検出するかを指定する
-        この値がFalseのindexは除外される。
-
-    Returns
-    -------
-    dict
-        値が存在する位置を格納した辞書。
-
-    Examples
-    --------
-    >>> values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
-    >>> dict_ = array_index(values)
-    >>> dict_[(1, 2)]
-    [[0, 1], [4, 4]]
-    >>> dict_[(3, 4)]
-    [[2, 3], [5, 6]]
-    """
-    dict_ = OrderedDict()
     if len(values) == 0:
-        return dict_
+        return {}
 
-    if isinstance(values, pd.DataFrame) or isinstance(values, pd.Series):
-        values = values.values
+    if isinstance(values, DataFrame | Series):
+        values = values.to_numpy()
 
-    try:
-        hash(values[0])
-    except TypeError:
+    if not isinstance(values[0], Hashable):
         values = [tuple(x) for x in values]
 
+    index: dict[Hashable, list[list[int]]] = {}
     for k, x in enumerate(values):
         if sel is not None and not sel[k]:
             continue
-        if x not in dict_:
-            dict_[x] = [[k, k]]
+
+        if x not in index:
+            index[x] = [[k, k]]
         else:
-            index = dict_[x]
-            if k == index[-1][-1] + 1:
-                index[-1][-1] = k
+            current = index[x]
+            if k == current[-1][-1] + 1:
+                current[-1][-1] = k
             else:
-                index.append([k, k])
-    return dict_
+                current.append([k, k])
 
-
-def multirange(sheet, row, column):
-    """
-    飛び地Rangeを作成する。
-    rowとcolumnのいずれかはint.
-    intでない方をindexとしたとき、indexはlist.
-    indexが(int, int)の場合は単純なRange
-    それ以外のときは、indexの各要素は、int or (int, int)で
-    それらを連結して、非連続なRangeを作製して返す。
-
-    Parameters
-    ----------
-    sheet : xlwings.main.Sheet
-        シートオブジェクト
-    row : int or list
-        行番号
-    column : int or list
-        列番号
-    """
-    if isinstance(row, int):
-        axis = 0
-        index = column  # type: list
-    elif isinstance(column, int):
-        axis = 1
-        index = row  # type: list
-    else:
-        raise ValueError("rowとcolumnのどちらかはintでなければならない。")
-
-    if isinstance(index, int):
-        return sheet.range(row, column).api
-
-    def _range(start_end):
-        if isinstance(start_end, int):
-            start = end = start_end
-        else:
-            start, end = start_end
-        if axis == 0:
-            return sheet.range((row, start), (row, end))
-        return sheet.range((start, column), (end, column))
-
-    if len(index) == 2 and isinstance(index[0], int) and isinstance(index[1], int):
-        index = [index]
-
-    ranges = [_range(i).api for i in index]
-    union = sheet.book.app.api.Union
-    range_ = ranges[0]
-    for r in ranges[1:]:
-        range_ = union(range_, r)
-
-    return range_
-
-
-def multirange_indirect(sheet, row, column):
-    """
-    不連続範囲でもSLOPE関数などが扱えるようにする。
-    戻り値はstr
-    """
-    ranges = multirange(sheet, row, column)
-    address = ",".join(['"' + range_.Address + '"' for range_ in ranges])
-    return "N(INDIRECT({" + address + "}))"
-
-
-def reference(sheet, cell):
-    """
-    Sheetのセルへの参照を返す。
-    cellが文字列であればそのまま返す。
-    """
-    if isinstance(cell, tuple):
-        # TODO: tupleのときどの要素使う？連結する？
-        cell = cell[0]
-    if not isinstance(cell, str):
-        cell = sheet.range(*cell).get_address(include_sheetname=True)
-        cell = "=" + cell
-    return cell
+    return index
 
 
 def get_sheet(book, name):

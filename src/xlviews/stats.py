@@ -7,8 +7,9 @@ import xlwings as xw
 from xlviews.decorators import wait_updating
 from xlviews.formula import AGGREGATE_FUNCTION, aggregate
 from xlviews.frame import SheetFrame
+from xlviews.range import multirange
 from xlviews.style import get_number_format, set_alignment, set_font, set_number_format
-from xlviews.utils import constant, multirange, outline_group, outline_levels
+from xlviews.utils import constant, outline_group, outline_levels
 
 
 class StatsFrame(SheetFrame):

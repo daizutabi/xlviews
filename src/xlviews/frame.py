@@ -22,6 +22,7 @@ from xlviews.decorators import wait_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.formula import aggregate, const
 from xlviews.grid import FacetGrid
+from xlviews.range import multirange
 from xlviews.style import (
     get_number_format,
     set_alignment,
@@ -32,7 +33,7 @@ from xlviews.style import (
     set_number_format,
     set_table_style,
 )
-from xlviews.utils import add_validation, array_index, columns_list, multirange
+from xlviews.utils import add_validation, array_index, columns_list
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator

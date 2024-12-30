@@ -1,4 +1,5 @@
 import pytest
+from pandas import DataFrame, Series
 
 
 @pytest.mark.parametrize(
@@ -52,3 +53,41 @@ def test_rgb_error(name):
 
     with pytest.raises(ValueError, match="Invalid color format"):
         rgb(name)
+
+
+@pytest.mark.parametrize("func", [lambda x: x, Series])
+def test_array_index(func):
+    from xlviews.utils import array_index
+
+    values = [1, 1, 2, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3]
+    index = array_index(func(values))
+    assert index[1] == [[0, 1], [7, 8]]
+    assert index[2] == [[2, 4], [9, 10]]
+    assert index[3] == [[5, 6], [11, 12]]
+
+
+@pytest.mark.parametrize("func", [lambda x: x, DataFrame])
+def test_array_index_list(func):
+    from xlviews.utils import array_index
+
+    values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
+    index = array_index(func(values))
+    assert index[(1, 2)] == [[0, 1], [4, 4]]
+    assert index[(3, 4)] == [[2, 3], [5, 6]]
+
+
+@pytest.mark.parametrize("func", [lambda x: x, DataFrame])
+def test_array_index_sel(func):
+    from xlviews.utils import array_index
+
+    values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
+    sel = [True, False, True, False, True, False, True]
+    index = array_index(func(values), sel=sel)
+    assert index[(1, 2)] == [[0, 0], [4, 4]]
+    assert index[(3, 4)] == [[2, 2], [6, 6]]
+
+
+def test_array_index_empty():
+    from xlviews.utils import array_index
+
+    assert not array_index([])
