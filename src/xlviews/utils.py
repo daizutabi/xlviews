@@ -181,55 +181,6 @@ def array_index(
     return index
 
 
-def get_sheet(book, name):
-    try:
-        return book.sheets[name]
-    except Exception:
-        return book.sheets.add(name, after=book.sheets(book.sheets.count))
-
-
-def get_chart(book, name):
-    for sheet in book.sheets:
-        try:
-            return sheet.charts(name)
-        except Exception:
-            continue
-
-
-def get_range(book, name, title=False):
-    for sheet in book.sheets:
-        try:
-            range_ = sheet.names(name).refers_to_range
-            if title:
-                start = range_[0, 0].offset(-1, 0)
-                if start.value:
-                    return sheet.range(start, range_[-1, -1])
-            else:
-                return range_
-        except Exception:
-            continue
-
-
-def copy_chart(book_from, sheet_to, name):
-    chart = get_chart(book_from, name)
-    # chart.api[1].ChartArea.Copy()
-    chart.api[0].Copy()
-    # sheet_to.api.Paste()
-    # sheet_to.activate()
-    # sheet_to.range('A1').api.Select()
-    sheet_to.api.PasteSpecial(Format="図 (PNG)", Link=False, DisplayAsIcon=False)
-    sheet_to.pictures[-1].name = name
-
-
-def copy_range(book_from, sheet_to, name, title=False):
-    range_ = get_range(book_from, name.replace("-", "__"), title=title)
-    range_.api.CopyPicture()  # Appearance:=xlScreen, Format:=xlPicture)
-    # sheet_to.activate()
-    # sheet_to.range('A1').api.Select()
-    sheet_to.api.Paste()
-    sheet_to.pictures[-1].name = name.replace("__", "-")
-
-
 def add_validation(cell, value, default=None):
     if default:
         cell.value = default
@@ -410,7 +361,48 @@ def autofilter(list_object, *args, **field_criteria):
             filter_(Field=field_index, Criteria1=f"{criteria}")
 
 
-def main():
-    sheet = xw.sheets.active
-    list_object = sheet.api.ListObjects("テーブル1")
-    autofilter(list_object, TMR=(100, 150))
+# def get_sheet(book, name):
+#     try:
+#         return book.sheets[name]
+#     except Exception:
+#         return book.sheets.add(name, after=book.sheets(book.sheets.count))
+
+# def get_range(book, name, title=False):
+#     for sheet in book.sheets:
+#         try:
+#             range_ = sheet.names(name).refers_to_range
+#             if title:
+#                 start = range_[0, 0].offset(-1, 0)
+#                 if start.value:
+#                     return sheet.range(start, range_[-1, -1])
+#             else:
+#                 return range_
+#         except Exception:
+#             continue
+
+
+# def copy_range(book_from, sheet_to, name, title=False):
+#     range_ = get_range(book_from, name.replace("-", "__"), title=title)
+#     range_.api.CopyPicture()  # Appearance:=xlScreen, Format:=xlPicture)
+#     # sheet_to.activate()
+#     # sheet_to.range('A1').api.Select()
+#     sheet_to.api.Paste()
+#     sheet_to.pictures[-1].name = name.replace("__", "-")
+
+# def get_chart(book, name):
+#     for sheet in book.sheets:
+#         try:
+#             return sheet.charts(name)
+#         except Exception:
+#             continue
+
+
+# def copy_chart(book_from, sheet_to, name):
+#     chart = get_chart(book_from, name)
+#     # chart.api[1].ChartArea.Copy()
+#     chart.api[0].Copy()
+#     # sheet_to.api.Paste()
+#     # sheet_to.activate()
+#     # sheet_to.range('A1').api.Select()
+#     sheet_to.api.PasteSpecial(Format="図 (PNG)", Link=False, DisplayAsIcon=False)
+#     sheet_to.pictures[-1].name = name
