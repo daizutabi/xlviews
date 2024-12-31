@@ -33,7 +33,7 @@ from xlviews.style import (
     set_number_format,
     set_table_style,
 )
-from xlviews.utils import add_validation, array_index, columns_list
+from xlviews.utils import add_validation, array_index, iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
@@ -646,10 +646,12 @@ class SheetFrame:
                 values = [None] * len(self)
             else:
                 values = [None] * len(self.columns)
+
         elif self.columns_names is None:
             if isinstance(by, list) or ":" in by:
-                by = columns_list(self, by)
+                by = list(iter_columns(self, by))
             values = self[by]
+
         else:
             df = DataFrame(self.value_columns, columns=self.columns_names)
             values = df[by]
@@ -1035,7 +1037,7 @@ class SheetFrame:
         if columns is None:
             columns = self.columns
         else:
-            columns = columns_list(self, columns)
+            columns = iter_columns(self, columns)
 
         index_columns = self.index_columns
         for index_level, column in enumerate(columns):

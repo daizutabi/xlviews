@@ -55,6 +55,22 @@ def test_rgb_error(name):
         rgb(name)
 
 
+@pytest.mark.parametrize(
+    ("columns", "lst"),
+    [
+        ("B", ["B"]),
+        (["A", "C"], ["A", "C"]),
+        (":B", ["A", "B"]),
+        (["::B", "C"], ["A", "C"]),
+    ],
+)
+def test_iter_columns(columns, lst):
+    from xlviews.utils import iter_columns
+
+    df = DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]], columns=["A", "B", "C"])
+    assert list(iter_columns(df, columns)) == lst
+
+
 @pytest.mark.parametrize("func", [lambda x: x, Series])
 def test_array_index(func):
     from xlviews.utils import array_index

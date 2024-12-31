@@ -14,8 +14,12 @@ from xlwings import Range, Sheet
 from xlviews.config import rcParams
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     import numpy as np
     from numpy.typing import NDArray
+
+    from xlviews.frame import SheetFrame
 
 
 def constant(type_: str, name: str | None = None) -> int:
@@ -86,6 +90,32 @@ def rgb(
         return rgb(*color)
 
     raise ValueError("Invalid color format. Expected #xxxxxx.")
+
+
+def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterator[str]:
+    """Yield the columns in the order of appearance with colon notation.
+
+    Examples:
+        >>> df = DataFrame([[1, 2, 3]], columns=["A", "B", "C"])
+        >>> list(iter_columns(df, "B"))
+        ['B']
+        >>> list(iter_columns(df, ":B"))
+        ['A', 'B']
+        >>> list(iter_columns(df, "::B"))
+        ['A']
+    """
+    if isinstance(columns, str):
+        columns = [columns]
+
+    cs = [c for c in sf if isinstance(c, str)]
+
+    for c in columns:
+        if c.startswith("::"):
+            yield from cs[: cs.index(c[2:])]
+        elif c.startswith(":"):
+            yield from cs[: cs.index(c[1:]) + 1]
+        else:
+            yield c
 
 
 def array_index(
@@ -316,40 +346,6 @@ def format_label(data, fmt, sel=None, default=None):
             )
             dict_[key] = "XXX"
     return fmt.format(**dict_)
-
-
-def columns_list(df, columns):
-    """
-    ':column' or '::column' 形式を通常のカラム名のリストに変換する。
-    ':column'はcolumnを含める、'::column'はcolumnの一つ前まで.
-    文字列の場合はリストにする。
-
-    Parameters
-    ----------
-    df : DataFrame or SheetFrame
-    columns : str or list of str
-        カラム名
-
-    Returns
-    -------
-    columns : list of str
-        カラム名のリスト
-
-    """
-    if isinstance(columns, str):
-        columns = [columns]
-    columns_ = list(df.columns)
-
-    def gen():
-        for column in columns:
-            if column.startswith("::"):
-                yield from columns_[: columns_.index(column[2:])]
-            elif column.startswith(":"):
-                yield from columns_[: columns_.index(column[1:]) + 1]
-            else:
-                yield column
-
-    return list(gen())
 
 
 def delete_charts(sheet=None):
