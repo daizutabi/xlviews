@@ -26,6 +26,11 @@ if TYPE_CHECKING:
 FIRST_POSITION = {"left": 50, "top": 80}
 
 
+def clear_first_position(left: int = 50, top: int = 80) -> None:
+    FIRST_POSITION["left"] = left
+    FIRST_POSITION["top"] = top
+
+
 def set_first_position(sf: SheetFrame, pos: str = "right") -> None:
     if pos == "right":
         cell = sf.get_adjacent_cell(offset=0)

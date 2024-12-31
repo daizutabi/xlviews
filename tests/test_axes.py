@@ -1,24 +1,28 @@
 from pathlib import Path
 
 import pytest
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews import constant
 from xlviews.axes import Axes
+from xlviews.frame import SheetFrame
 
 
-def test_set_first_position():
-    from xlviews.axes import FIRST_POSITION, set_first_position
+@pytest.mark.parametrize(
+    ("pos", "left", "top"),
+    [("right", 112.0, 18.5), ("inside", 94.5, 66.5), ("bottom", 52.0, 91.0)],
+)
+def test_set_first_position(sheet: Sheet, pos: str, left: float, top: float):
+    from xlviews.axes import FIRST_POSITION, clear_first_position, set_first_position
 
-    left_org = FIRST_POSITION["left"]
-    top_org = FIRST_POSITION["top"]
-    assert left_org == 50
-    assert top_org == 80
+    df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
+    sf = SheetFrame(sheet, 2, 2, data=df)
 
-    # TODO: test_set_first_position
-
-    FIRST_POSITION["left"] = left_org
-    FIRST_POSITION["top"] = top_org
+    set_first_position(sf, pos)
+    assert FIRST_POSITION["left"] == left
+    assert FIRST_POSITION["top"] == top
+    clear_first_position()
 
 
 @pytest.mark.parametrize(

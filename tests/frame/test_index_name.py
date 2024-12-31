@@ -8,7 +8,9 @@ from xlviews.frame import SheetFrame
 
 @pytest.fixture(scope="module")
 def df():
-    return DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]}, index=["x", "x", "y", "y"])
+    df.index.name = "name"
+    return df
 
 
 @pytest.fixture(scope="module")
@@ -25,12 +27,12 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
 
 
 def test_value(sf: SheetFrame):
-    v = [[None, "a", "b"], [0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
+    v = [["name", "a", "b"], ["x", 1, 5], ["x", 2, 6], ["y", 3, 7], ["y", 4, 8]]
     assert sf.cell.expand().options(ndim=2).value == v
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.columns == [None, "a", "b"]
+    assert sf.columns == ["name", "a", "b"]
 
 
 def test_value_columns(sf: SheetFrame):
@@ -38,41 +40,26 @@ def test_value_columns(sf: SheetFrame):
 
 
 def test_index_columns(sf: SheetFrame):
-    assert sf.index_columns == [None]
-
-
-def test_init_index_false(df: DataFrame, sheet: Sheet):
-    sf = SheetFrame(sheet, 2, 3, data=df, index=False, style=False)
-    assert sf.columns == ["a", "b"]
-    assert sf.index_level == 0
-
-
-def test_len(sf: SheetFrame):
-    assert len(sf) == 4
+    assert sf.index_columns == ["name"]
 
 
 def test_contains(sf: SheetFrame):
+    assert "name" in sf
     assert "a" in sf
     assert "x" not in sf
-
-
-def test_repr(sf: SheetFrame):
-    assert repr(sf).endswith("!$C$2:$E$6>")
-
-
-def test_str(sf: SheetFrame):
-    assert str(sf).endswith("!$C$2:$E$6>")
 
 
 @pytest.mark.parametrize(
     ("column", "relative", "index"),
     [
+        ("name", True, 1),
+        ("name", False, 3),
         ("a", True, 2),
         ("a", False, 4),
         ("b", True, 3),
         ("b", False, 5),
-        (["a", "b"], True, [2, 3]),
-        (["a", "b"], False, [4, 5]),
+        (["name", "b"], True, [1, 3]),
+        (["name", "b"], False, [3, 5]),
     ],
 )
 def test_index(sf: SheetFrame, column, relative, index):
@@ -84,6 +71,7 @@ def test_data(sf: SheetFrame, df: DataFrame):
     np.testing.assert_array_equal(df_.index, df.index)
     np.testing.assert_array_equal(df_.columns, df.columns)
     np.testing.assert_array_equal(df_, df)
+    assert df_.index.name == df.index.name
 
 
 def test_range_all(sf: SheetFrame):
@@ -117,6 +105,7 @@ def test_range_index(sf: SheetFrame, start, end, address):
         ("a", 0, None, "$D$2"),
         ("b", 0, None, "$E$2"),
         ("index", 0, None, "$C$2"),
+        ("name", 0, None, "$C$2"),
         ("a", 1, None, "$D$1"),
         ("a", 2, None, "$D$2"),
         ("b", 100, None, "$E$100"),
@@ -124,6 +113,7 @@ def test_range_index(sf: SheetFrame, start, end, address):
         ("a", False, None, "$D$2:$D$6"),
         ("b", False, None, "$E$2:$E$6"),
         ("index", False, None, "$C$2:$C$6"),
+        ("name", False, None, "$C$2:$C$6"),
         ("a", 2, 100, "$D$2:$D$100"),
     ],
 )
@@ -149,74 +139,30 @@ def test_getitem_list(sf: SheetFrame):
 def test_getitem_slice_none(sf: SheetFrame):
     df = sf[:]
     assert isinstance(df, DataFrame)
-    assert df.columns.to_list() == ["index", "a", "b"]
-    x = [[0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
-    np.testing.assert_array_equal(df, x)
-
-
-def test_setitem(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-    x = [10, 20, 30]
-    sf["a"] = x
-    np.testing.assert_array_equal(sf["a"], x)
-
-
-def test_setitem_new_column(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-    x = [10, 20, 30]
-    sf["c"] = x
-    assert sf.columns == [None, "a", "b", "c"]
-    np.testing.assert_array_equal(sf["c"], x)
+    assert df.columns.to_list() == ["name", "a", "b"]
+    np.testing.assert_array_equal(df["name"], ["x", "x", "y", "y"])
+    np.testing.assert_array_equal(df["a"], [1, 2, 3, 4])
+    np.testing.assert_array_equal(df["b"], [5, 6, 7, 8])
 
 
 @pytest.mark.parametrize(
-    ("a", "b", "sel"),
+    ("name", "a", "sel"),
     [
-        (1, None, [True, False, False, False]),
-        (3, None, [False, False, True, False]),
-        ([2, 4], None, [False, True, False, True]),
-        ((2, 4), None, [False, True, True, True]),
-        (1, 5, [True, False, False, False]),
-        (1, 6, [False, False, False, False]),
-        ((1, 3), (6, 8), [False, True, True, False]),
+        ("x", None, [True, True, False, False]),
+        ("y", None, [False, False, True, True]),
+        ("x", (2, 3), [False, True, False, False]),
+        ("x", [1, 4], [True, False, False, False]),
+        (["x", "y"], [1, 4], [True, False, False, True]),
     ],
 )
-def test_select(sf: SheetFrame, a, b, sel):
-    if b is None:
-        np.testing.assert_array_equal(sf.select(a=a), sel)
+def test_select(sf: SheetFrame, name, a, sel):
+    if a is None:
+        np.testing.assert_array_equal(sf.select(name=name), sel)
     else:
-        np.testing.assert_array_equal(sf.select(a=a, b=b), sel)
+        np.testing.assert_array_equal(sf.select(name=name, a=a), sel)
 
 
-def test_groupby(sheet: Sheet):
-    df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [1, 2, 3, 4, 5, 6, 7]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
-
-    g = sf.groupby("a")
-    assert g[1.0] == [[3, 5], [8, 9]]
-    assert g[2.0] == [[6, 7]]
-
-    assert len(sf.groupby(["a", "b"])) == 7
-
-    g = sf.groupby("::b")
-    assert g[(1.0,)] == [[3, 5], [8, 9]]
-    assert g[(2.0,)] == [[6, 7]]
-
-    assert len(sf.groupby(":b")) == 7
-
-
-def test_row_one(sheet: Sheet):
-    df = DataFrame({"a": [1], "b": [2]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-    assert len(sf) == 1
-    np.testing.assert_array_equal(sf["a"], [1])
-
-
-def test_column_one(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
-    assert len(sf) == 3
-    assert sf.columns == ["a"]
-    np.testing.assert_array_equal(sf["a"], [1, 2, 3])
+def test_groupby(sf: SheetFrame):
+    g = sf.groupby("name")
+    assert g["x"] == [[3, 4]]
+    assert g["y"] == [[5, 6]]
