@@ -104,7 +104,6 @@ def test_range_index(sf: SheetFrame, start, end, address):
     [
         ("a", 0, None, "$D$2"),
         ("b", 0, None, "$E$2"),
-        ("index", 0, None, "$C$2"),
         ("name", 0, None, "$C$2"),
         ("a", 1, None, "$D$1"),
         ("a", 2, None, "$D$2"),
@@ -112,12 +111,12 @@ def test_range_index(sf: SheetFrame, start, end, address):
         ("a", -1, None, "$D$3:$D$6"),
         ("a", False, None, "$D$2:$D$6"),
         ("b", False, None, "$E$2:$E$6"),
-        ("index", False, None, "$C$2:$C$6"),
         ("name", False, None, "$C$2:$C$6"),
         ("a", 2, 100, "$D$2:$D$100"),
     ],
 )
-def test_range(sf: SheetFrame, column, start, end, address):
+def test_range_column(sf: SheetFrame, column, start, end, address):
+    assert sf.range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
 
 

@@ -29,6 +29,10 @@ def test_value(sf: SheetFrame):
     assert sf.cell.expand().options(ndim=2).value == v
 
 
+def test_len(sf: SheetFrame):
+    assert len(sf) == 4
+
+
 def test_columns(sf: SheetFrame):
     assert sf.columns == [None, "a", "b"]
 
@@ -47,21 +51,9 @@ def test_init_index_false(df: DataFrame, sheet: Sheet):
     assert sf.index_level == 0
 
 
-def test_len(sf: SheetFrame):
-    assert len(sf) == 4
-
-
 def test_contains(sf: SheetFrame):
     assert "a" in sf
     assert "x" not in sf
-
-
-def test_repr(sf: SheetFrame):
-    assert repr(sf).endswith("!$C$2:$E$6>")
-
-
-def test_str(sf: SheetFrame):
-    assert str(sf).endswith("!$C$2:$E$6>")
 
 
 @pytest.mark.parametrize(
@@ -116,19 +108,26 @@ def test_range_index(sf: SheetFrame, start, end, address):
     [
         ("a", 0, None, "$D$2"),
         ("b", 0, None, "$E$2"),
-        ("index", 0, None, "$C$2"),
         ("a", 1, None, "$D$1"),
         ("a", 2, None, "$D$2"),
         ("b", 100, None, "$E$100"),
         ("a", -1, None, "$D$3:$D$6"),
         ("a", False, None, "$D$2:$D$6"),
         ("b", False, None, "$E$2:$E$6"),
-        ("index", False, None, "$C$2:$C$6"),
         ("a", 2, 100, "$D$2:$D$100"),
     ],
 )
-def test_range(sf: SheetFrame, column, start, end, address):
+def test_range_column(sf: SheetFrame, column, start, end, address):
+    assert sf.range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
+
+
+def test_repr(sf: SheetFrame):
+    assert repr(sf).endswith("!$C$2:$E$6>")
+
+
+def test_str(sf: SheetFrame):
+    assert str(sf).endswith("!$C$2:$E$6>")
 
 
 def test_getitem_str(sf: SheetFrame):

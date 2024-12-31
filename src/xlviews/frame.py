@@ -237,15 +237,6 @@ class SheetFrame:
 
         return cell.row - start.row
 
-    def __contains__(self, item: str) -> bool:
-        return item in self.columns
-
-    def __repr__(self) -> str:
-        return repr(self.range()).replace("<Range ", "<SheetFrame ")
-
-    def __str__(self) -> str:
-        return str(self.range()).replace("<Range ", "<SheetFrame ")
-
     @property
     def row(self) -> int:
         """Return the row of the top-left cell."""
@@ -262,14 +253,7 @@ class SheetFrame:
     def columns(self) -> list[str | tuple[str, ...] | None]:
         """Return the column names. This is equivalent to `DataFrame.columns`."""
         if self.columns_level == 1:
-            values = self.expand("right").value
-            if values is None:
-                return []
-
-            if isinstance(values, str):
-                return [values]
-
-            return values
+            return self.expand("right").options(ndim=1).value or []
 
         # TODO: when self.columns_names is None
 
@@ -282,15 +266,11 @@ class SheetFrame:
 
     @property
     def value_columns(self) -> list[str | tuple[str, ...] | None]:
-        columns = self.columns
-        index_level = self.index_level
-        return columns[index_level:]
+        return self.columns[self.index_level :]
 
     @property
     def index_columns(self) -> list[str | tuple[str, ...] | None]:
-        columns = self.columns
-        index_level = self.index_level
-        return columns[:index_level]
+        return self.columns[: self.index_level]
 
     @property
     def wide_columns(self):
@@ -300,6 +280,9 @@ class SheetFrame:
         if values:
             return [value for value in values if value]
         return []
+
+    def __contains__(self, item: str) -> bool:
+        return item in self.columns
 
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
         return iter(self.columns)
@@ -424,7 +407,6 @@ class SheetFrame:
         row_offset = self.columns_level + len(self) - 1
         column_offset = self.index_level + len(self.value_columns) - 1
         end = start.offset(row_offset, column_offset)
-
         return self.sheet.range(start, end)
 
     def range_index(
@@ -433,39 +415,79 @@ class SheetFrame:
         end: int | None = None,
     ) -> Range:
         """Return the range of the index."""
-        if self.index_level != 1:
+        if not self.index_level:
             raise NotImplementedError
 
-        if start is None:
-            return self.cell.offset(self.columns_level)
+        c = self.index_level - 1
 
         match start:
+            case None:
+                cell_start = self.cell.offset(self.columns_level)
+                cell_end = cell_start.offset(0, c)
+
             case False:
                 cell_start = self.cell
-                cell_end = cell_start.offset(self.columns_level + len(self) - 1)
+                cell_end = cell_start.offset(self.columns_level + len(self) - 1, c)
 
             case 0:
                 cell_start = self.cell
-                cell_end = cell_start.offset(self.columns_level - 1)
+                cell_end = cell_start.offset(self.columns_level - 1, c)
 
             case -1:
                 cell_start = self.cell.offset(self.columns_level)
-                cell_end = cell_start.offset(len(self) - 1)
+                cell_end = cell_start.offset(len(self) - 1, c)
 
             case _:
                 column = self.cell.column
                 cell_start = self.sheet.range(start, column)
-                if end is None:
-                    return cell_start
-                cell_end = self.sheet.range(end, column)
+                cell_end = self.sheet.range(end or start, column + c)
 
         return self.sheet.range(cell_start, cell_end)
+
+    def range_column(
+        self,
+        column,
+        start: int | Literal[False] | None = None,
+        end: int | None = None,
+    ) -> Range:
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        if start is False:
+            header = self.range_column(column, 0)
+            values = self.range_column(column, -1)
+            return self.sheet.range(header[0], values[-1])
+
+        if start == 0:
+            start = self.row
+            if isinstance(column, tuple):
+                # 階層インデックスでないtupleはwide-column
+                end = self.row - 1
+            else:
+                end = self.row
+        elif start is None or start == -1:
+            if start == -1:
+                end = self.row + len(self)
+            start = self.row + self.columns_level
+        column = self.index(column)
+        if isinstance(column, list):  # wide column
+            column_start, column_end = column
+        else:
+            column_start = column_end = column
+        start = self.sheet.range(start, column_start)
+        if end is None:
+            if isinstance(column, list):
+                end = start.offset(0, column_end - column_start)
+                return self.sheet.range(start, end)
+            return start
+        end = self.sheet.range(end, column_end)
+        return self.sheet.range(start, end)
 
     def range(
         self,
         column=None,
         start: int | Literal[False] | None = None,
-        end=None,
+        end: int | None = None,
     ) -> Range:
         """Return the range of the column.
 
@@ -478,9 +500,9 @@ class SheetFrame:
                 If a dict is specified, filter by the hierarchical column.
             start (int, optional):
                 - None: first row
+                - False: entire row with column row
                 - 0: column row
                 - -1: entire row data without column row
-                - False: entire row with column row
                 - other: specified row
             end (int, optional):
                 - None : same as start.
@@ -492,36 +514,14 @@ class SheetFrame:
         if column == "index":
             return self.range_index(start, end)
 
+        if self.columns_level == 1:
+            return self.range_column(column, start, end)
+
         if start is False:
             header = self.range(column, 0)
             values = self.range(column, -1)
             return self.sheet.range(header[0], values[-1])
 
-        if self.columns_level == 1 or isinstance(column, tuple):
-            if start == 0:
-                start = self.row
-                if isinstance(column, tuple) and self.columns_level == 1:
-                    # 階層インデックスでないtupleはwide-column
-                    end = self.row - 1
-                else:
-                    end = self.row + self.columns_level - 1
-            elif start is None or start == -1:
-                if start == -1:
-                    end = self.row + len(self) + self.columns_level - 1
-                start = self.row + self.columns_level
-            column = self.index(column)
-            if isinstance(column, list):  # wide column
-                column_start, column_end = column
-            else:
-                column_start = column_end = column
-            start = self.sheet.range(start, column_start)
-            if end is None:
-                if isinstance(column, list):
-                    end = start.offset(0, column_end - column_start)
-                    return self.sheet.range(start, end)
-                return start
-            end = self.sheet.range(end, column_end)
-            return self.sheet.range(start, end)
         # 階層カラムのカラム名指定
         columns = self.columns
         if start == 0:
@@ -537,6 +537,12 @@ class SheetFrame:
             return start
         end = self.sheet.range(row, end)
         return self.sheet.range(start, end)
+
+    def __repr__(self) -> str:
+        return repr(self.range()).replace("<Range ", "<SheetFrame ")
+
+    def __str__(self) -> str:
+        return str(self.range()).replace("<Range ", "<SheetFrame ")
 
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
