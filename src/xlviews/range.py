@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlwings import Range, Sheet
-
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
-    from xlwings import Sheet
+    from xlwings import Range, Sheet
 
 
 def multirange(
