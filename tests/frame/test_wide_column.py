@@ -23,8 +23,8 @@ def test_df(df: DataFrame):
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
     sf = SheetFrame(sheet_module, 4, 2, data=df, style=False)
-    sf.add_wide_column("u", range(3))
-    sf.add_wide_column("v", range(4))
+    sf.add_wide_column("u", range(3), autofit=False)
+    sf.add_wide_column("v", range(4), autofit=False)
     return sf
 
 
@@ -92,9 +92,27 @@ def test_index(sf: SheetFrame, column, relative, index):
     assert sf.index(column, relative=relative) == index
 
 
-# def test_index_error(sf: SheetFrame):
-#     with pytest.raises(IndexError):
-#         sf.index("z")
+@pytest.mark.parametrize(
+    ("column", "relative", "index"),
+    [
+        ("u", True, (5, 7)),
+        ("v", True, (8, 11)),
+        ("u", False, (6, 8)),
+        ("v", False, (9, 12)),
+        (("u", 0), True, 5),
+        (("u", 2), True, 7),
+        (("v", 0), False, 9),
+        (("v", 3), False, 12),
+    ],
+)
+def test_index_wide(sf: SheetFrame, column, relative, index):
+    assert sf.index_wide(column, relative=relative) == index
+
+
+@pytest.mark.parametrize("column", ["z", ("u", -1)])
+def test_index_error(sf: SheetFrame, column):
+    with pytest.raises(ValueError, match=".* is not in list"):
+        sf.index(column)
 
 
 # def test_data(sf: SheetFrame, df: DataFrame):

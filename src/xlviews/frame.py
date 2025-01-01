@@ -7,7 +7,7 @@ is unnamed.
 from __future__ import annotations
 
 import re
-from itertools import chain, product
+from itertools import chain, product, takewhile
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
@@ -118,6 +118,8 @@ class SheetFrame:
         self.stats = None
         self.dist = None
 
+        self.columns_names = None
+
         if self.parent:  # Locate the child frame to the right of the parent frame.
             self.cell = self.parent.get_child_cell()
             self.parent.add_child(self)
@@ -186,15 +188,12 @@ class SheetFrame:
             refers_to = "=" + self.cell.get_address(include_sheetname=True)
             book.names.add(self.name, refers_to)
 
-        # If the column is a hierarchical index and the index is a normal index,
-        # display the column name in the index column.
-        if data.columns.nlevels > 1 and data.index.nlevels == 1:
+        # If the column is a hierarchical index and the index is
+        # a normal index, # display the column name in the index column.
+        if index and data.columns.nlevels > 1 and data.index.nlevels == 1:
             self.columns_names = list(data.columns.names)
             self.cell.options(transpose=True).value = self.columns_names
             self.expand("down").columns.autofit()
-        else:
-            # Ignore the name of the column index.
-            self.columns_names = None
 
     def set_data_from_sheet(
         self,
@@ -217,8 +216,6 @@ class SheetFrame:
             start = self.cell
             end = start.offset(self.columns_level - 1)
             self.columns_names = self.sheet.range(start, end).value
-        else:
-            self.columns_names = None
 
         if number_format:
             self.set_number_format(number_format)
@@ -250,12 +247,14 @@ class SheetFrame:
         return self.cell.column
 
     @property
-    def columns(self) -> list[str | tuple[str, ...] | None]:
-        """Return the column names. This is equivalent to `DataFrame.columns`."""
+    def columns(self) -> list:
+        """Return the column names."""
         if self.columns_level == 1:
             return self.expand("right").options(ndim=1).value or []
 
-        if self.has_index:
+        if self.columns_names:
+            idx = [tuple(self.columns_names)]
+        elif self.has_index:
             start = self.cell.offset(self.columns_level - 1)
             end = start.offset(0, self.index_level - 1)
             idx = self.sheet.range(start, end).value or []
@@ -271,7 +270,7 @@ class SheetFrame:
         return [*idx, *cs]
 
     @property
-    def value_columns(self) -> list[str | tuple[str, ...] | None]:
+    def value_columns(self) -> list:
         return self.columns[self.index_level :]
 
     @property
@@ -292,10 +291,25 @@ class SheetFrame:
         return iter(self.columns)
 
     @overload
-    def index(self, column: str | tuple, *, relative: bool = False) -> int: ...
+    def index(
+        self,
+        column: str | tuple,
+        *,
+        relative: bool = False,
+    ) -> int | tuple[int, int]: ...
     @overload
-    def index(self, column: list[str], *, relative: bool = False) -> list[int]: ...
-    def index(self, column: str | tuple | list[str], *, relative: bool = False):  # noqa: C901
+    def index(
+        self,
+        column: list[str | tuple],
+        *,
+        relative: bool = False,
+    ) -> list[int | tuple[int, int]]: ...
+    def index(
+        self,
+        column: str | tuple | list[str | tuple],
+        *,
+        relative: bool = False,
+    ) -> int | tuple[int, int] | list[int | tuple[int, int]]:
         """Return the column index (1-indexed).
 
         If the column is a hierarchical index and the column name is specified,
@@ -308,54 +322,58 @@ class SheetFrame:
         if isinstance(column, dict):
             return self.index_dict(column, relative=relative)
 
+        if self.columns_names and isinstance(column, str):
+            return self.index_row(column, relative=relative)
+
         columns = self.columns
         offset = 1 if relative else self.column
 
         if column in columns:
             return columns.index(column) + offset
 
-        if self.columns_level > 1:  # 積層カラムのカラム名指定
-            row = columns[0].index(column)
-            if relative:
-                return row + 1
-            return row + self.row
+        return self.index_wide(column, relative=relative)
 
-        # wide column
-        if relative:
-            offset = self.index_level + 1
-        else:
-            offset = self.cell.column + self.index_level
-        if isinstance(column, tuple):
-            if len(column) != 2:
-                raise ValueError("Wide-columnは長さ2のみ")
-            start, end = self.index(column[0], relative=True)
-            values = self.sheet.range(
-                self.cell.offset(0, start - 1),
-                self.cell.offset(0, end - 1),
-            ).value
-            index = values.index(column[1]) + start
-            if relative:
-                return index
-            return index + self.cell.column - 1
-        start = self.cell.offset(-1, self.index_level)
-        end = start.offset(0, len(columns) - self.index_level - 1)
-        values = self.sheet.range(start, end).value
-        if start == end:
-            values = [values]
-        start = end = index = -1
-        for index, value in enumerate(values):
-            if value == column:
-                start = index
-            elif value and start != -1:
-                end = index - 1
-                break
-        if start == -1:
-            raise IndexError
-        if end == -1:
-            end = index
-        return [start + offset, end + offset]
+    def index_row(self, column: str, *, relative: bool = False) -> int:
+        if not self.columns_names:
+            raise NotImplementedError
 
-    def index_dict(self, column, relative=False):
+        row = self.columns_names.index(column)
+        return row + 1 if relative else row + self.row
+
+    @overload
+    def index_wide(self, column: str, *, relative: bool = False) -> tuple[int, int]: ...
+    @overload
+    def index_wide(
+        self,
+        column: tuple[str, str | float],
+        *,
+        relative: bool = False,
+    ) -> int: ...
+    def index_wide(
+        self,
+        column: str | tuple[str, str | float],
+        *,
+        relative: bool = False,
+    ) -> tuple[int, int] | int:
+        value_columns = self.value_columns
+
+        cell_start = self.cell.offset(-1, self.index_level)
+        cell_end = cell_start.offset(0, len(value_columns) - 1)
+        names = self.sheet.range(cell_start, cell_end).options(ndim=1).value or []
+
+        name = column[0] if isinstance(column, tuple) else column
+        start = names.index(name)
+        end = len(list(takewhile(lambda n: n is None, names[start + 1 :]))) + start
+
+        offset = self.index_level + (1 if relative else self.cell.column)
+
+        if isinstance(column, str):
+            return start + offset, end + offset
+
+        values = value_columns[start : end + 1]
+        return values.index(column[1]) + start + offset
+
+    def index_dict(self, column: dict, *, relative: bool = False):
         # 階層インデックスのフィルタリング
         if self.columns_level == 1:
             raise ValueError("階層カラムのときのみ, 辞書によるインデックスが可能")
@@ -1193,20 +1211,26 @@ class SheetFrame:
             raise NotImplementedError
 
         cell = self.cell.offset(0, len(self.columns))
-        cell.value = list(values)
+        values_list = list(values)
+        cell.value = values_list
 
         header = cell.offset(-1)
         header.value = column
+
         set_font(header, bold=True, color="#002255")
         set_alignment(header, horizontal_alignment="left")
-        cell = cell.sheet.range(cell, cell.offset(0, len(values)))
+
+        cell = cell.sheet.range(cell, cell.offset(0, len(values_list)))
         if number_format:
             set_number_format(cell, number_format)
+
         if autofit:
             range_ = self.range(column, 0)
             range_.autofit()
+
         if style:
             self.set_style()
+
         return cell[0].offset(1)
 
     def add_validation(

@@ -103,7 +103,7 @@ def test_index(sf: SheetFrame, column, relative, index):
 
 
 def test_index_error(sf: SheetFrame):
-    with pytest.raises(IndexError):
+    with pytest.raises(ValueError, match="'z' is not in list"):
         sf.index("z")
 
 

@@ -10,10 +10,10 @@ from xlviews.frame import SheetFrame
 def df():
     df = DataFrame(
         {
-            "c": [1, 2, 3, 4, 5, 6, 7, 8],
-            "d": [11, 12, 13, 14, 15, 16, 17, 18],
-            "e": [21, 22, 23, 24, 25, 26, 27, 28],
-            "f": [31, 32, 33, 34, 35, 36, 37, 38],
+            "c": [1, 2, 3, 4, 5],
+            "d": [11, 12, 13, 14, 15],
+            "e": [21, 22, 23, 24, 25],
+            "f": [31, 32, 33, 34, 35],
         },
     )
     x = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
@@ -22,108 +22,104 @@ def df():
 
 
 def test_df(df: DataFrame):
-    assert len(df) == 8
-    assert df.shape == (8, 4)
+    assert len(df) == 5
+    assert df.shape == (5, 4)
 
     x = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
     assert df.columns.to_list() == x
     assert df.columns.names == ["a", "b"]
     assert isinstance(df.columns, MultiIndex)
 
-    assert df.index.to_list() == list(range(8))
+    assert df.index.to_list() == list(range(5))
     assert df.index.names == [None]
 
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(sheet_module, 5, 3, data=df, style=False)
+    return SheetFrame(sheet_module, 20, 4, data=df, style=False)
 
 
-def test_value_column(sf: SheetFrame):
+def test_value(sf: SheetFrame):
     v = sf.cell.expand().options(ndim=2).value
-    assert len(v) == 10
+    assert len(v) == 7
     assert v[0] == ["a", "a1", "a1", "a2", "a2"]
     assert v[1] == ["b", "b1", "b2", "b1", "b2"]
     assert v[2] == [0, 1, 11, 21, 31]
-    assert v[-1] == [7, 8, 18, 28, 38]
+    assert v[-1] == [4, 5, 15, 25, 35]
 
 
-# def test_value_values(sf: SheetFrame):
-#     v = sf.cell.offset(1, 0).expand().options(ndim=2).value
-#     assert v[0] == ["x", "y", "z", "b1", "b2", "b1", "b2"]
-#     assert v[1] == [1, 1, 1, 1, 11, 21, 31]
-#     assert v[2] == [1, 1, 1, 2, 12, 22, 32]
-#     assert v[-1] == [2, 2, 1, 8, 18, 28, 38]
+def test_init(sf: SheetFrame, sheet_module: Sheet):
+    assert sf.cell.get_address() == "$D$20"
+    assert sf.row == 20
+    assert sf.column == 4
+    assert sf.sheet.name == sheet_module.name
+    assert sf.index_level == 1
+    assert sf.columns_level == 2
+    assert sf.columns_names == ["a", "b"]
 
 
-# def test_init(sf: SheetFrame, sheet_module: Sheet):
-#     assert sf.cell.get_address() == "$C$5"
-#     assert sf.row == 5
-#     assert sf.column == 3
-#     assert sf.sheet.name == sheet_module.name
-#     assert sf.index_level == 3
-#     assert sf.columns_level == 2
-#     assert sf.columns_names is None
+def test_len(sf: SheetFrame):
+    assert len(sf) == 5
 
 
-# def test_len(sf: SheetFrame):
-#     assert len(sf) == 8
+def test_columns(sf: SheetFrame):
+    x = [("a", "b"), ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
+    assert sf.columns == x
 
 
-# def test_columns(sf: SheetFrame):
-#     i = "x", "y", "z"
-#     c = ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")
-#     assert sf.columns == [*i, *c]
+def test_value_columns(sf: SheetFrame):
+    c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
+    assert sf.value_columns == c
 
 
-# def test_value_columns(sf: SheetFrame):
-#     c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-#     assert sf.value_columns == c
+def test_index_columns(sf: SheetFrame):
+    assert sf.index_columns == [("a", "b")]
 
 
-# def test_index_columns(sf: SheetFrame):
-#     assert sf.index_columns == ["x", "y", "z"]
+def test_init_index_false(df: DataFrame, sheet: Sheet):
+    sf = SheetFrame(sheet, 2, 3, data=df, index=False, style=False)
+
+    assert sf.index_level == 0
+    c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
+    assert sf.columns == c
 
 
-# def test_init_index_false(df: DataFrame, sheet: Sheet):
-#     sf = SheetFrame(sheet, 2, 3, data=df, index=False, style=False)
-
-#     assert sf.index_level == 0
-#     c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-#     assert sf.columns == c
-
-
-# def test_contains(sf: SheetFrame):
-#     assert "x" in sf
-#     assert "z" in sf
-#     assert ("a1", "b1") in sf
-#     assert "a1" not in sf
+def test_contains(sf: SheetFrame):
+    assert None not in sf
+    assert ("a", "b") in sf
+    assert ("a1", "b1") in sf
+    assert "a1" not in sf
 
 
-# def test_iter(sf: SheetFrame):
-#     i = "x", "y", "z"
-#     c = ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")
-#     assert list(sf) == [*i, *c]
+def test_iter(sf: SheetFrame):
+    x = [("a", "b"), ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
+    assert list(sf) == x
 
 
-# @pytest.mark.parametrize(
-#     ("column", "relative", "index"),
-#     [
-#         ("a", True, 3),
-#         ("a", False, 8),
-#         ("b", True, 4),
-#         ("b", False, 9),
-#         (["x", "b"], True, [1, 4]),
-#         (["y", "b"], False, [7, 9]),
-#     ],
-# )
-# def test_index(sf: SheetFrame, column, relative, index):
-#     assert sf.index(column, relative=relative) == index
+@pytest.mark.parametrize(
+    ("column", "relative", "index"),
+    [
+        (("a", "b"), True, 1),
+        (("a1", "b1"), True, 2),
+        (("a2", "b2"), True, 5),
+        (("a1", "b2"), False, 6),
+        (("a2", "b1"), False, 7),
+        ([("a1", "b2"), ("a2", "b1")], True, [3, 4]),
+        ([("a", "b"), ("a2", "b2")], False, [4, 8]),
+        ("a", True, 1),
+        (["b", "a"], True, [2, 1]),
+        ("a", False, 20),
+        (["a", "b"], False, [20, 21]),
+    ],
+)
+def test_index(sf: SheetFrame, column, relative, index):
+    assert sf.index(column, relative=relative) == index
 
 
-# def test_index_error(sf: SheetFrame):
-#     with pytest.raises(IndexError):
-#         sf.index("z")
+@pytest.mark.parametrize("column", ["a", "b"])
+def test_index_row(sf: SheetFrame, column):
+    r = sf.index(column, relative=False)
+    assert sf.sheet.range(r, sf.column).value == column
 
 
 # def test_data(sf: SheetFrame, df: DataFrame):
