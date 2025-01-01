@@ -149,34 +149,26 @@ def test_range_index(sf: SheetFrame, start, end, address):
     assert sf.range("index", start, end).get_address() == address
 
 
-# @pytest.mark.parametrize(
-#     ("column", "start", "end", "address"),
-#     [
-#         ("x", 0, None, "$F$10"),
-#         ("y", 0, None, "$G$10"),
-#         ("a", 0, None, "$H$10"),
-#         ("b", 0, None, "$I$10"),
-#         ("x", 1, None, "$F$1"),
-#         ("a", 2, None, "$H$2"),
-#         ("b", 100, None, "$I$100"),
-#         ("y", -1, None, "$G$11:$G$18"),
-#         ("a", False, None, "$H$10:$H$18"),
-#         ("b", False, None, "$I$10:$I$18"),
-#         ("x", 2, 100, "$F$2:$F$100"),
-#         ("a", 3, 300, "$H$3:$H$300"),
-#     ],
-# )
-# def test_range_column(sf: SheetFrame, column, start, end, address):
-#     assert sf.range_column(column, start, end).get_address() == address
-#     assert sf.range(column, start, end).get_address() == address
-
-
-# def test_repr(sf: SheetFrame):
-#     assert repr(sf).endswith("!$C$2:$E$6>")
-
-
-# def test_str(sf: SheetFrame):
-#     assert str(sf).endswith("!$C$2:$E$6>")
+@pytest.mark.parametrize(
+    ("column", "start", "end", "address"),
+    [
+        ("x", 0, None, "$B$4"),
+        ("y", None, None, "$C$5"),
+        ("a", -1, None, "$D$5:$D$6"),
+        ("b", False, None, "$E$4:$E$6"),
+        (("u", 0), 0, None, "$F$3:$F$4"),
+        (("u", 2), None, None, "$H$5"),
+        (("v", 0), -1, None, "$I$5:$I$6"),
+        (("v", 3), False, None, "$L$3:$L$6"),
+        ("u", 0, None, "$F$3:$H$4"),
+        ("u", None, None, "$F$5:$H$5"),
+        ("v", -1, None, "$I$5:$L$6"),
+        ("v", False, None, "$I$3:$L$6"),
+    ],
+)
+def test_range_column(sf: SheetFrame, column, start, end, address):
+    assert sf.range_column(column, start, end).get_address() == address
+    assert sf.range(column, start, end).get_address() == address
 
 
 # def test_getitem_str(sf: SheetFrame):

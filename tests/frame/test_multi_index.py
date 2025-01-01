@@ -161,14 +161,6 @@ def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf.range(column, start, end).get_address() == address
 
 
-# def test_repr(sf: SheetFrame):
-#     assert repr(sf).endswith("!$C$2:$E$6>")
-
-
-# def test_str(sf: SheetFrame):
-#     assert str(sf).endswith("!$C$2:$E$6>")
-
-
 # def test_getitem_str(sf: SheetFrame):
 #     s = sf["a"]
 #     assert isinstance(s, Series)
