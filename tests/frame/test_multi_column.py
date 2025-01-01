@@ -122,12 +122,30 @@ def test_index_row(sf: SheetFrame, column):
     assert sf.sheet.range(r, sf.column).value == column
 
 
-# def test_data(sf: SheetFrame, df: DataFrame):
-#     df_ = sf.data
-#     np.testing.assert_array_equal(df_.index, df.index)
-#     np.testing.assert_array_equal(df_.index.names, df.index.names)
-#     np.testing.assert_array_equal(df_.columns, df.columns)
-#     np.testing.assert_array_equal(df_, df)
+@pytest.mark.parametrize(
+    ("column", "relative", "index"),
+    [
+        ({"a": "a1"}, True, (2, 3)),
+        ({"a": "a2"}, True, (4, 5)),
+        ({"a": "a1"}, False, (5, 6)),
+        ({"a": "a2"}, False, (7, 8)),
+    ],
+)
+def test_index_dict(sf: SheetFrame, column, relative, index):
+    assert sf.index_dict(column, relative=relative) == index
+    assert sf.index(column, relative=relative) == index
+
+
+def test_data(sf: SheetFrame, df: DataFrame):
+    df_ = sf.data
+    print(df_)
+    print(df_.index)
+    print(df_.columns)
+    assert 0
+    np.testing.assert_array_equal(df_.index, df.index)
+    np.testing.assert_array_equal(df_.index.names, df.index.names)
+    np.testing.assert_array_equal(df_.columns, df.columns)
+    np.testing.assert_array_equal(df_, df)
 
 
 # def test_range_all(sf: SheetFrame):

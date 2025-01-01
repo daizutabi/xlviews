@@ -115,24 +115,24 @@ def test_iter(sf: SheetFrame):
     assert list(sf) == [*i, *c]
 
 
-# @pytest.mark.parametrize(
-#     ("column", "relative", "index"),
-#     [
-#         ("a", True, 3),
-#         ("a", False, 8),
-#         ("b", True, 4),
-#         ("b", False, 9),
-#         (["x", "b"], True, [1, 4]),
-#         (["y", "b"], False, [7, 9]),
-#     ],
-# )
-# def test_index(sf: SheetFrame, column, relative, index):
-#     assert sf.index(column, relative=relative) == index
+@pytest.mark.parametrize(
+    ("column", "relative", "index"),
+    [
+        ("x", True, 1),
+        ("z", False, 5),
+        (("a1", "b1"), True, 4),
+        (("a1", "b1"), False, 6),
+        (["y", ("a2", "b1")], True, [2, 6]),
+        (["x", ("a2", "b2")], False, [3, 9]),
+    ],
+)
+def test_index(sf: SheetFrame, column, relative, index):
+    assert sf.index(column, relative=relative) == index
 
 
-# def test_index_error(sf: SheetFrame):
-#     with pytest.raises(IndexError):
-#         sf.index("z")
+def test_index_error(sf: SheetFrame):
+    with pytest.raises(ValueError, match="'a' is not in list"):
+        sf.index("a")
 
 
 # def test_data(sf: SheetFrame, df: DataFrame):

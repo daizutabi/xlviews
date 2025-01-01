@@ -304,9 +304,16 @@ class SheetFrame:
         *,
         relative: bool = False,
     ) -> list[int | tuple[int, int]]: ...
+    @overload
     def index(
         self,
-        column: str | tuple | list[str | tuple],
+        column: dict,
+        *,
+        relative: bool = False,
+    ) -> tuple[int, int]: ...
+    def index(
+        self,
+        column: str | tuple | list[str | tuple] | dict,
         *,
         relative: bool = False,
     ) -> int | tuple[int, int] | list[int | tuple[int, int]]:
@@ -373,18 +380,20 @@ class SheetFrame:
         values = value_columns[start : end + 1]
         return values.index(column[1]) + start + offset
 
-    def index_dict(self, column: dict, *, relative: bool = False):
-        # 階層インデックスのフィルタリング
-        if self.columns_level == 1:
-            raise ValueError("階層カラムのときのみ, 辞書によるインデックスが可能")
+    def index_dict(self, column: dict, *, relative: bool = False) -> tuple[int, int]:
+        if not self.columns_names:
+            raise NotImplementedError
+
         by = list(column.keys())
         key = tuple(column.values())
-        column = self.groupby(by)[key]
-        if len(column) != 1:
-            raise ValueError("連続カラムのみ可能")
-        if relative:
-            return [c - self.column + 1 for c in column[0]]
-        return column[0]
+
+        index = self.groupby(by)[key]
+
+        if len(index) != 1 or len(index[0]) != 2:
+            raise NotImplementedError
+
+        offset = -self.column + 1 if relative else 0
+        return index[0][0] + offset, index[0][1] + offset
 
     def update_cell(self) -> None:  # for bug fix in cell.row, cell.column, cell.expand
         self.cell = self.cell.offset(0, 0)
