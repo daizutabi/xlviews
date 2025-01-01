@@ -456,6 +456,9 @@ class SheetFrame:
         if not self.index_level:
             raise NotImplementedError
 
+        if self.columns_names and start in [-1, 0, False]:
+            raise ValueError("index start must be a specific row")
+
         c = self.index_level - 1
 
         match start:

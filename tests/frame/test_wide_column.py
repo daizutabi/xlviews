@@ -133,20 +133,20 @@ def test_range_all(sf: SheetFrame):
     assert sf.range().get_address() == "$B$4:$L$6"
 
 
-# @pytest.mark.parametrize(
-#     ("start", "end", "address"),
-#     [
-#         (0, None, "$F$10:$G$10"),
-#         (None, None, "$F$11:$G$11"),
-#         (-1, None, "$F$11:$G$18"),
-#         (False, None, "$F$10:$G$18"),
-#         (20, None, "$F$20:$G$20"),
-#         (20, 100, "$F$20:$G$100"),
-#     ],
-# )
-# def test_range_index(sf: SheetFrame, start, end, address):
-#     assert sf.range_index(start, end).get_address() == address
-#     assert sf.range("index", start, end).get_address() == address
+@pytest.mark.parametrize(
+    ("start", "end", "address"),
+    [
+        (0, None, "$B$4:$C$4"),
+        (None, None, "$B$5:$C$5"),
+        (-1, None, "$B$5:$C$6"),
+        (False, None, "$B$4:$C$6"),
+        (20, None, "$B$20:$C$20"),
+        (20, 100, "$B$20:$C$100"),
+    ],
+)
+def test_range_index(sf: SheetFrame, start, end, address):
+    assert sf.range_index(start, end).get_address() == address
+    assert sf.range("index", start, end).get_address() == address
 
 
 # @pytest.mark.parametrize(
