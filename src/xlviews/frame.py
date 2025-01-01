@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, overload
 import numpy as np
 import pandas as pd
 import xlwings as xw
-from pandas import DataFrame, Series
+from pandas import DataFrame, MultiIndex, Series
 from xlwings import Sheet
 
 from xlviews import common
@@ -405,16 +405,23 @@ class SheetFrame:
     @property
     def data(self) -> DataFrame:
         """Return the data as a DataFrame."""
-        df = self.expand().options(DataFrame, index=False).value
+        if self.cell.value is None and self.columns_level > 1:
+            rng = self.cell.offset(self.columns_level - 1).expand()
+            rng = rng.options(DataFrame, index=self.index_level, header=1)
+            df = rng.value
+            df.columns = MultiIndex.from_tuples(self.value_columns)
+            return df
+
+        rng = self.expand()
+        rng = rng.options(DataFrame, index=self.index_level, header=self.columns_level)
+        df = rng.value
 
         if not isinstance(df, DataFrame):
             raise NotImplementedError
 
-        if self.columns_level == 1 and isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-
-        if self.has_index and self.index_level:
-            df = df.set_index(list(df.columns[: self.index_level]))
+        if self.columns_names:
+            df.index.name = None
+            df.columns.names = self.columns_names
 
         return df
 
