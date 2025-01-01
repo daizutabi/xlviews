@@ -147,13 +147,9 @@ def test_data(sf: SheetFrame, df: DataFrame):
     assert df_.columns.name == df.columns.name
 
 
-# def test_range_all(sf: SheetFrame):
-#     assert sf.range_all().get_address() == "$F$10:$I$18"
-#     assert sf.range().get_address() == "$F$10:$I$18"
-
-
-# def test_range_column_none(sf: SheetFrame):
-#     assert sf.range(column=None).get_address() == "$F$10:$I$18"
+def test_range_all(sf: SheetFrame):
+    assert sf.range_all().get_address() == "$D$20:$H$26"
+    assert sf.range().get_address() == "$D$20:$H$26"
 
 
 # @pytest.mark.parametrize(

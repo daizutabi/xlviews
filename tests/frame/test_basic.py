@@ -87,10 +87,6 @@ def test_range_all(sf: SheetFrame):
     assert sf.range().get_address() == "$C$2:$E$6"
 
 
-def test_range_column_none(sf: SheetFrame):
-    assert sf.range(column=None).get_address() == "$C$2:$E$6"
-
-
 @pytest.mark.parametrize(
     ("start", "end", "address"),
     [
