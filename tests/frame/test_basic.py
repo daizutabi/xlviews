@@ -16,17 +16,17 @@ def sf(df: DataFrame, sheet_module: Sheet):
     return SheetFrame(sheet_module, 2, 3, data=df, style=False)
 
 
+def test_value(sf: SheetFrame):
+    v = [[None, "a", "b"], [0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
+    assert sf.cell.expand().options(ndim=2).value == v
+
+
 def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.row == 2
     assert sf.column == 3
     assert sf.sheet.name == sheet_module.name
     assert sf.index_level == 1
     assert sf.columns_level == 1
-
-
-def test_value(sf: SheetFrame):
-    v = [[None, "a", "b"], [0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
-    assert sf.cell.expand().options(ndim=2).value == v
 
 
 def test_len(sf: SheetFrame):

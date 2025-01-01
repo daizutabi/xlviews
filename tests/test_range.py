@@ -2,6 +2,21 @@ import pytest
 from xlwings import Sheet
 
 
+def test_range_value_int(sheet: Sheet):
+    sheet.range(1, 1).value = 10
+    x = sheet.range(1, 1).value
+    assert not isinstance(x, int)
+    assert isinstance(x, float)
+    assert x == 10
+
+
+def test_range_value_str(sheet: Sheet):
+    sheet.range(1, 1).value = "abc"
+    x = sheet.range(1, 1).value
+    assert isinstance(x, str)
+    assert x == "abc"
+
+
 def test_multirange_int_int(sheet_module: Sheet):
     from xlviews.range import multirange
 

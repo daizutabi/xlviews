@@ -36,7 +36,7 @@ from xlviews.style import (
 from xlviews.utils import add_validation, array_index, iter_columns
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterator
+    from collections.abc import Hashable, Iterable, Iterator
     from typing import Literal
 
     from numpy.typing import NDArray
@@ -255,14 +255,20 @@ class SheetFrame:
         if self.columns_level == 1:
             return self.expand("right").options(ndim=1).value or []
 
-        # TODO: when self.columns_names is None
+        if self.has_index:
+            start = self.cell.offset(self.columns_level - 1)
+            end = start.offset(0, self.index_level - 1)
+            idx = self.sheet.range(start, end).value or []
+        else:
+            idx = []
 
-        columns_ = []
+        cs = []
         for k in range(self.columns_level):
-            cell = self.cell.offset(k)
-            columns_.append(cell.expand("right").value)
+            rng = self.cell.offset(k, self.index_level).expand("right")
+            cs.append(rng.options(ndim=1).value)
+        cs = [tuple(c) for c in zip(*cs, strict=True)]
 
-        return [tuple(column) for column in zip(*columns_, strict=False)]
+        return [*idx, *cs]
 
     @property
     def value_columns(self) -> list[str | tuple[str, ...] | None]:
@@ -273,13 +279,11 @@ class SheetFrame:
         return self.columns[: self.index_level]
 
     @property
-    def wide_columns(self):
+    def wide_columns(self) -> list[str]:
         start = self.cell.offset(-1, self.index_level)
         end = start.offset(0, len(self.columns) - self.index_level - 1)
-        values = self.sheet.range(start, end).value
-        if values:
-            return [value for value in values if value]
-        return []
+        cs = self.sheet.range(start, end).value or []
+        return [c for c in cs if c]
 
     def __contains__(self, item: str) -> bool:
         return item in self.columns
@@ -292,7 +296,7 @@ class SheetFrame:
     @overload
     def index(self, column: list[str], *, relative: bool = False) -> list[int]: ...
     def index(self, column: str | tuple | list[str], *, relative: bool = False):  # noqa: C901
-        """Return the column index.
+        """Return the column index (1-indexed).
 
         If the column is a hierarchical index and the column name is specified,
         return the row index. If relative is True, return the relative position
@@ -302,7 +306,7 @@ class SheetFrame:
             return [self.index(c, relative=relative) for c in column]
 
         if isinstance(column, dict):
-            return self.index_multicolumn(column, relative=relative)
+            return self.index_dict(column, relative=relative)
 
         columns = self.columns
         offset = 1 if relative else self.column
@@ -351,7 +355,7 @@ class SheetFrame:
             end = index
         return [start + offset, end + offset]
 
-    def index_multicolumn(self, column, relative=False):
+    def index_dict(self, column, relative=False):
         # 階層インデックスのフィルタリング
         if self.columns_level == 1:
             raise ValueError("階層カラムのときのみ, 辞書によるインデックスが可能")
@@ -468,7 +472,8 @@ class SheetFrame:
         elif start is None or start == -1:
             if start == -1:
                 end = self.row + len(self)
-            start = self.row + self.columns_level
+            start = self.row + 1
+
         column = self.index(column)
         if isinstance(column, list):  # wide column
             column_start, column_end = column
@@ -1169,34 +1174,27 @@ class SheetFrame:
     def add_wide_column(
         self,
         column: str,
-        values,
-        number_format=None,
-        autofit=True,
-        style=False,
-    ):
-        """
-        横方向に展開するカラムを作成する。
+        values: Iterable[str | float],
+        *,
+        number_format: str | None = None,
+        autofit: bool = True,
+        style: bool = False,
+    ) -> Range:
+        """Create a wide column.
 
-        Parameters
-        ----------
-        column : str
-            ワイドカラムの識別名
-        values : listable
-            横方向に伸びる値のリスト
-        number_format : str, optional
-            フォーマット
-        autofit : bool
-            幅を自動調整するか。
-        style : bool
-            装飾するか
-
-        Returns
-        -------
-        xw.Range
-            セル
+        Args:
+            column (str): The name of the wide column.
+            values (iterable): The values to be expanded horizontally.
+            number_format (str, optional): The number format.
+            autofit (bool): Whether to autofit the width.
+            style (bool): Whether to style the column.
         """
+        if self.columns_level != 1:
+            raise NotImplementedError
+
         cell = self.cell.offset(0, len(self.columns))
-        cell.value = values
+        cell.value = list(values)
+
         header = cell.offset(-1)
         header.value = column
         set_font(header, bold=True, color="#002255")
