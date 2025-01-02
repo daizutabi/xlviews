@@ -190,14 +190,6 @@ def test_getitem_list(sf: SheetFrame):
     np.testing.assert_array_equal(df, x)
 
 
-# def test_getitem_slice_none(sf: SheetFrame):
-#     df = sf[:]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["index", "a", "b"]
-#     x = [[0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
-#     np.testing.assert_array_equal(df, x)
-
-
 # def test_setitem(sheet: Sheet):
 #     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 #     sf = SheetFrame(sheet, 2, 2, data=df, style=False)

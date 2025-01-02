@@ -33,11 +33,11 @@ from xlviews.style import (
     set_number_format,
     set_table_style,
 )
-from xlviews.utils import add_validation, array_index, iter_columns
+from xlviews.utils import array_index, iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterable, Iterator, Sequence
-    from typing import Literal
+    from typing import Any, Literal
 
     from numpy.typing import NDArray
     from xlwings import Range
@@ -122,7 +122,7 @@ class SheetFrame:
 
         if self.parent:  # Locate the child frame to the right of the parent frame.
             self.cell = self.parent.get_child_cell()
-            self.parent.add_child(self)
+            self.parent.add_child_frame(self)
 
         elif self.head:  # Locate the child frame below the head frame.
             row_offset = len(self.head) + self.head.columns_level + 1
@@ -440,6 +440,39 @@ class SheetFrame:
 
         return df
 
+    def range(
+        self,
+        column: str | tuple | dict | None = None,
+        start: int | Literal[False] | None = None,
+        end: int | None = None,
+    ) -> Range:
+        """Return the range of the column.
+
+        If the column is a hierarchical index and the column name is specified,
+        return the range of the column.
+
+        Args:
+            column (str or tuple or dict, optional): The name of the column.
+                If omitted, return the range of the entire SheetFrame.
+                If a dict is specified, filter by the hierarchical column.
+            start (int, optional):
+                - None: first row
+                - False: entire row with column row
+                - 0: column row
+                - -1: entire row data without column row
+                - other: specified row
+            end (int, optional):
+                - None : same as start.
+                - other: specified row
+        """
+        if column is None:
+            return self.range_all()
+
+        if column == "index":
+            return self.range_index(start, end)
+
+        return self.range_column(column, start, end)
+
     def range_all(self) -> Range:
         start = self.cell
         row_offset = self.columns_level + len(self) - 1
@@ -487,7 +520,7 @@ class SheetFrame:
 
     def range_column(
         self,
-        column: str | tuple,
+        column: str | tuple | dict,
         start: int | Literal[False] | None = None,
         end: int | None = None,
     ) -> Range:
@@ -533,44 +566,152 @@ class SheetFrame:
         cell_end = self.sheet.range(end, column_end)
         return self.sheet.range(cell_start, cell_end)
 
-    def range(
-        self,
-        column: str | tuple | None = None,
-        start: int | Literal[False] | None = None,
-        end: int | None = None,
-    ) -> Range:
-        """Return the range of the column.
-
-        If the column is a hierarchical index and the column name is specified,
-        return the range of the column.
-
-        Args:
-            column (str or tuple or dict, optional): The name of the column.
-                If omitted, return the range of the entire SheetFrame.
-                If a dict is specified, filter by the hierarchical column.
-            start (int, optional):
-                - None: first row
-                - False: entire row with column row
-                - 0: column row
-                - -1: entire row data without column row
-                - other: specified row
-            end (int, optional):
-                - None : same as start.
-                - other: specified row
-        """
-        if column is None:
-            return self.range_all()
-
-        if column == "index":
-            return self.range_index(start, end)
-
-        return self.range_column(column, start, end)
-
     def __repr__(self) -> str:
         return repr(self.range()).replace("<Range ", "<SheetFrame ")
 
     def __str__(self) -> str:
         return str(self.range()).replace("<Range ", "<SheetFrame ")
+
+    def rename(self, columns: dict[str, str]) -> None:
+        """Rename the columns of the SheetFrame."""
+        for old, new in columns.items():
+            self.range(old, 0).value = new
+
+    def drop_duplicates(self, column: str | tuple | Iterable[str | tuple]) -> None:
+        columns = [column] if isinstance(column, str | tuple) else list(column)
+
+        for column in columns:
+            for cell in reversed(self.range(column, -1)[1:]):
+                if cell.value == cell.offset(-1).value:
+                    cell.value = None
+
+    def get_address(
+        self,
+        column: str | tuple | dict,
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> list[str]:
+        """Return the address list of the column.
+
+        Args:
+            column (str or tuple or dict): The name of the column.
+            formula (bool, optional): Whether to add '=' to the beginning
+                of the address.
+            kwargs Keyword arguments for the `Range.get_address` method.
+
+        Returns:
+            list[str]: The address list of the column.
+        """
+        addresses = []
+        for cell in self.range(column, -1):
+            addresses.append(cell.get_address(**kwargs))
+
+        if formula:
+            addresses = ["=" + address for address in addresses]
+
+        return addresses
+
+    def add_column(self, column: str, value: Any | None = None) -> Range:
+        column_int = self.column + len(self.columns)
+        cell = self.sheet.range(self.row, column_int)
+        cell.value = column
+
+        rng = self.range(column, -1)
+
+        if value is not None:
+            rng.options(transpose=True).value = value
+
+        return rng
+
+    def add_formula_column(
+        self,
+        rng: Range,
+        formula: str,
+        number_format: str | None = None,
+        autofit: bool = False,
+        lhs: str | None = None,
+    ) -> None:
+        """Add a formula column.
+
+        Args:
+            rng (Range): The range of the column.
+            formula (str or tuple): The formula.
+            number_format (str, optional): The number format.
+            autofit (bool): Whether to autofit the width.
+            lhs (str, optional): The name of the column to be assigned.
+        """
+        self_columns = self.columns
+        if isinstance(formula, str) and formula.startswith("="):
+            columns = re.findall(r"{.+?}", formula)
+            ref_dict = {}
+            for column in columns:
+                column = column[1:-1]
+                if column in self_columns:
+                    ref = self.range(column)
+                    ref = ref.get_address(row_absolute=False)
+                elif column == lhs:  # 自分自身への代入
+                    ref = self.range(column, 0)[0]
+                    ref = ref.get_address(column_absolute=False)
+                else:  # 他に参照される。このときは同型であることが必要。
+                    ref = self.range(column)[0]
+                    ref = ref.get_address(column_absolute=False, row_absolute=False)
+                ref_dict[column] = ref
+            formula = formula.format(**ref_dict)
+            rng.value = formula
+        else:
+            rng.options(transpose=True).value = formula
+
+        if number_format:
+            set_number_format(rng, number_format)
+
+        if autofit:
+            rng = rng.sheet.range(rng[0].offset(-1), rng[-1])
+            rng.autofit()
+
+    def add_wide_column(
+        self,
+        column: str,
+        values: Iterable[str | float],
+        *,
+        number_format: str | None = None,
+        autofit: bool = True,
+        style: bool = False,
+    ) -> Range:
+        """Add a wide column.
+
+        Args:
+            column (str): The name of the wide column.
+            values (iterable): The values to be expanded horizontally.
+            number_format (str, optional): The number format.
+            autofit (bool): Whether to autofit the width.
+            style (bool): Whether to style the column.
+        """
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        cell = self.cell.offset(0, len(self.columns))
+        values_list = list(values)
+        cell.value = values_list
+
+        header = cell.offset(-1)
+        header.value = column
+
+        set_font(header, bold=True, color="#002255")
+        set_alignment(header, horizontal_alignment="left")
+
+        cell = cell.sheet.range(cell, cell.offset(0, len(values_list)))
+        if number_format:
+            set_number_format(cell, number_format)
+
+        if autofit:
+            range_ = self.range(column, 0)
+            range_.autofit()
+
+        if style:
+            self.set_style()
+
+        return cell[0].offset(1)
 
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
@@ -609,15 +750,13 @@ class SheetFrame:
             raise NotImplementedError
 
         if column not in self:
-            column_int = self.column + len(self.columns)
-            cell = self.sheet.range(self.row, column_int)
-            cell.value = column
+            self.add_column(column)
 
         rng = self.range(column, -1)
 
         starts_eq = isinstance(value, str) and value.startswith("=")
         if starts_eq or isinstance(value, tuple):
-            self.add_formula_column(rng, value, column)
+            self.add_formula_column(rng, *value, lhs=column)
         else:
             rng.options(transpose=True).value = value
 
@@ -684,10 +823,10 @@ class SheetFrame:
 
         index = array_index(values, sel)
 
-        if self.columns_names is None:  # vertical
-            offset = self.row + self.columns_level
-        else:  # horizontal
-            offset = self.column + self.index_level
+        if self.columns_names is None:
+            offset = self.row + self.columns_level  # vertical
+        else:
+            offset = self.column + self.index_level  # horizontal
 
         for key, value in index.items():
             index[key] = [[x + offset for x in v] for v in value]
@@ -706,6 +845,10 @@ class SheetFrame:
             d["formula"] = aggregate(func, range_, **kwargs)
             dicts.append(d)
         return pd.DataFrame(dicts)
+
+    def get_number_format(self, column):
+        cell = self.range(column)
+        return get_number_format(cell)
 
     def set_number_format(
         self,
@@ -745,10 +888,6 @@ class SheetFrame:
                     set_number_format(cell, columns_format[column])
                     if autofit:
                         cell.autofit()
-
-    def get_number_format(self, column):
-        cell = self.range(column)
-        return get_number_format(cell)
 
     def set_style(self, columns_alignment=None, gray=False, **kwargs):
         set_frame_style(
@@ -811,7 +950,7 @@ class SheetFrame:
         """Unhide the SheetFrame."""
         self.hide(hidden=False)
 
-    def add_child(self, child: SheetFrame) -> None:
+    def add_child_frame(self, child: SheetFrame) -> None:
         """Add a child SheetFrame."""
         self.children.append(child)
         child.parent = self
@@ -828,14 +967,6 @@ class SheetFrame:
             return self.get_child_cell()
 
         return self.cell.offset(0, len(self.columns) + 1).offset(0, offset)
-
-    def to_series(self) -> Series:
-        df = self.data
-
-        if len(df.columns) != 1:
-            raise ValueError("This sheetframe has more than one column.")
-
-        return df[df.columns[0]]
 
     def set_columns_alignment(self, alignment: str) -> None:
         start = self.cell
@@ -892,6 +1023,9 @@ class SheetFrame:
             set_font(header, size=8, italic=True, color="blue")
             set_alignment(header, "center")
 
+    def set_chart_position(self, pos: str = "right") -> None:
+        set_first_position(self, pos=pos)
+
     def scatter(self, *args, **kwargs):
         return Scatter(*args, data=self, **kwargs)
 
@@ -900,16 +1034,6 @@ class SheetFrame:
 
     def bar(self, *args, **kwargs):
         return Bar(*args, data=self, **kwargs)
-
-    def drop_duplicates(self, column):
-        """
-        Barプロットように、連続して重複する値を消す。
-        """
-        columns = [column] if isinstance(column, str) else list(column)
-        for column in columns:
-            for cell in reversed(self.range(column, -1)[1:]):
-                if cell.value == cell.offset(-1).value:
-                    cell.value = ""
 
     def grid(self, *args, **kwargs):
         return FacetGrid(self, *args, **kwargs)
@@ -925,55 +1049,6 @@ class SheetFrame:
 
         self.stats = StatsFrame(self, *args, **kwargs)
         return self.stats
-
-    # データ追加
-    def add_formula_column(self, range_, formula, lhs):
-        """
-        数式カラムを追加する。
-
-        Parameters
-        ----------
-        range_ : xw.Range
-        formula : str or tuple
-        lhs : str
-            代入元のカラム名
-        """
-        if isinstance(formula, tuple):
-            if len(formula) == 2:
-                formula, format_ = formula
-                autofit = False
-            else:
-                formula, format_, autofit = formula
-        else:
-            format_ = False
-            autofit = False
-
-        self_columns = self.columns
-        if isinstance(formula, str) and formula.startswith("="):
-            columns = re.findall(r"{.+?}", formula)
-            ref_dict = {}
-            for column in columns:
-                column = column[1:-1]
-                if column in self_columns:
-                    ref = self.range(column)
-                    ref = ref.get_address(row_absolute=False)
-                elif column == lhs:  # 自分自身への代入
-                    ref = self.range(column, 0)[0]
-                    ref = ref.get_address(column_absolute=False)
-                else:  # 他に参照される。このときは同型であることが必要。
-                    ref = self.range(column)[0]
-                    ref = ref.get_address(column_absolute=False, row_absolute=False)
-                ref_dict[column] = ref
-            formula = formula.format(**ref_dict)
-            range_.value = formula
-        else:
-            range_.options(transpose=True).value = formula
-
-        if format_:
-            range_.api.NumberFormatLocal = format_
-        if autofit:
-            range_ = range_.sheet.range(range_[0].offset(-1), range_[-1])
-            range_.autofit()
 
     def autofilter(self, *args, **field_criteria):
         """
@@ -1010,6 +1085,79 @@ class SheetFrame:
                 filter_(Field=field)
             else:
                 filter_(Field=field, Criteria1=f"{criteria}")
+
+    def move(self, count, direction="down", width=None):
+        """
+        空の行/列を挿入することで自分自身を右 or 下に移動する。
+
+        Parameters
+        ----------
+        count : int
+            空きを作る行数
+        direction : str
+            'down' or 'right'
+        width : int, optional
+            右方向に追加した時のカラム幅
+
+        Returns
+        -------
+        xw.Range
+           元のセル
+        """
+        if direction == "down":
+            start = self.row - 1
+            if self.cell.offset(-1).formula:
+                end = start + count + 1
+            else:
+                end = start + count
+
+            rows = self.sheet.api.Rows(f"{start}:{end}")
+            rows.Insert(Shift=xw.constants.Direction.xlDown)
+            return self.sheet.range(start + 1, self.column)
+        if direction == "right":
+            start = self.column - 1
+            end = start + count
+            start_ = self.sheet.range(1, start).get_address().split("$")[1]
+            end_ = self.sheet.range(1, end).get_address().split("$")[1]
+            columns = self.sheet.api.Columns(f"{start_}:{end_}")
+            columns.Insert(Shift=xw.constants.Direction.xlToRight)
+            if width:
+                columns = self.sheet.api.Columns(f"{start_}:{end_}")
+                columns.ColumnWidth = width
+            return self.sheet.range(self.row, start + 1)
+
+    def delete(self, direction="up", entire=False):
+        """
+        自分自身を消去する。
+        Parameters
+        ----------
+        direction : str
+            'up' or 'left'
+        entire : bool
+            行/列全体を消去するか
+
+        Returns
+        -------
+        """
+        range_ = self.range()
+        start, end = range_[0], range_[-1]
+        start = start.offset(-1, -1)
+        if self.wide_columns:
+            start = start.offset(-1)
+        end = end.offset(1, 1)
+        range_ = xw.Range(start, end).api
+        if direction == "up":
+            if entire:
+                range_.EntireRow.Delete()
+            else:
+                range_.Delete(Shift=xw.constants.Direction.xlUp)
+        elif direction == "left":
+            if entire:
+                range_.EntireColumn.Delete()
+            else:
+                range_.Delete(Shift=xw.constants.Direction.xlToLeft)
+        else:
+            raise ValueError('directionは"up" or "left"', direction)
 
     @wait_updating
     def copy(
@@ -1156,218 +1304,3 @@ class SheetFrame:
             sf[column] = list(df[column]) * length
         sf.set_style(autofit=True)
         return sf
-
-    def get_address(self, column, formula=False, **kwargs):
-        """
-        カラムのアドレスリストを返す。
-
-        Parameters
-        ----------
-        column : str
-            カラム名
-        formula : bool, optional
-            先頭に'='をつけるかどうか
-        kwargs :
-            get_address関数に渡すキーワード引数
-
-        Returns
-        -------
-        list
-            アドレス文字列のリスト
-        """
-        range_ = self.range(column, -1)
-        addresses = []
-        for cell in range_:
-            addresses.append(cell.get_address(**kwargs))
-        if formula:
-            addresses = ["=" + address for address in addresses]
-        return addresses
-
-    def set_chart_position(self, pos="right"):
-        set_first_position(self, pos=pos)
-
-    def add_wide_column(
-        self,
-        column: str,
-        values: Iterable[str | float],
-        *,
-        number_format: str | None = None,
-        autofit: bool = True,
-        style: bool = False,
-    ) -> Range:
-        """Create a wide column.
-
-        Args:
-            column (str): The name of the wide column.
-            values (iterable): The values to be expanded horizontally.
-            number_format (str, optional): The number format.
-            autofit (bool): Whether to autofit the width.
-            style (bool): Whether to style the column.
-        """
-        if self.columns_level != 1:
-            raise NotImplementedError
-
-        cell = self.cell.offset(0, len(self.columns))
-        values_list = list(values)
-        cell.value = values_list
-
-        header = cell.offset(-1)
-        header.value = column
-
-        set_font(header, bold=True, color="#002255")
-        set_alignment(header, horizontal_alignment="left")
-
-        cell = cell.sheet.range(cell, cell.offset(0, len(values_list)))
-        if number_format:
-            set_number_format(cell, number_format)
-
-        if autofit:
-            range_ = self.range(column, 0)
-            range_.autofit()
-
-        if style:
-            self.set_style()
-
-        return cell[0].offset(1)
-
-    def add_validation(
-        self,
-        ref: str,
-        column=None,
-        name="valid",
-        invalid='""',
-        valid_value="○",
-        invalid_value="×",
-        default=True,
-    ):
-        """
-        ○、×でカラムの値を使うかどうかの作業列を追加する。
-        フィッティングする値の選別に用いる。
-
-        Parameters
-        ----------
-        ref : str
-            選択するカラム名
-        column : str, optional
-            選択先のカラム名
-            省略すると、ref+'_'
-        name : str
-            選択を選ぶカラム名
-        invalid : str
-            選ばなかった時の値
-        valid_value, invalid_value : str
-            選択文字列
-        default : bool
-            デフォルトの選択肢
-        """
-        if column is None:
-            column = ref + "_"
-        default = valid_value if default else invalid_value
-        if name not in self.columns:
-            self[name] = default, None, True
-            add_validation(
-                self.range(name, -1),
-                [valid_value, invalid_value],
-                default=default,
-            )
-        number_format = self.get_number_format(ref)
-        self[column] = (f'=IF({{{name}}}="○",{{{ref}}},{invalid})', number_format, True)
-        self.set_style()
-
-    def move(self, count, direction="down", width=None):
-        """
-        空の行/列を挿入することで自分自身を右 or 下に移動する。
-
-        Parameters
-        ----------
-        count : int
-            空きを作る行数
-        direction : str
-            'down' or 'right'
-        width : int, optional
-            右方向に追加した時のカラム幅
-
-        Returns
-        -------
-        xw.Range
-           元のセル
-        """
-        if direction == "down":
-            start = self.row - 1
-            if self.cell.offset(-1).formula:
-                end = start + count + 1
-            else:
-                end = start + count
-
-            rows = self.sheet.api.Rows(f"{start}:{end}")
-            rows.Insert(Shift=xw.constants.Direction.xlDown)
-            return self.sheet.range(start + 1, self.column)
-        if direction == "right":
-            start = self.column - 1
-            end = start + count
-            start_ = self.sheet.range(1, start).get_address().split("$")[1]
-            end_ = self.sheet.range(1, end).get_address().split("$")[1]
-            columns = self.sheet.api.Columns(f"{start_}:{end_}")
-            columns.Insert(Shift=xw.constants.Direction.xlToRight)
-            if width:
-                columns = self.sheet.api.Columns(f"{start_}:{end_}")
-                columns.ColumnWidth = width
-            return self.sheet.range(self.row, start + 1)
-
-    def delete(self, direction="up", entire=False):
-        """
-        自分自身を消去する。
-        Parameters
-        ----------
-        direction : str
-            'up' or 'left'
-        entire : bool
-            行/列全体を消去するか
-
-        Returns
-        -------
-        """
-        range_ = self.range()
-        start, end = range_[0], range_[-1]
-        start = start.offset(-1, -1)
-        if self.wide_columns:
-            start = start.offset(-1)
-        end = end.offset(1, 1)
-        range_ = xw.Range(start, end).api
-        if direction == "up":
-            if entire:
-                range_.EntireRow.Delete()
-            else:
-                range_.Delete(Shift=xw.constants.Direction.xlUp)
-        elif direction == "left":
-            if entire:
-                range_.EntireColumn.Delete()
-            else:
-                range_.Delete(Shift=xw.constants.Direction.xlToLeft)
-        else:
-            raise ValueError('directionは"up" or "left"', direction)
-
-    def set_manual_input(self, column):
-        """
-        マニュアル入力可能であることを示すスタイルにする
-
-        Parameters
-        ----------
-        column : str or list of str
-            カラム名
-
-        Returns
-        -------
-        """
-        if isinstance(column, list):
-            for column_ in column:
-                self.set_manual_input(column_)
-            return
-
-        range_ = self.range(column, -1)
-        set_fill(range_, "yellow")
-
-    def rename(self, columns: dict[str, str]) -> None:
-        """Rename the columns of the SheetFrame."""
-        for old, new in columns.items():
-            self.range(old, 0).value = new

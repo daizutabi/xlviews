@@ -130,6 +130,49 @@ def test_str(sf: SheetFrame):
     assert str(sf).endswith("!$C$2:$E$6>")
 
 
+def test_rename(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf.rename({"a": "A", "b": "B"})
+    assert sf.columns == [None, "A", "B"]
+
+
+def test_drop_duplicates(sheet: Sheet):
+    df = DataFrame({"a": [1, 1, 2, 2, 3, 3], "b": [4, 4, 4, 5, 5, 5]})
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf.drop_duplicates(["a", "b"])
+    x = sf["a"]
+    assert x[::2].to_list() == [1, 2, 3]
+    assert x[1::2].isna().all()
+    x = sf["b"]
+    assert x[::3].to_list() == [4, 5]
+    assert x[1::3].isna().all()
+    assert x[2::3].isna().all()
+
+
+def test_address(sf: SheetFrame):
+    assert sf.get_address("a") == ["$D$3", "$D$4", "$D$5", "$D$6"]
+
+
+def test_address_formula(sf: SheetFrame):
+    assert sf.get_address("a", formula=True) == ["=$D$3", "=$D$4", "=$D$5", "=$D$6"]
+
+
+def test_add_column(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    rng = sf.add_column("c")
+    assert rng.get_address() == "$E$3:$E$5"
+    assert sf.columns == [None, "a", "b", "c"]
+
+
+def test_add_column_value(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf.add_column("c", [7, 8, 9])
+    np.testing.assert_array_equal(sf["c"], [7, 8, 9])
+
+
 def test_getitem_str(sf: SheetFrame):
     s = sf["a"]
     assert isinstance(s, Series)
