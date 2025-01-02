@@ -29,6 +29,12 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_level == 1
 
 
+def test_set_data_from_sheet(sf: SheetFrame):
+    sf.set_data_from_sheet(index_level=1)
+    assert sf.has_index is True
+    assert sf.index_level == 1
+
+
 def test_len(sf: SheetFrame):
     assert len(sf) == 4
 

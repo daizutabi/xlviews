@@ -31,6 +31,15 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_level == 1
 
 
+def test_set_data_from_sheet(sf: SheetFrame):
+    sf.set_data_from_sheet(index_level=0)
+    assert sf.has_index is False
+    assert sf.value_columns == ["name", "a", "b"]
+    sf.set_data_from_sheet(index_level=1)
+    assert sf.has_index is True
+    assert sf.value_columns == ["a", "b"]
+
+
 def test_columns(sf: SheetFrame):
     assert sf.columns == ["name", "a", "b"]
 

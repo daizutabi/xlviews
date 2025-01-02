@@ -8,7 +8,7 @@ from xlviews.frame import SheetFrame
 
 @pytest.fixture(scope="module")
 def sf1(sheet_module: Sheet):
-    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8], "c": [0, 0, 0, 0]})
+    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     return SheetFrame(sheet_module, 2, 3, data=df, style=False)
 
 
@@ -20,8 +20,13 @@ def sf1(sheet_module: Sheet):
         ("={a}-{b}", [-4, -4, -4, -4]),
     ],
 )
-def test_formula(sf1: SheetFrame, formula, value):
-    sf1.add_formula_column("c", formula)
+@pytest.mark.parametrize("use_setitem", [False, True])
+def test_formula(sf1: SheetFrame, formula, value, use_setitem):
+    if use_setitem:
+        sf1["c"] = formula
+    else:
+        sf1.add_formula_column("c", formula)
+
     np.testing.assert_array_equal(sf1["c"], value)
 
 

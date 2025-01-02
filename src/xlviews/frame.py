@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from collections.abc import Hashable, Iterable, Iterator, Sequence
     from typing import Any, Literal
 
-    from numpy.typing import NDArray
+    from numpy.typing import ArrayLike, NDArray
     from xlwings import Range
 
     from xlviews.dist import DistFrame
@@ -150,7 +150,6 @@ class SheetFrame:
             )
         else:
             self.set_data_from_sheet(
-                index=index,
                 index_level=index_level,
                 columns_level=columns_level,
                 number_format=number_format,
@@ -198,7 +197,6 @@ class SheetFrame:
     def set_data_from_sheet(
         self,
         *,
-        index: bool = True,
         index_level: int = 1,
         columns_level: int = 1,
         number_format: str | None = None,
@@ -208,11 +206,11 @@ class SheetFrame:
             self.cell = book.names[self.name].refers_to_range
             self.sheet = self.cell.sheet
 
-        self.has_index = index
+        self.has_index = bool(index_level)
         self.index_level = index_level
         self.columns_level = columns_level
 
-        if self.columns_level > 1:
+        if self.columns_level > 1 and index_level == 1:
             start = self.cell
             end = start.offset(self.columns_level - 1)
             self.columns_names = self.sheet.range(start, end).value
@@ -640,11 +638,14 @@ class SheetFrame:
             number_format (str, optional): The number format.
             autofit (bool): Whether to autofit the width.
         """
-        if isinstance(rng, str):
-            rng = self.range(rng, -1)
-
         columns = self.columns
         wide_columns = self.wide_columns
+
+        if isinstance(rng, str):
+            if rng not in columns + wide_columns:
+                rng = self.add_column(rng)
+            else:
+                rng = self.range(rng, -1)
 
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
@@ -749,18 +750,16 @@ class SheetFrame:
 
         raise NotImplementedError
 
-    def __setitem__(self, column: str, value: str | list | tuple) -> None:
-        if self.columns_level > 1 or not isinstance(column, str):
+    def __setitem__(self, column: str | tuple, value: ArrayLike) -> None:
+        if column in self:
+            rng = self.range(column, -1)
+        elif isinstance(column, str):
+            rng = self.add_column(column)
+        else:
             raise NotImplementedError
 
-        if column not in self:
-            self.add_column(column)
-
-        rng = self.range(column, -1)
-
-        starts_eq = isinstance(value, str) and value.startswith("=")
-        if starts_eq or isinstance(value, tuple):
-            self.add_formula_column(rng, *value, lhs=column)
+        if isinstance(value, str) and value.startswith("="):
+            self.add_formula_column(rng, value)
         else:
             rng.options(transpose=True).value = value
 

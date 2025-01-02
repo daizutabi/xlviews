@@ -58,6 +58,14 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_names == ["a", "b"]
 
 
+def test_set_data_from_sheet(sf: SheetFrame):
+    sf.set_data_from_sheet(index_level=1, columns_level=2)
+    assert sf.has_index is True
+    x = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
+    assert sf.value_columns == x
+    assert sf.columns_names == ["a", "b"]
+
+
 def test_len(sf: SheetFrame):
     assert len(sf) == 5
 
@@ -203,23 +211,6 @@ def test_getitem_list(sf: SheetFrame):
     assert df.columns.to_list() == [("a1", "b1"), ("a2", "b2")]
     x = np.array([[1, 2, 3, 4, 5], [31, 32, 33, 34, 35]]).T
     np.testing.assert_array_equal(df, x)
-
-
-# def test_setitem(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-#     x = [10, 20, 30]
-#     sf["a"] = x
-#     np.testing.assert_array_equal(sf["a"], x)
-
-
-# def test_setitem_new_column(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-#     x = [10, 20, 30]
-#     sf["c"] = x
-#     assert sf.columns == [None, "a", "b", "c"]
-#     np.testing.assert_array_equal(sf["c"], x)
 
 
 # @pytest.mark.parametrize(
