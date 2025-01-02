@@ -626,11 +626,11 @@ class SheetFrame:
 
     def add_formula_column(
         self,
-        rng: Range,
+        rng: Range | str,
         formula: str,
+        *,
         number_format: str | None = None,
         autofit: bool = False,
-        lhs: str | None = None,
     ) -> None:
         """Add a formula column.
 
@@ -639,28 +639,32 @@ class SheetFrame:
             formula (str or tuple): The formula.
             number_format (str, optional): The number format.
             autofit (bool): Whether to autofit the width.
-            lhs (str, optional): The name of the column to be assigned.
         """
-        self_columns = self.columns
-        if isinstance(formula, str) and formula.startswith("="):
-            columns = re.findall(r"{.+?}", formula)
-            ref_dict = {}
-            for column in columns:
-                column = column[1:-1]
-                if column in self_columns:
-                    ref = self.range(column)
-                    ref = ref.get_address(row_absolute=False)
-                elif column == lhs:  # 自分自身への代入
-                    ref = self.range(column, 0)[0]
-                    ref = ref.get_address(column_absolute=False)
-                else:  # 他に参照される。このときは同型であることが必要。
-                    ref = self.range(column)[0]
-                    ref = ref.get_address(column_absolute=False, row_absolute=False)
-                ref_dict[column] = ref
-            formula = formula.format(**ref_dict)
-            rng.value = formula
-        else:
-            rng.options(transpose=True).value = formula
+        if isinstance(rng, str):
+            rng = self.range(rng, -1)
+
+        columns = self.columns
+        wide_columns = self.wide_columns
+
+        refs = {}
+        for m in re.finditer(r"{(.+?)}", formula):
+            column = m.group(1)
+
+            if column in columns:
+                ref = self.range(column)
+                ref = ref.get_address(row_absolute=False)
+
+            elif column in wide_columns:
+                ref = self.range(column, 0)[0].offset(1)
+                ref = ref.get_address(column_absolute=False)
+
+            else:
+                ref = self.range(column)[0]
+                ref = ref.get_address(column_absolute=False, row_absolute=False)
+
+            refs[column] = ref
+
+        rng.value = formula.format(**refs)
 
         if number_format:
             set_number_format(rng, number_format)

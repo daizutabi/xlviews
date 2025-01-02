@@ -7,22 +7,40 @@ from xlviews.frame import SheetFrame
 
 
 @pytest.fixture(scope="module")
-def df():
-    return DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-
-
-@pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
+def sf1(sheet_module: Sheet):
+    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8], "c": [0, 0, 0, 0]})
     return SheetFrame(sheet_module, 2, 3, data=df, style=False)
 
 
-# def test_formula(sf: SheetFrame):
-#     rng=self.
-#     sf.add_formula_column("a", "=A1+B1", "c")
-#     assert sf.cell.value == [
-#         [None, "a", "b", "c"],
-#         [0, 1, 5, 6],
-#         [1, 2, 6, 8],
-#         [2, 3, 7, 10],
-#         [3, 4, 8, 12],
-#     ]
+@pytest.mark.parametrize(
+    ("formula", "value"),
+    [
+        ("={a}+{b}", [6, 8, 10, 12]),
+        ("={a}*{b}", [5, 12, 21, 32]),
+        ("={a}-{b}", [-4, -4, -4, -4]),
+    ],
+)
+def test_formula(sf1: SheetFrame, formula, value):
+    sf1.add_formula_column("c", formula)
+    np.testing.assert_array_equal(sf1["c"], value)
+
+
+@pytest.fixture(scope="module")
+def sf2(sheet_module: Sheet):
+    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    sf = SheetFrame(sheet_module, 10, 3, data=df, style=False)
+    sf.add_wide_column("c", [1, 2, 3, 4])
+    return sf
+
+
+@pytest.mark.parametrize(
+    ("formula", "value"),
+    [
+        ("={a}+{b}+{c}", ([7, 9, 11, 13], [10, 12, 14, 16])),
+        ("={a}*{b}*{c}", ([5, 12, 21, 32], [20, 48, 84, 128])),
+    ],
+)
+def test_formula_wide(sf2: SheetFrame, formula, value):
+    sf2.add_formula_column("c", formula)
+    np.testing.assert_array_equal(sf2[("c", 1)], value[0])
+    np.testing.assert_array_equal(sf2[("c", 4)], value[1])
