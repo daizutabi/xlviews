@@ -171,19 +171,23 @@ def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf.range(column, start, end).get_address() == address
 
 
-# def test_getitem_str(sf: SheetFrame):
-#     s = sf["a"]
-#     assert isinstance(s, Series)
-#     assert s.name == "a"
-#     np.testing.assert_array_equal(s, [1, 2, 3, 4])
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [("a", [1, 2]), (("u", 1), [np.nan, np.nan])],
+)
+def test_getitem_str(sf: SheetFrame, column, value):
+    s = sf[column]
+    assert isinstance(s, Series)
+    assert s.name == column
+    np.testing.assert_array_equal(s, value)
 
 
-# def test_getitem_list(sf: SheetFrame):
-#     df = sf[["a", "b"]]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["a", "b"]
-#     x = [[1, 5], [2, 6], [3, 7], [4, 8]]
-#     np.testing.assert_array_equal(df, x)
+def test_getitem_list(sf: SheetFrame):
+    df = sf[["b", ("v", 3)]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == ["b", ("v", 3)]
+    x = [[3, np.nan], [4, np.nan]]
+    np.testing.assert_array_equal(df, x)
 
 
 # def test_getitem_slice_none(sf: SheetFrame):

@@ -161,27 +161,19 @@ def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf.range(column, start, end).get_address() == address
 
 
-# def test_getitem_str(sf: SheetFrame):
-#     s = sf["a"]
-#     assert isinstance(s, Series)
-#     assert s.name == "a"
-#     np.testing.assert_array_equal(s, [1, 2, 3, 4])
+def test_getitem_str(sf: SheetFrame):
+    s = sf["a"]
+    assert isinstance(s, Series)
+    assert s.name == "a"
+    np.testing.assert_array_equal(s, range(1, 9))
 
 
-# def test_getitem_list(sf: SheetFrame):
-#     df = sf[["a", "b"]]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["a", "b"]
-#     x = [[1, 5], [2, 6], [3, 7], [4, 8]]
-#     np.testing.assert_array_equal(df, x)
-
-
-# def test_getitem_slice_none(sf: SheetFrame):
-#     df = sf[:]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["index", "a", "b"]
-#     x = [[0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
-#     np.testing.assert_array_equal(df, x)
+def test_getitem_list(sf: SheetFrame):
+    df = sf[["x", "a"]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == ["x", "a"]
+    x = np.array([[1, 1, 1, 1, 2, 2, 2, 2], range(1, 9)]).T
+    np.testing.assert_array_equal(df, x)
 
 
 # def test_setitem(sheet: Sheet):

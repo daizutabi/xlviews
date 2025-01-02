@@ -134,15 +134,6 @@ def test_getitem_list(sf: SheetFrame):
     np.testing.assert_array_equal(df, x)
 
 
-def test_getitem_slice_none(sf: SheetFrame):
-    df = sf[:]
-    assert isinstance(df, DataFrame)
-    assert df.columns.to_list() == ["name", "a", "b"]
-    np.testing.assert_array_equal(df["name"], ["x", "x", "y", "y"])
-    np.testing.assert_array_equal(df["a"], [1, 2, 3, 4])
-    np.testing.assert_array_equal(df["b"], [5, 6, 7, 8])
-
-
 @pytest.mark.parametrize(
     ("name", "a", "sel"),
     [

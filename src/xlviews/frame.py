@@ -36,7 +36,7 @@ from xlviews.style import (
 from xlviews.utils import add_validation, array_index, iter_columns
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterable, Iterator
+    from collections.abc import Hashable, Iterable, Iterator, Sequence
     from typing import Literal
 
     from numpy.typing import NDArray
@@ -533,38 +533,6 @@ class SheetFrame:
         cell_end = self.sheet.range(end, column_end)
         return self.sheet.range(cell_start, cell_end)
 
-    def range_column_multi(
-        self,
-        column: tuple,
-        start: int | Literal[False] | None = None,
-        end: int | None = None,
-    ) -> Range:
-        if self.columns_level < 2:
-            raise NotImplementedError
-
-        if start is False:
-            header = self.range_column_multi(column, 0)
-            values = self.range_column_multi(column, -1)
-            return self.sheet.range(header[0], values[-1])
-
-        columns = self.columns
-        print(columns)
-
-        if start == 0:
-            start = self.column
-            end = self.column + self.index_level - 1
-        elif start is None or start == -1:
-            if start == -1:
-                end = self.column + len(columns) - 1
-            start = self.column + self.index_level
-
-        row = self.row + columns[0].index(column)
-        start = self.sheet.range(row, start)
-        if end is None:
-            return start
-        end = self.sheet.range(row, end)
-        return self.sheet.range(start, end)
-
     def range(
         self,
         column: str | tuple | None = None,
@@ -607,10 +575,10 @@ class SheetFrame:
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
     @overload
-    def __getitem__(self, column: slice | list[str]) -> DataFrame: ...
+    def __getitem__(self, column: Sequence[str | tuple]) -> DataFrame: ...
     def __getitem__(
         self,
-        column: str | tuple | slice | list[str],
+        column: str | tuple | Sequence[str | tuple],
     ) -> Series | DataFrame:
         """Return the column data.
 
@@ -619,14 +587,6 @@ class SheetFrame:
         """
         if isinstance(column, list):
             return DataFrame({c: self[c] for c in column})
-
-        if column == slice(None, None, None):
-            df = self.data
-
-            if self.has_index and self.index_level:
-                df = df.reset_index()
-
-            return df
 
         if isinstance(column, str | tuple):
             row = self.row + self.columns_level
