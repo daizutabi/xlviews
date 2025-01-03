@@ -18,9 +18,11 @@ def const(rng: Range, prefix: str = "") -> str:
     name = f'SUBSTITUTE(ADDRESS(ROW({column}),COLUMN({column}),4),ROW({column}),"")'
     index = f"INDEX(SUBTOTAL(3,INDIRECT({name}&ROW({column}))),)"
     value = f"INDEX({column},MATCH(1,{index},0))"
+
     prod_first = f'SUBTOTAL(3,OFFSET({ref},ROW(INDIRECT("1:"&ROWS({column}))),))'
     prod_second = f"({column}={value})"
     sumproduct = f"SUMPRODUCT({prod_first}*{prod_second})"
+
     return f'{prefix}IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}")'
 
 

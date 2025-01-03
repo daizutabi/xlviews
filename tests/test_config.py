@@ -9,3 +9,8 @@ def test_rcParams():  # noqa: N802
 
     assert rcParams["chart.width"] == 200
     assert rcParams["chart.title.font.bold"] is True
+
+    rcParams["chart.width"] = 100
+    assert rcParams["chart.width"] == 100
+
+    rcParams["chart.width"] = 200

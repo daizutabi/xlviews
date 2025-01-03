@@ -152,3 +152,11 @@ def open_or_create(
     book.save()
 
     return sheet
+
+
+def delete_charts(sheet: Sheet | None = None) -> None:
+    """Delete all charts in the sheet."""
+    sheet = sheet or xw.sheets.active
+
+    for chart in sheet.charts:
+        chart.delete()

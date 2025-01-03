@@ -95,4 +95,8 @@ def test_auto_filter(table: Table, name, value, const):
     table.auto_filter(clear=True)
     table.add_const_header(clear=True)
 
-    # return DataFrame({"a": [1, 1, 1, 0], "b": [2, 2, 3, 3], "c": [4, 4, 5, 6]})
+
+def test_table_error():
+    msg = "Either rng or sheet and api must be provided"
+    with pytest.raises(ValueError, match=msg):
+        Table()

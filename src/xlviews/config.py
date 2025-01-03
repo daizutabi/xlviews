@@ -26,7 +26,7 @@ class Config:
     def __init__(self) -> None:
         self.params = load_config()
 
-    def __getitem__(self, key: str) -> Any:  # noqa: ANN401
+    def __getitem__(self, key: str) -> Any:
         keys = key.split(".")
         value = self.params
 
@@ -34,6 +34,15 @@ class Config:
             value = value[k]
 
         return value
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        keys = key.split(".")
+        params = self.params
+
+        for k in keys[:-1]:
+            params = params[k]
+
+        params[keys[-1]] = value
 
 
 rcParams = Config()  # noqa: N816

@@ -299,68 +299,6 @@ def format_label(data, fmt, sel=None, default=None):
     return fmt.format(**dict_)
 
 
-def delete_charts(sheet=None):
-    """
-    シート内のすべてのチャートを削除する。
-
-    Parameters
-    ----------
-    sheet : xlwings.Sheet
-    """
-    if sheet is None:
-        sheet = xw.sheets.active
-    for chart in sheet.charts:
-        chart.delete()
-
-
-def set_axis_dimension(key, label=None, ticks=None, format=None):
-    if label:
-        rcParams[f"axis.label.{key}"] = label
-    if ticks:
-        rcParams[f"axis.ticks.{key}"] = ticks
-    if format:
-        rcParams[f"axis.format.{key}"] = format
-
-
-def autofilter(list_object, *args, **field_criteria):
-    """
-    キーワード引数で指定される条件に応じてフィルタリングする
-    キーワード引数のキーはカラム名、値は条件。条件は以下のものが指定できる。
-       - list : 要素を指定する。
-       - tuple : 値の範囲を指定する。
-       - None : 設定されているフィルタをクリアする
-       - 他 : 値の一致
-
-    """
-    for field, criteria in zip(args[::2], args[1::2], strict=False):
-        field_criteria[field] = criteria
-
-    filter_ = list_object.Range.AutoFilter
-    operator = xw.constants.AutoFilterOperator
-    columns = [column.Name for column in list_object.ListColumns]
-
-    for field, criteria in field_criteria.items():
-        field_index = columns.index(field) + 1
-        if isinstance(criteria, list):
-            criteria = list(map(str, criteria))
-            filter_(
-                Field=field_index,
-                Criteria1=criteria,
-                Operator=operator.xlFilterValues,
-            )
-        elif isinstance(criteria, tuple):
-            filter_(
-                Field=field_index,
-                Criteria1=f">={criteria[0]}",
-                Operator=operator.xlAnd,
-                Criteria2=f"<={criteria[1]}",
-            )
-        elif criteria is None:
-            filter_(Field=field_index)
-        else:
-            filter_(Field=field_index, Criteria1=f"{criteria}")
-
-
 # def get_sheet(book, name):
 #     try:
 #         return book.sheets[name]
