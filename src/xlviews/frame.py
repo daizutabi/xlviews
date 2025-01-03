@@ -1,8 +1,4 @@
-"""The table of the Excel sheet is linked to a Pandas DataFrame.
-
-When there are names in the columns, they are ignored unless the index
-is unnamed.
-"""
+"""DataFrame on an Excel sheet."""
 
 from __future__ import annotations
 
@@ -20,7 +16,7 @@ from xlviews import common
 from xlviews.axes import set_first_position
 from xlviews.decorators import wait_updating
 from xlviews.element import Bar, Plot, Scatter
-from xlviews.formula import aggregate, const
+from xlviews.formula import aggregate
 from xlviews.grid import FacetGrid
 from xlviews.range import multirange
 from xlviews.style import (
@@ -31,8 +27,8 @@ from xlviews.style import (
     set_font,
     set_frame_style,
     set_number_format,
-    set_table_style,
 )
+from xlviews.table import Table
 from xlviews.utils import array_index, iter_columns
 
 if TYPE_CHECKING:
@@ -56,6 +52,7 @@ class SheetFrame:
     index_level: int
     columns_level: int
     columns_names: list[str] | None
+    table: Table | None
     parent: SheetFrame | None
     children: list[SheetFrame]
     head: SheetFrame | None
@@ -108,17 +105,14 @@ class SheetFrame:
             font_size (int): The font size of the SheetFrame.
         """
         self.name = name
+        self.columns_names = None
+        self.table = None
         self.parent = parent
         self.children = []
         self.head = head
         self.tail = None
-
-        self.table = None  # TODO: type
-
         self.stats = None
         self.dist = None
-
-        self.columns_names = None
 
         if self.parent:  # Locate the child frame to the right of the parent frame.
             self.cell = self.parent.get_child_cell()
@@ -437,6 +431,31 @@ class SheetFrame:
             df = df.set_index(list(df.columns[: self.index_level]))
 
         return df
+
+    def as_table(
+        self,
+        *,
+        const_header: bool = True,
+        autofit: bool = True,
+        style: bool = True,
+    ) -> Table:
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        self.set_columns_alignment("left")
+
+        end = self.cell.offset(len(self), len(self.columns) - 1)
+        rng = self.sheet.range(self.cell, end)
+
+        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
+        self.table = table
+
+        return table
+
+    def unlist(self) -> None:
+        if self.table:
+            self.table.unlist()
+            self.table = None
 
     def range(
         self,
@@ -976,91 +995,6 @@ class SheetFrame:
         end = start.offset(0, len(self.columns) - 1)
         rng = self.sheet.range(start, end)
         set_alignment(rng, alignment)
-
-    def astable(self, header=True, autofit=False):
-        if self.columns_level != 1:
-            return None
-        self.set_columns_alignment("left")
-        start = self.cell
-        end = start.offset(0, len(self.columns) - 1)
-        columns = self.sheet.range(start, end)
-        table = self.sheet.range(start, end.offset(len(self)))
-        xlsrcrange = xw.constants.ListObjectSourceType.xlSrcRange
-        table = self.sheet.api.ListObjects.Add(
-            xlsrcrange,
-            table.api,
-            None,
-            xw.constants.YesNoGuess.xlYes,
-        )
-        if autofit:
-            columns.api.EntireColumn.AutoFit()
-        if header:
-            self.filtered_header()
-        self.is_table = True
-        self.table = table
-        set_table_style(table)
-        return table
-
-    def unlist(self) -> None:
-        """Unlist the SheetFrame."""
-        if self.table:
-            self.table.Unlist()
-            self.filtered_header(clear=True)
-
-    def autofilter(self, *args, **field_criteria):
-        """
-        キーワード引数で指定される条件に応じてフィルタリングする
-        キーワード引数のキーはカラム名、値は条件。条件は以下のものが指定できる。
-           - list : 要素を指定する。
-           - tuple : 値の範囲を指定する。
-           - None : 設定されているフィルタをクリアする
-           - 他 : 値の一致
-
-        """
-        for field, criteria in zip(args[::2], args[1::2], strict=False):
-            field_criteria[field] = criteria
-
-        filter_ = self.table.Range.AutoFilter
-        operator = xw.constants.AutoFilterOperator
-        for field, criteria in field_criteria.items():
-            field = self.index(field, relative=True)
-            if isinstance(criteria, list):
-                criteria = list(map(str, criteria))
-                filter_(
-                    Field=field,
-                    Criteria1=criteria,
-                    Operator=operator.xlFilterValues,
-                )
-            elif isinstance(criteria, tuple):
-                filter_(
-                    Field=field,
-                    Criteria1=f">={criteria[0]}",
-                    Operator=operator.xlAnd,
-                    Criteria2=f"<={criteria[1]}",
-                )
-            elif criteria is None:
-                filter_(Field=field)
-            else:
-                filter_(Field=field, Criteria1=f"{criteria}")
-
-    def filtered_header(self, clear: bool = False) -> None:
-        """Write the filtered element above the header.
-
-        Args:
-            clear (bool, optional): If True, clear the header.
-        """
-        start = self.cell.offset(self.columns_level)
-        end = start.offset(len(self) - 1)
-        column = self.sheet.range(start, end)
-        start = self.cell.offset(-1)
-        end = start.offset(0, self.index_level - 1)
-        header = self.sheet.range(start, end)
-        if clear:
-            header.value = ""
-        else:
-            header.value = "=" + const(column)
-            set_font(header, size=8, italic=True, color="blue")
-            set_alignment(header, "center")
 
     def set_chart_position(self, pos: str = "right") -> None:
         set_first_position(self, pos=pos)

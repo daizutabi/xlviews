@@ -525,17 +525,17 @@ def set_frame_style(
         set_alignment(range, alignment)
 
 
-def set_table_style(table, even_color=rgb(240, 250, 255), odd_color=rgb(255, 255, 255)):
-    book = table.Range.Parent.Parent
+def set_table_style(api, even_color=rgb(240, 250, 255), odd_color=rgb(255, 255, 255)):
+    book = api.Range.Parent.Parent
     try:
-        style = book.TableStyles("phoenix")
+        style = book.TableStyles("xlviews")
     except pywintypes.com_error:
-        style = book.TableStyles.Add("phoenix")
+        style = book.TableStyles.Add("xlviews")
         odd_type = xw.constants.TableStyleElementType.xlRowStripe1
         style.TableStyleElements(odd_type).Interior.Color = odd_color
         even_type = xw.constants.TableStyleElementType.xlRowStripe2
         style.TableStyleElements(even_type).Interior.Color = even_color
-    table.TableStyle = style
+    api.TableStyle = style
 
 
 def hide_gridlines(sheet):

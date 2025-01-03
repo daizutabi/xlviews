@@ -1,27 +1,27 @@
+from __future__ import annotations
+
 from collections import OrderedDict
-from typing import Dict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from xlwings import Range
 
 NONCONST_VALUE = "XXX"
 
 
-def const(range_):
-    """
-    start-endの中の値が一意であればそれを返し、そうでなければXXXを返す数式を返す。
-    """
-    column = range_.get_address(column_absolute=False)
-    ref = range_[0].offset(-1).get_address(column_absolute=False)
+def const(rng: Range, prefix: str = "") -> str:
+    """Return a formula to check if the values in the range are unique."""
+    column = rng.get_address(column_absolute=False)
+    ref = rng[0].offset(-1).get_address(column_absolute=False)
+
     subtotal = f"SUBTOTAL(3,{column})"
-    column_name = (
-        f"SUBSTITUTE(ADDRESS(ROW({column}),COLUMN({column}),4)," f'ROW({column}),"")'
-    )
-    value = (
-        f"INDEX({column},MATCH(1,INDEX(SUBTOTAL(3,"
-        f"INDIRECT({column_name}&ROW({column}))),),0))"
-    )
-    prod_first = f"SUBTOTAL(3,OFFSET({ref}," f'ROW(INDIRECT("1:"&ROWS({column}))),))'
+    name = f'SUBSTITUTE(ADDRESS(ROW({column}),COLUMN({column}),4),ROW({column}),"")'
+    index = f"INDEX(SUBTOTAL(3,INDIRECT({name}&ROW({column}))),)"
+    value = f"INDEX({column},MATCH(1,{index},0))"
+    prod_first = f'SUBTOTAL(3,OFFSET({ref},ROW(INDIRECT("1:"&ROWS({column}))),))'
     prod_second = f"({column}={value})"
     sumproduct = f"SUMPRODUCT({prod_first}*{prod_second})"
-    return f'IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}")'
+    return f'{prefix}IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}")'
 
 
 AGGREGATE_FUNCTION = OrderedDict(

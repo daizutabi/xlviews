@@ -4,6 +4,7 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.frame import SheetFrame
+from xlviews.table import Table
 
 
 @pytest.fixture(scope="module")
@@ -84,6 +85,34 @@ def test_data(sf: SheetFrame, df: DataFrame):
     np.testing.assert_array_equal(df_, df)
     assert df_.index.name == df.index.name
     assert df_.columns.name == df.columns.name
+
+
+@pytest.fixture
+def table(sf: SheetFrame):
+    yield sf.as_table()
+    sf.unlist()
+
+
+@pytest.mark.parametrize("value", ["x", "y"])
+def test_table(table: Table, value):
+    table.auto_filter("name", value)
+    header = table.const_header.value
+    assert isinstance(header, list)
+    assert header[0] == value
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("x", [[1, 5], [2, 6]]),
+        ("y", [[3, 7], [4, 8]]),
+    ],
+)
+def test_visible_data(sf: SheetFrame, table: Table, name, value):
+    table.auto_filter("name", name)
+    df = sf.visible_data
+    assert df.index.to_list() == [name, name]
+    np.testing.assert_array_equal(df, value)
 
 
 def test_range_all(sf: SheetFrame):
