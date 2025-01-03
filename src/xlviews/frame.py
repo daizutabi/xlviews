@@ -813,7 +813,7 @@ class SheetFrame:
             if self.columns_names is None:
                 values = [None] * len(self)
             else:
-                values = [None] * len(self.columns)
+                values = [None] * len(self.value_columns)
 
         elif self.columns_names is None:
             if isinstance(by, list) or ":" in by:
@@ -847,7 +847,7 @@ class SheetFrame:
             range_ = multirange(self.sheet, row, column)
             d["formula"] = aggregate(func, range_, **kwargs)
             dicts.append(d)
-        return pd.DataFrame(dicts)
+        return DataFrame(dicts)
 
     def get_number_format(self, column):
         cell = self.range(column)
@@ -1007,6 +1007,42 @@ class SheetFrame:
             self.table.Unlist()
             self.filtered_header(clear=True)
 
+    def autofilter(self, *args, **field_criteria):
+        """
+        キーワード引数で指定される条件に応じてフィルタリングする
+        キーワード引数のキーはカラム名、値は条件。条件は以下のものが指定できる。
+           - list : 要素を指定する。
+           - tuple : 値の範囲を指定する。
+           - None : 設定されているフィルタをクリアする
+           - 他 : 値の一致
+
+        """
+        for field, criteria in zip(args[::2], args[1::2], strict=False):
+            field_criteria[field] = criteria
+
+        filter_ = self.table.Range.AutoFilter
+        operator = xw.constants.AutoFilterOperator
+        for field, criteria in field_criteria.items():
+            field = self.index(field, relative=True)
+            if isinstance(criteria, list):
+                criteria = list(map(str, criteria))
+                filter_(
+                    Field=field,
+                    Criteria1=criteria,
+                    Operator=operator.xlFilterValues,
+                )
+            elif isinstance(criteria, tuple):
+                filter_(
+                    Field=field,
+                    Criteria1=f">={criteria[0]}",
+                    Operator=operator.xlAnd,
+                    Criteria2=f"<={criteria[1]}",
+                )
+            elif criteria is None:
+                filter_(Field=field)
+            else:
+                filter_(Field=field, Criteria1=f"{criteria}")
+
     def filtered_header(self, clear: bool = False) -> None:
         """Write the filtered element above the header.
 
@@ -1052,42 +1088,6 @@ class SheetFrame:
 
         self.stats = StatsFrame(self, *args, **kwargs)
         return self.stats
-
-    def autofilter(self, *args, **field_criteria):
-        """
-        キーワード引数で指定される条件に応じてフィルタリングする
-        キーワード引数のキーはカラム名、値は条件。条件は以下のものが指定できる。
-           - list : 要素を指定する。
-           - tuple : 値の範囲を指定する。
-           - None : 設定されているフィルタをクリアする
-           - 他 : 値の一致
-
-        """
-        for field, criteria in zip(args[::2], args[1::2], strict=False):
-            field_criteria[field] = criteria
-
-        filter_ = self.table.Range.AutoFilter
-        operator = xw.constants.AutoFilterOperator
-        for field, criteria in field_criteria.items():
-            field = self.index(field, relative=True)
-            if isinstance(criteria, list):
-                criteria = list(map(str, criteria))
-                filter_(
-                    Field=field,
-                    Criteria1=criteria,
-                    Operator=operator.xlFilterValues,
-                )
-            elif isinstance(criteria, tuple):
-                filter_(
-                    Field=field,
-                    Criteria1=f">={criteria[0]}",
-                    Operator=operator.xlAnd,
-                    Criteria2=f"<={criteria[1]}",
-                )
-            elif criteria is None:
-                filter_(Field=field)
-            else:
-                filter_(Field=field, Criteria1=f"{criteria}")
 
     def move(self, count, direction="down", width=None):
         """

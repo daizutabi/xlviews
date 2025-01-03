@@ -57,6 +57,21 @@ def test_init_index_false(df: DataFrame, sheet: Sheet):
     assert sf.index_level == 0
 
 
+def test_row_one(sheet: Sheet):
+    df = DataFrame({"a": [1], "b": [2]})
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    assert len(sf) == 1
+    np.testing.assert_array_equal(sf["a"], [1])
+
+
+def test_column_one(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3]})
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
+    assert len(sf) == 3
+    assert sf.columns == ["a"]
+    np.testing.assert_array_equal(sf["a"], [1, 2, 3])
+
+
 def test_contains(sf: SheetFrame):
     assert "a" in sf
     assert "x" not in sf
@@ -235,28 +250,16 @@ def test_groupby(sheet: Sheet):
     sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
 
     g = sf.groupby("a")
-    assert g[1.0] == [[3, 5], [8, 9]]
-    assert g[2.0] == [[6, 7]]
+    assert len(g) == 2
+    assert g[1] == [[3, 5], [8, 9]]
+    assert g[2] == [[6, 7]]
 
     assert len(sf.groupby(["a", "b"])) == 7
 
     g = sf.groupby("::b")
-    assert g[(1.0,)] == [[3, 5], [8, 9]]
-    assert g[(2.0,)] == [[6, 7]]
+    assert len(g) == 2
+    assert g[(1,)] == [[3, 5], [8, 9]]
+    assert g[(2,)] == [[6, 7]]
 
     assert len(sf.groupby(":b")) == 7
-
-
-def test_row_one(sheet: Sheet):
-    df = DataFrame({"a": [1], "b": [2]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-    assert len(sf) == 1
-    np.testing.assert_array_equal(sf["a"], [1])
-
-
-def test_column_one(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
-    assert len(sf) == 3
-    assert sf.columns == ["a"]
-    np.testing.assert_array_equal(sf["a"], [1, 2, 3])
+    assert len(sf.groupby(None)) == 1

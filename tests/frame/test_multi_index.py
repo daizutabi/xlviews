@@ -187,69 +187,24 @@ def test_getitem_list(sf: SheetFrame):
     np.testing.assert_array_equal(df, x)
 
 
-# def test_setitem(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-#     x = [10, 20, 30]
-#     sf["a"] = x
-#     np.testing.assert_array_equal(sf["a"], x)
+@pytest.mark.parametrize(
+    ("by", "v1", "v2"),
+    [
+        ("x", [[11, 14]], [[15, 18]]),
+        ("y", [[11, 12], [15, 16]], [[13, 14], [17, 18]]),
+    ],
+)
+def test_groupby(sf: SheetFrame, by, v1, v2):
+    g = sf.groupby(by)
+    assert len(g) == 2
+    assert g[1] == v1
+    assert g[2] == v2
 
 
-# def test_setitem_new_column(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-#     x = [10, 20, 30]
-#     sf["c"] = x
-#     assert sf.columns == [None, "a", "b", "c"]
-#     np.testing.assert_array_equal(sf["c"], x)
-
-
-# @pytest.mark.parametrize(
-#     ("a", "b", "sel"),
-#     [
-#         (1, None, [True, False, False, False]),
-#         (3, None, [False, False, True, False]),
-#         ([2, 4], None, [False, True, False, True]),
-#         ((2, 4), None, [False, True, True, True]),
-#         (1, 5, [True, False, False, False]),
-#         (1, 6, [False, False, False, False]),
-#         ((1, 3), (6, 8), [False, True, True, False]),
-#     ],
-# )
-# def test_select(sf: SheetFrame, a, b, sel):
-#     if b is None:
-#         np.testing.assert_array_equal(sf.select(a=a), sel)
-#     else:
-#         np.testing.assert_array_equal(sf.select(a=a, b=b), sel)
-
-
-# def test_groupby(sheet: Sheet):
-#     df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [1, 2, 3, 4, 5, 6, 7]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
-
-#     g = sf.groupby("a")
-#     assert g[1.0] == [[3, 5], [8, 9]]
-#     assert g[2.0] == [[6, 7]]
-
-#     assert len(sf.groupby(["a", "b"])) == 7
-
-#     g = sf.groupby("::b")
-#     assert g[(1.0,)] == [[3, 5], [8, 9]]
-#     assert g[(2.0,)] == [[6, 7]]
-
-#     assert len(sf.groupby(":b")) == 7
-
-
-# def test_row_one(sheet: Sheet):
-#     df = DataFrame({"a": [1], "b": [2]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False)
-#     assert len(sf) == 1
-#     np.testing.assert_array_equal(sf["a"], [1])
-
-
-# def test_column_one(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3]})
-#     sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
-#     assert len(sf) == 3
-#     assert sf.columns == ["a"]
-#     np.testing.assert_array_equal(sf["a"], [1, 2, 3])
+def test_groupby_list(sf: SheetFrame):
+    g = sf.groupby(["x", "y"])
+    assert len(g) == 4
+    assert g[(1, 1)] == [[11, 12]]
+    assert g[(1, 2)] == [[13, 14]]
+    assert g[(2, 1)] == [[15, 16]]
+    assert g[(2, 2)] == [[17, 18]]
