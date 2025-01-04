@@ -6,10 +6,72 @@ import pywintypes
 import seaborn as sns
 import xlwings as xw
 from xlwings import Range
+from xlwings.constants import BordersIndex, LineStyle
 
 from xlviews.config import rcParams
 from xlviews.decorators import api, wait_updating
 from xlviews.utils import constant, rgb
+
+
+def set_border_line(
+    rng: Range,
+    index: str,
+    weight: int = 2,
+    color: int | str = 0,
+) -> None:
+    if not weight:
+        return
+
+    borders = rng.api.Borders
+    border = borders(getattr(BordersIndex, index))
+    border.LineStyle = LineStyle.xlContinuous
+    border.Weight = weight
+    border.Color = rgb(color)
+
+
+def set_border_edge(
+    rng: Range,
+    weight: int | tuple[int, int, int, int] = 3,
+    color: int | str = 0,
+) -> None:
+    if isinstance(weight, int):
+        wl = wr = wt = wb = weight
+    else:
+        wl, wr, wt, wb = weight
+
+    sheet = rng.sheet
+    start, end = rng[0], rng[-1]
+
+    left = sheet.range((start.row, start.column - 1), (end.row, start.column))
+    set_border_line(left, "xlInsideVertical", weight=wl, color=color)
+
+    right = sheet.range((start.row, end.column), (end.row, end.column + 1))
+    set_border_line(right, "xlInsideVertical", weight=wr, color=color)
+
+    top = sheet.range((start.row - 1, start.column), (start.row, end.column))
+    set_border_line(top, "xlInsideHorizontal", weight=wt, color=color)
+
+    bottom = sheet.range((end.row, start.column), (end.row + 1, end.column))
+    set_border_line(bottom, "xlInsideHorizontal", weight=wb, color=color)
+
+
+def set_border_inside(rng: Range, weight: int = 1, color: int | str = 0) -> None:
+    set_border_line(rng, "xlInsideVertical", weight=weight, color=color)
+    set_border_line(rng, "xlInsideHorizontal", weight=weight, color=color)
+
+
+def set_border(
+    rng: Range,
+    edge_weight: int | tuple[int, int, int, int] = 2,
+    inside_weight: int = 1,
+    edge_color: int = 0,
+    inside_color: int = rgb(140, 140, 140),
+) -> None:
+    if edge_weight:
+        set_border_edge(rng, edge_weight, edge_color)
+
+    if inside_weight:
+        set_border_inside(rng, inside_weight, inside_color)
 
 
 def color_palette(n: int) -> list[tuple[int, int, int]]:
@@ -235,51 +297,6 @@ def set_ticklabels(axis, name=None, size=None, format=None):
     # set_font(axis.Format.TextFrame2.TextRange, name=name, size=size)
     if format:
         axis.TickLabels.NumberFormatLocal = format
-
-
-def set_border(
-    range_,
-    edge_width=2,
-    inside_width=1,
-    edge_color=0,
-    inside_color=rgb(140, 140, 140),
-):
-    # 非表示セルでも罫線が表示されるように、xlInsideを使う。
-    sheet = range_.sheet
-    if edge_width:
-        if isinstance(edge_width, int):
-            el = er = et = eb = edge_width
-        else:
-            el, er, et, eb = edge_width
-        start, end = range_[0], range_[-1]
-        left = sheet.range((start.row, start.column - 1), (end.row, start.column))
-        set_border_line(left.api, "xlInsideVertical", width=el, color=edge_color)
-        right = sheet.range((start.row, end.column), (end.row, end.column + 1))
-        set_border_line(right.api, "xlInsideVertical", width=er, color=edge_color)
-        top = sheet.range((start.row - 1, start.column), (start.row, end.column))
-        set_border_line(top.api, "xlInsideHorizontal", width=et, color=edge_color)
-        bottom = sheet.range((end.row, start.column), (end.row + 1, end.column))
-        set_border_line(bottom.api, "xlInsideHorizontal", width=eb, color=edge_color)
-    if inside_width:
-        for inside in ["Vertical", "Horizontal"]:
-            set_border_line(
-                range_,
-                "xlInside" + inside,
-                width=inside_width,
-                color=inside_color,
-            )
-
-
-@api
-def set_border_line(obj, index, width=2, color=0):
-    if width is None:
-        return
-    borders = obj.Borders
-    border = getattr(xw.constants.BordersIndex, index)
-    border = borders(border)
-    border.LineStyle = xw.constants.LineStyle.xlContinuous
-    border.Weight = width
-    border.Color = rgb(color)
 
 
 @api
@@ -515,8 +532,8 @@ def set_frame_style(
     if border:
         set_border(
             range,
-            edge_width=2 if gray else 3,
-            inside_width=0,
+            edge_weight=2 if gray else 3,
+            inside_weight=0,
             edge_color="#aaaaaa" if gray else 0,
         )
     if autofit:

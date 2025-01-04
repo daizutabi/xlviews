@@ -914,8 +914,8 @@ class SheetFrame:
             edge_width = [1, er - 1, 1, 1] if gray else [2, er, 2, 2]
             set_border(
                 range_,
-                edge_width=edge_width,
-                inside_width=1,
+                edge_weight=edge_width,
+                inside_weight=1,
                 edge_color=edge_color,
             )
             if gray:
@@ -927,8 +927,8 @@ class SheetFrame:
             edge_width = [el - 1, 2, 2, 1] if gray else [el, 3, 3, 2]
             set_border(
                 range_,
-                edge_width=edge_width,
-                inside_width=None,
+                edge_weight=edge_width,
+                inside_weight=None,
                 edge_color=edge_color,
             )
             if gray:
@@ -980,6 +980,16 @@ class SheetFrame:
         rng = self.sheet.range(start, end)
         set_alignment(rng, alignment)
 
+    def move(self, count: int, direction: str = "down", width: int = 0) -> Range:
+        return modify.move(self, count, direction, width)
+
+    def delete(self, direction: str = "up", *, entire: bool = False) -> None:
+        return modify.delete(self, direction, entire=entire)
+
+    @wait_updating
+    def copy(self, *args, **kwargs) -> SheetFrame:
+        return modify.copy(self, *args, **kwargs)
+
     def distframe(self, *args, **kwargs):
         from xlviews.dist import DistFrame
 
@@ -991,16 +1001,6 @@ class SheetFrame:
 
         self.stats = StatsFrame(self, *args, **kwargs)
         return self.stats
-
-    def move(self, count: int, direction: str = "down", width: int = 0) -> Range:
-        return modify.move(self, count, direction, width)
-
-    def delete(self, direction: str = "up", *, entire: bool = False) -> None:
-        return modify.delete(self, direction, entire=entire)
-
-    @wait_updating
-    def copy(self, *args, **kwargs) -> SheetFrame:
-        return modify.copy(self, *args, **kwargs)
 
     def set_chart_position(self, pos: str = "right") -> None:
         set_first_position(self, pos=pos)
