@@ -16,12 +16,7 @@ from xlviews.axes import set_first_position
 from xlviews.decorators import wait_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
-from xlviews.style import (
-    set_alignment,
-    set_font,
-    set_frame_style,
-    set_wide_column_style,
-)
+from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
 from xlviews.table import Table
 from xlviews.utils import array_index, iter_columns
 
@@ -281,6 +276,7 @@ class SheetFrame:
         *,
         relative: bool = False,
     ) -> int | tuple[int, int]: ...
+
     @overload
     def index(
         self,
@@ -288,6 +284,7 @@ class SheetFrame:
         *,
         relative: bool = False,
     ) -> list[int | tuple[int, int]]: ...
+
     @overload
     def index(
         self,
@@ -295,6 +292,7 @@ class SheetFrame:
         *,
         relative: bool = False,
     ) -> tuple[int, int]: ...
+
     def index(
         self,
         column: str | tuple | list[str | tuple] | dict,
@@ -333,6 +331,7 @@ class SheetFrame:
 
     @overload
     def index_wide(self, column: str, *, relative: bool = False) -> tuple[int, int]: ...
+
     @overload
     def index_wide(
         self,
@@ -340,6 +339,7 @@ class SheetFrame:
         *,
         relative: bool = False,
     ) -> int: ...
+
     def index_wide(
         self,
         column: str | tuple[str, str | float],
@@ -729,8 +729,10 @@ class SheetFrame:
 
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
+
     @overload
     def __getitem__(self, column: Sequence[str | tuple]) -> DataFrame: ...
+
     def __getitem__(
         self,
         column: str | tuple | Sequence[str | tuple],
