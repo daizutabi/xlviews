@@ -18,10 +18,9 @@ from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.style import (
     set_alignment,
-    set_border,
-    set_fill,
     set_font,
     set_frame_style,
+    set_wide_column_style,
 )
 from xlviews.table import Table
 from xlviews.utils import array_index, iter_columns
@@ -714,7 +713,6 @@ class SheetFrame:
         header = rng.offset(-1)
         header.value = column
 
-        set_font(header, bold=True, color="#002255")
         set_alignment(header, horizontal_alignment="left")
 
         rng = rng.sheet.range(rng, rng.offset(0, len(values_list)))
@@ -882,42 +880,15 @@ class SheetFrame:
                         rng.autofit()
                     break
 
-    def set_style(
-        self,
-        *,
-        alignment: str | None = None,
-        gray: bool = False,
-        **kwargs,
-    ) -> None:
+    def set_style(self, *, gray: bool = False, **kwargs) -> None:
         set_frame_style(self, gray=gray, **kwargs)
+        set_wide_column_style(self, gray=gray)
 
-        wide_columns = self.wide_columns
-        edge_color = "#aaaaaa" if gray else 0
-
-        for wide_column in wide_columns:
-            rng = self.range(wide_column).offset(-1)
-            set_fill(rng, "#eeeeee" if gray else "#f0fff0")
-
-            er = 3 if wide_column == wide_columns[-1] else 2
-            edge_weight = (1, er - 1, 1, 1) if gray else (2, er, 2, 2)
-            set_border(rng, edge_weight, inside_weight=1, edge_color=edge_color)
-
-            if gray:
-                set_font(rng, color="#aaaaaa")
-
-        for wide_column in wide_columns:
-            rng = self.range(wide_column).offset(-2)
-            set_fill(rng, "#eeeeee" if gray else "#e0ffe0")
-
-            el = 3 if wide_column == wide_columns[0] else 2
-            edge_weight = (el - 1, 2, 2, 1) if gray else (el, 3, 3, 2)
-            set_border(rng, edge_weight, inside_weight=0, edge_color=edge_color)
-
-            if gray:
-                set_font(rng, color="#aaaaaa")
-
-        if alignment:
-            self.set_alignment(alignment)
+    def set_alignment(self, alignment: str) -> None:
+        start = self.cell
+        end = start.offset(0, len(self.columns) - 1)
+        rng = self.sheet.range(start, end)
+        set_alignment(rng, alignment)
 
     def set_adjacent_column_width(self, width: float) -> None:
         """Set the width of the adjacent empty column."""
@@ -952,12 +923,6 @@ class SheetFrame:
             return self.get_child_cell()
 
         return self.cell.offset(0, len(self.columns) + 1).offset(0, offset)
-
-    def set_alignment(self, alignment: str) -> None:
-        start = self.cell
-        end = start.offset(0, len(self.columns) - 1)
-        rng = self.sheet.range(start, end)
-        set_alignment(rng, alignment)
 
     def move(self, count: int, direction: str = "down", width: int = 0) -> Range:
         return modify.move(self, count, direction, width)

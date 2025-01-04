@@ -223,17 +223,33 @@ def _set_style(
         set_border(rng, edge_color="#aaaaaa" if gray else 0)
 
     if fill:
-        if gray and name != "values":
-            color = "#eeeeee"
-        else:
-            color = rcParams[f"frame.{name}.fill.color"]
-        set_fill(rng, color=color)
+        _set_style_fill(rng, name, gray=gray)
 
     if font:
-        color = "#aaaaaa" if gray else rcParams[f"frame.{name}.font.color"]
-        bold = rcParams[f"frame.{name}.font.bold"]
-        size = font_size or rcParams["frame.font.size"]
-        set_font(rng, color=color, bold=bold, size=size)
+        _set_style_font(rng, name, gray=gray, font_size=font_size)
+
+
+def _set_style_fill(rng: Range, name: str, *, gray: bool = False):
+    if gray and name != "values":
+        color = "#eeeeee"
+    else:
+        color = rcParams[f"frame.{name}.fill.color"]
+
+    set_fill(rng, color=color)
+
+
+def _set_style_font(
+    rng: Range,
+    name: str,
+    *,
+    gray: bool = False,
+    font_size: int | None = None,
+) -> None:
+    color = "#aaaaaa" if gray else rcParams[f"frame.{name}.font.color"]
+    bold = rcParams[f"frame.{name}.font.bold"]
+    size = font_size or rcParams["frame.font.size"]
+
+    set_font(rng, color=color, bold=bold, size=size)
 
 
 @wait_updating
@@ -314,22 +330,47 @@ def set_frame_style(
     set_style(start, end, "values")
 
     rng = sheet.range(start, end)
-    if border:
-        set_border(rng, edge_color="#aaaaaa" if gray else 0)
+
     if banding and not gray:
         set_banding(rng)
-    if gray:
-        set_font(rng, color="#aaaaaa")
 
     rng = sheet.range(cell, end)
+
     if border:
         ew = 2 if gray else 3
         ec = "#aaaaaa" if gray else 0
         set_border(rng, edge_weight=ew, inside_weight=0, edge_color=ec)
+
     if autofit:
         rng.columns.autofit()
+
     if alignment:
         set_alignment(rng, alignment)
+
+
+def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
+    wide_columns = sf.wide_columns
+    edge_color = "#aaaaaa" if gray else 0
+
+    for wide_column in wide_columns:
+        rng = sf.range(wide_column).offset(-1)
+
+        er = 3 if wide_column == wide_columns[-1] else 2
+        edge_weight = (1, er - 1, 1, 1) if gray else (2, er, 2, 2)
+        set_border(rng, edge_weight, inside_weight=1, edge_color=edge_color)
+
+        _set_style_fill(rng, "wide-columns", gray=gray)
+        _set_style_font(rng, "wide-columns", gray=gray)
+
+    for wide_column in wide_columns:
+        rng = sf.range(wide_column).offset(-2)
+
+        el = 3 if wide_column == wide_columns[0] else 2
+        edge_weight = (el - 1, 2, 2, 1) if gray else (el, 3, 3, 2)
+        set_border(rng, edge_weight, inside_weight=0, edge_color=edge_color)
+
+        _set_style_fill(rng, "wide-columns.name", gray=gray)
+        _set_style_font(rng, "wide-columns.name", gray=gray)
 
 
 def set_table_style(

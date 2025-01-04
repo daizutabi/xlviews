@@ -280,6 +280,27 @@ def test_frame_style_multi_index_columns(sf_mic: SheetFrame, cell: str, name: st
     assert sf_mic.sheet[cell].api.Interior.Color == c
 
 
+@pytest.fixture(scope="module")
+def sf_wide(sheet_module: Sheet):
+    from xlviews.style import set_wide_column_style
+
+    df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
+    sf = SheetFrame(sheet_module, 24, 2, data=df, style=False)
+    sf.add_wide_column("u", range(3), autofit=True)
+    sf.add_wide_column("v", range(4), autofit=True)
+    set_wide_column_style(sf, gray=False)
+    return sf
+
+
+@pytest.mark.parametrize(
+    ("cell", "name"),
+    [("G23", ".name"), ("M23", ".name"), ("G24", ""), ("M24", "")],
+)
+def test_frame_style_wide(sf_wide: SheetFrame, cell: str, name: str):
+    c = rgb(rcParams[f"frame.wide-columns{name}.fill.color"])
+    assert sf_wide.sheet[cell].api.Interior.Color == c
+
+
 def test_table_style(sheet_module: Sheet):
     from xlviews.style import set_table_style
 

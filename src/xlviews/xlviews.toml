@@ -39,6 +39,16 @@ fill.color = "#ccffff"
 font.color = "#004455"
 font.bold = true
 
+[frame.wide-columns.name]
+fill.color = "#e0ffe0"
+font.color = "#002244"
+font.bold = true
+
+[frame.wide-columns]
+fill.color = "#f0fff0"
+font.color = "#004455"
+font.bold = false
+
 [frame.values]
 fill.color = "#ffffff"
 font.color = "#001122"
