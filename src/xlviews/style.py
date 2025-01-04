@@ -1,16 +1,23 @@
 """Set styles such as Marker."""
 
+from __future__ import annotations
+
 import itertools
+from functools import partial
+from typing import TYPE_CHECKING
 
 import pywintypes
 import seaborn as sns
 import xlwings as xw
-from xlwings import Range
-from xlwings.constants import BordersIndex, LineStyle
+from xlwings import Range, Sheet
+from xlwings.constants import BordersIndex, FormatConditionType, LineStyle
 
 from xlviews.config import rcParams
 from xlviews.decorators import api, wait_updating
 from xlviews.utils import constant, rgb
+
+if TYPE_CHECKING:
+    from xlwings._xlwindows import COMRetryObjectWrapper
 
 
 def set_border_line(
@@ -64,14 +71,270 @@ def set_border(
     rng: Range,
     edge_weight: int | tuple[int, int, int, int] = 2,
     inside_weight: int = 1,
-    edge_color: int = 0,
-    inside_color: int = rgb(140, 140, 140),
+    edge_color: int | str = 0,
+    inside_color: int | str = rgb(140, 140, 140),
 ) -> None:
     if edge_weight:
         set_border_edge(rng, edge_weight, edge_color)
 
     if inside_weight:
         set_border_inside(rng, inside_weight, inside_color)
+
+
+def set_fill(rng: Range, color: int | str | None = None) -> None:
+    if color is not None:
+        rng.api.Interior.Color = rgb(color)
+
+
+def set_font_api(
+    api: COMRetryObjectWrapper,
+    name: str | None = None,
+    *,
+    size: int | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    color: int | str | None = None,
+) -> None:
+    if name is None:
+        name = rcParams["chart.font.name"]
+
+    font = api.Font
+    font.Name = name  # type: ignore
+    if size:
+        font.Size = size  # type: ignore
+    if bold is not None:
+        font.Bold = bold  # type: ignore
+    if italic is not None:
+        font.Italic = italic  # type: ignore
+    if color is not None:
+        font.Color = rgb(color)  # type: ignore
+
+
+def set_font(rng: Range, *args, **kwargs) -> None:
+    set_font_api(rng.api, *args, **kwargs)
+
+
+def set_alignment(
+    rng: Range,
+    horizontal_alignment: str | None = None,
+    vertical_alignment: str | None = None,
+) -> None:
+    if horizontal_alignment:
+        rng.api.HorizontalAlignment = constant(horizontal_alignment)
+
+    if vertical_alignment:
+        rng.api.VerticalAlignment = constant(vertical_alignment)
+
+
+def set_banding(
+    rng: Range,
+    axis: int = 0,
+    even_color: int | str = rgb(240, 250, 255),
+    odd_color: int | str = rgb(255, 255, 255),
+) -> None:
+    def banding(mod: int, color: int) -> None:
+        formula = f"=MOD(ROW(), 2)={mod}" if axis == 0 else f"=MOD(COLUMN(), 2)={mod}"
+        condition = add(Type=FormatConditionType.xlExpression, Formula1=formula)
+
+        condition.SetFirstPriority()
+        condition.StopIfTrue = False
+
+        interior = condition.Interior
+        interior.PatternColorIndex = constant("automatic")
+        interior.Color = color
+        interior.TintAndShade = 0
+
+    add = rng.api.FormatConditions.Add
+
+    banding(0, rgb(odd_color))
+    banding(1, rgb(even_color))
+
+
+def hide_succession(rng: Range, color: int | str = rgb(200, 200, 200)) -> None:
+    cell = rng[0].get_address(row_absolute=False, column_absolute=False)
+
+    start = rng[0].offset(-2).get_address(column_absolute=False)
+    column = rng[0].offset(-1)
+    column = ":".join(
+        [
+            column.get_address(column_absolute=False),
+            column.get_address(row_absolute=False, column_absolute=False),
+        ],
+    )
+
+    ref = (
+        f"INDIRECT(ADDRESS(MAX(INDEX(SUBTOTAL(3,OFFSET({start},"
+        f'ROW(INDIRECT("1:"&ROWS({column}))),))*ROW({column}),)),'
+        f"COLUMN({column})))"
+    )
+    formula = f"={cell}={ref}"
+
+    add = rng.api.FormatConditions.Add
+    condition = add(Type=FormatConditionType.xlExpression, Formula1=formula)
+    condition.SetFirstPriority()
+    condition.StopIfTrue = False
+    condition.Font.Color = rgb(color)
+
+
+def hide_unique(rng: Range, length: int, color: int | str = rgb(100, 100, 100)) -> None:
+    def address(r: Range) -> str:
+        return r.get_address(row_absolute=False, column_absolute=False)
+
+    start = rng[0, 0].offset(1, 0)
+    end = rng[0, 0].offset(length, 0)
+    cell = address(Range(start, end))
+    ref = address(start)
+    formula = f"=COUNTIF({cell}, {ref}) = {length}"
+
+    add = rng.api.FormatConditions.Add
+    condition = add(Type=FormatConditionType.xlExpression, Formula1=formula)
+    condition.SetFirstPriority()
+    condition.StopIfTrue = False
+    condition.Font.Color = rgb(color)
+    condition.Font.Italic = True
+
+
+def hide_gridlines(sheet: Sheet) -> None:
+    sheet.book.app.api.ActiveWindow.DisplayGridlines = False
+
+
+def _set_style(
+    start: Range,
+    end: Range,
+    name: str,
+    *,
+    border: bool = True,
+    gray: bool = False,
+    font: bool = True,
+    fill: bool = True,
+    font_size: int | None = None,
+) -> None:
+    rng = start.sheet.range(start, end)
+
+    if border:
+        set_border(rng, edge_color="#aaaaaa" if gray else 0)
+
+    if fill:
+        if gray and name != "values":
+            color = "#eeeeee"
+        else:
+            color = rcParams[f"frame.{name}.fill.color"]
+        set_fill(rng, color=color)
+
+    if font:
+        color = "#aaaaaa" if gray else rcParams[f"frame.{name}.font.color"]
+        bold = rcParams[f"frame.{name}.font.bold"]
+        size = font_size or rcParams["frame.font.size"]
+        set_font(rng, color=color, bold=bold, size=size)
+
+
+@wait_updating
+def set_frame_style(
+    cell: Range,
+    index_level: int,
+    columns_level: int,
+    length: int,
+    columns: int,
+    *,
+    autofit: bool = False,
+    alignment: str | None = "center",
+    banding: bool = False,
+    succession: bool = False,
+    border: bool = True,
+    gray: bool = False,
+    font: bool = True,
+    fill: bool = True,
+    font_size: int | None = None,
+) -> None:
+    """Set style of SheetFrame.
+
+    Args:
+        cell: The top-left cell of the frame.
+        index_level: The depth of the index level.
+        columns_level: The depth of the columns level.
+        length: The number of rows.
+        columns: The number of columns excluding the index.
+        autofit: Whether to autofit the frame.
+        alignment: The alignment of the frame.
+        border: Whether to draw the border.
+        font: Whether to specify the font.
+        fill: Whether to fill the frame.
+        banding: Whether to draw the banding.
+        succession: Whether to hide the succession of the index.
+        gray: Whether to set the frame in gray mode.
+        font_size: The font size to specify directly.
+    """
+    sheet = cell.sheet
+    set_style = partial(
+        _set_style,
+        border=border,
+        gray=gray,
+        font=font,
+        fill=fill,
+        font_size=font_size,
+    )
+
+    if index_level > 0:
+        start = cell
+        end = cell.offset(columns_level - 1, index_level - 1)
+        set_style(start, end, "index.name")
+
+        start = cell.offset(columns_level, 0)
+        end = cell.offset(columns_level + length - 1, index_level - 1)
+        set_style(start, end, "index")
+
+        if succession:
+            rng = sheet.range(start.offset(1, 0), end)
+            hide_succession(rng)
+
+            start = cell.offset(columns_level - 1, 0)
+            end = cell.offset(columns_level - 1, index_level - 1)
+            rng = sheet.range(start, end)
+            hide_unique(rng, length)
+
+    if columns_level > 1:
+        start = cell.offset(0, index_level)
+        end = cell.offset(columns_level - 2, index_level + columns - 1)
+        set_style(start, end, "columns.name")
+
+    start = cell.offset(columns_level - 1, index_level)
+    end = cell.offset(columns_level - 1, index_level + columns - 1)
+    set_style(start, end, "columns")
+
+    start = cell.offset(columns_level, index_level)
+    end = cell.offset(columns_level + length - 1, index_level + columns - 1)
+    set_style(start, end, "values")
+
+    rng = sheet.range(start, end)
+    if border:
+        set_border(rng, edge_color="#aaaaaa" if gray else 0)
+    if banding and not gray:
+        set_banding(rng)
+    if gray:
+        set_font(rng, color="#aaaaaa")
+
+    rng = sheet.range(cell, end)
+    if border:
+        ew = 2 if gray else 3
+        ec = "#aaaaaa" if gray else 0
+        set_border(rng, edge_weight=ew, inside_weight=0, edge_color=ec)
+    if autofit:
+        rng.columns.autofit()
+    if alignment:
+        set_alignment(rng, alignment)
+
+
+def set_table_style(api, even_color=rgb(240, 250, 255), odd_color=rgb(255, 255, 255)):
+    book = api.Range.Parent.Parent
+    try:
+        style = book.TableStyles("xlviews")
+    except pywintypes.com_error:
+        style = book.TableStyles.Add("xlviews")
+        odd_type = xw.constants.TableStyleElementType.xlRowStripe1
+        style.TableStyleElements(odd_type).Interior.Color = odd_color
+        even_type = xw.constants.TableStyleElementType.xlRowStripe2
+        style.TableStyleElements(even_type).Interior.Color = even_color
+    api.TableStyle = style
 
 
 def color_palette(n: int) -> list[tuple[int, int, int]]:
@@ -297,269 +560,6 @@ def set_ticklabels(axis, name=None, size=None, format=None):
     # set_font(axis.Format.TextFrame2.TextRange, name=name, size=size)
     if format:
         axis.TickLabels.NumberFormatLocal = format
-
-
-@api
-def set_fill(obj, color=None):
-    if color is not None:
-        obj.Interior.Color = rgb(color)
-
-
-@api
-def set_font(obj, name=None, size=None, bold=None, italic=None, color=None):
-    font = obj.Font
-    if name is None:
-        name = rcParams["chart.font.name"]
-    font.Name = name
-    if size:
-        font.Size = size
-    if bold is not None:
-        font.Bold = bold
-    if italic is not None:
-        font.Italic = italic
-    if color is not None:
-        font.Color = rgb(color)
-
-
-def set_alignment(
-    rng: Range,
-    horizontal_alignment: str | None = None,
-    vertical_alignment: str | None = None,
-) -> None:
-    if horizontal_alignment:
-        rng.api.HorizontalAlignment = constant(horizontal_alignment)
-
-    if vertical_alignment:
-        rng.api.VerticalAlignment = constant(vertical_alignment)
-
-
-@api
-def set_banding(
-    range,
-    axis=0,
-    even_color=rgb(240, 250, 255),
-    odd_color=rgb(255, 255, 255),
-):
-    def banding(mod, color):
-        if axis == 0:
-            formula = f"=MOD(ROW(), 2)={mod}"
-        else:
-            formula = f"=MOD(COLUMN(), 2)={mod}"
-        condition = range.FormatConditions.Add(
-            Type=xw.constants.FormatConditionType.xlExpression,
-            Formula1=formula,
-        )
-        condition.SetFirstPriority()
-        interior = condition.Interior
-        interior.PatternColorIndex = constant("automatic")
-        interior.Color = color
-        interior.TintAndShade = 0
-        condition.StopIfTrue = False
-
-    banding(0, odd_color)
-    banding(1, even_color)
-
-
-def hide_succession(range_, color=rgb(200, 200, 200)):
-    cell = range_[0].get_address(row_absolute=False, column_absolute=False)
-    start = range_[0].offset(-2).get_address(column_absolute=False)
-    column = range_[0].offset(-1)
-    column = ":".join(
-        [
-            column.get_address(column_absolute=False),
-            column.get_address(row_absolute=False, column_absolute=False),
-        ],
-    )
-    ref = (
-        f"INDIRECT(ADDRESS(MAX(INDEX(SUBTOTAL(3,OFFSET({start},"
-        f'ROW(INDIRECT("1:"&ROWS({column}))),))*ROW({column}),)),'
-        f"COLUMN({column})))"
-    )
-    formula = f"={cell}={ref}"
-
-    condition = range_.api.FormatConditions.Add(
-        Type=xw.constants.FormatConditionType.xlExpression,
-        Formula1=formula,
-    )
-    condition.SetFirstPriority()
-    font = condition.Font
-    font.Color = color
-    condition.StopIfTrue = False
-
-
-def hide_unique(range_, length, color=rgb(100, 100, 100)):
-    def address(r):
-        return r.get_address(row_absolute=False, column_absolute=False)
-
-    start = range_[0, 0].offset(1, 0)
-    end = range_[0, 0].offset(length, 0)
-    cell = address(xw.Range(start, end))
-    ref = address(start)
-    formula = f"=countif({cell}, {ref}) = {length}"
-    condition = range_.api.FormatConditions.Add(
-        Type=xw.constants.FormatConditionType.xlExpression,
-        Formula1=formula,
-    )
-    condition.SetFirstPriority()
-    font = condition.Font
-    font.Color = color
-    font.Italic = True
-    condition.StopIfTrue = False
-
-
-def set_number_format(rng: Range, fmt: str) -> None:
-    rng.api.NumberFormatLocal = fmt
-
-
-def get_number_format(rng: Range) -> str:
-    return rng.api.NumberFormatLocal
-
-
-@wait_updating
-def set_frame_style(
-    cell,
-    index_level,
-    columns_level,
-    length,
-    columns,
-    *,
-    autofit=False,
-    alignment="center",
-    border=True,
-    font=True,
-    fill=True,
-    banding=False,
-    succession=False,
-    gray=False,
-    font_size=None,
-):
-    """
-    SheetFrameの装飾をする。
-
-    Parameters
-    ----------
-    cell : xw.main.Range
-        左上のセル
-    index_level : int
-        インデックスの階層の深さ
-    columns_level : int
-        カラムの階層の深さ
-    length : int
-        データの行数
-    columns : int
-        インデックスを除いたデータの列数
-    autofit : bool
-        オートフィットするか
-    alignment : str
-        アライメント. ex) 'center'
-    border : bool
-        罫線を書くか
-    font : bool
-        フォント指定をするか
-    fill : bool
-        塗りつぶしをするか
-    banding : bool
-        縞を書くか
-    succession : bool
-        連続したインデックスを隠すか
-    gray : bool
-        グレーモードにするか
-    font_size : int, optional
-        フォントサイズを直に指定する。
-    """
-
-    def set_style(start, end, name):
-        range = xw.Range(start, end)
-        if border:
-            set_border(range, edge_color="#aaaaaa" if gray else 0)
-        if fill:
-            if gray and name != "values":
-                color = "#eeeeee"
-            else:
-                color = rcParams[f"frame.{name}.fill.color"]
-            set_fill(range, color=color)
-        if font:
-            if gray:
-                color = "#aaaaaa"
-            else:
-                color = rcParams[f"frame.{name}.font.color"]
-            set_font(
-                range,
-                color=color,
-                bold=rcParams[f"frame.{name}.font.bold"],
-                size=font_size or rcParams["frame.font.size"],
-            )
-
-    if index_level > 0:
-        start = cell
-        end = cell.offset(columns_level - 1, index_level - 1)
-        set_style(start, end, "index.name")
-
-        start = cell.offset(columns_level, 0)
-        end = cell.offset(columns_level + length - 1, index_level - 1)
-        set_style(start, end, "index")
-
-        if succession:
-            # range = xw.Range(start, end)
-            range = xw.Range(start.offset(1, 0), end)
-            hide_succession(range)
-            start = cell.offset(columns_level - 1, 0)
-            end = cell.offset(columns_level - 1, index_level - 1)
-            range = xw.Range(start, end)
-            hide_unique(range, length)
-
-    if columns_level > 1:
-        start = cell.offset(0, index_level)
-        end = cell.offset(columns_level - 2, index_level + columns - 1)
-        set_style(start, end, "columns.name")
-
-    start = cell.offset(columns_level - 1, index_level)
-    end = cell.offset(columns_level - 1, index_level + columns - 1)
-    set_style(start, end, "columns")
-
-    start = cell.offset(columns_level, index_level)
-    end = cell.offset(columns_level + length - 1, index_level + columns - 1)
-    set_style(start, end, "values")
-    range = xw.Range(start, end)
-    if border:
-        set_border(range, edge_color="#aaaaaa" if gray else 0)
-    if banding and not gray:
-        set_banding(range)
-    if gray:
-        set_font(range, color="#aaaaaa")
-
-    range = xw.Range(cell, end)
-    if border:
-        set_border(
-            range,
-            edge_weight=2 if gray else 3,
-            inside_weight=0,
-            edge_color="#aaaaaa" if gray else 0,
-        )
-    if autofit:
-        range.columns.autofit()
-    if alignment:
-        set_alignment(range, alignment)
-
-
-def set_table_style(api, even_color=rgb(240, 250, 255), odd_color=rgb(255, 255, 255)):
-    book = api.Range.Parent.Parent
-    try:
-        style = book.TableStyles("xlviews")
-    except pywintypes.com_error:
-        style = book.TableStyles.Add("xlviews")
-        odd_type = xw.constants.TableStyleElementType.xlRowStripe1
-        style.TableStyleElements(odd_type).Interior.Color = odd_color
-        even_type = xw.constants.TableStyleElementType.xlRowStripe2
-        style.TableStyleElements(even_type).Interior.Color = even_color
-    api.TableStyle = style
-
-
-def hide_gridlines(sheet):
-    """
-    シートの罫線を表示しない
-    """
-    sheet.book.app.api.ActiveWindow.DisplayGridlines = False
 
 
 def set_dimensions(obj, left=None, top=None, width=None, height=None):

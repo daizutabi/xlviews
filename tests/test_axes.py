@@ -17,7 +17,7 @@ def test_set_first_position(sheet: Sheet, pos: str, left: float, top: float):
     from xlviews.axes import FIRST_POSITION, clear_first_position, set_first_position
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
-    sf = SheetFrame(sheet, 2, 2, data=df)
+    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
 
     set_first_position(sf, pos)
     assert FIRST_POSITION["left"] == left
