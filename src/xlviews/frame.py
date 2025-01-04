@@ -176,8 +176,6 @@ class SheetFrame:
             refers_to = "=" + self.cell.get_address(include_sheetname=True)
             book.names.add(self.name, refers_to)
 
-        # If the column is a hierarchical index and the index is
-        # a normal index, # display the column name in the index column.
         if index and data.columns.nlevels > 1 and data.index.nlevels == 1:
             self.columns_names = list(data.columns.names)
             self.cell.options(transpose=True).value = self.columns_names
@@ -207,9 +205,9 @@ class SheetFrame:
         if number_format:
             self.set_number_format(number_format)
 
-        for table in self.sheet.api.ListObjects:
-            if table.Range.Row == self.row and table.Range.Column == self.column:
-                self.table = table
+        for api in self.sheet.api.ListObjects:
+            if api.Range.Row == self.row and api.Range.Column == self.column:
+                self.table = Table(api=api, sheet=self.sheet)
                 break
 
     def __len__(self) -> int:
@@ -437,7 +435,7 @@ class SheetFrame:
         if self.columns_level != 1:
             raise NotImplementedError
 
-        self.set_columns_alignment("left")
+        self.set_alignment("left")
 
         end = self.cell.offset(len(self), len(self.columns) - 1)
         rng = self.sheet.range(self.cell, end)
@@ -682,7 +680,7 @@ class SheetFrame:
         rng.value = formula.format(**refs)
 
         if number_format:
-            set_number_format(rng, number_format)
+            rng.number_format = number_format
 
         if autofit:
             rng = rng.sheet.range(rng[0].offset(-1), rng[-1])
@@ -709,28 +707,27 @@ class SheetFrame:
         if self.columns_level != 1:
             raise NotImplementedError
 
-        cell = self.cell.offset(0, len(self.columns))
+        rng = self.cell.offset(0, len(self.columns))
         values_list = list(values)
-        cell.value = values_list
+        rng.value = values_list
 
-        header = cell.offset(-1)
+        header = rng.offset(-1)
         header.value = column
 
         set_font(header, bold=True, color="#002255")
         set_alignment(header, horizontal_alignment="left")
 
-        cell = cell.sheet.range(cell, cell.offset(0, len(values_list)))
+        rng = rng.sheet.range(rng, rng.offset(0, len(values_list)))
         if number_format:
-            set_number_format(cell, number_format)
+            rng.number_format = number_format
 
         if autofit:
-            range_ = self.range(column, 0)
-            range_.autofit()
+            self.range(column, 0).autofit()
 
         if style:
             self.set_style()
 
-        return cell[0].offset(1)
+        return rng[0].offset(1)
 
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
@@ -885,50 +882,42 @@ class SheetFrame:
                         rng.autofit()
                     break
 
-    def set_style(self, columns_alignment=None, gray=False, **kwargs):
-        set_frame_style(
-            self.cell,
-            self.index_level,
-            self.columns_level,
-            len(self),
-            len(self.value_columns),
-            gray=gray,
-            **kwargs,
-        )
+    def set_style(
+        self,
+        *,
+        alignment: str | None = None,
+        gray: bool = False,
+        **kwargs,
+    ) -> None:
+        set_frame_style(self, gray=gray, **kwargs)
+
         wide_columns = self.wide_columns
         edge_color = "#aaaaaa" if gray else 0
-        for wide_column in wide_columns:
-            range_ = self.range(wide_column, 0)
-            set_fill(range_, "#eeeeee" if gray else "#f0fff0")
-            er = 3 if wide_column == wide_columns[-1] else 2
-            edge_width = [1, er - 1, 1, 1] if gray else [2, er, 2, 2]
-            set_border(
-                range_,
-                edge_weight=edge_width,
-                inside_weight=1,
-                edge_color=edge_color,
-            )
-            if gray:
-                set_font(range_, color="#aaaaaa")
-        for wide_column in wide_columns:
-            range_ = self.range(wide_column, 0).offset(-1)
-            set_fill(range_, "#eeeeee" if gray else "#e0ffe0")
-            el = 3 if wide_column == wide_columns[0] else 2
-            edge_width = [el - 1, 2, 2, 1] if gray else [el, 3, 3, 2]
-            set_border(
-                range_,
-                edge_weight=edge_width,
-                inside_weight=None,
-                edge_color=edge_color,
-            )
-            if gray:
-                set_font(range_, color="#aaaaaa")
-        if columns_alignment:
-            self.set_columns_alignment(columns_alignment)
 
-    def autofit(self) -> None:
-        """Autofits the width of the SheetFrame."""
-        self.range().columns.autofit()
+        for wide_column in wide_columns:
+            rng = self.range(wide_column).offset(-1)
+            set_fill(rng, "#eeeeee" if gray else "#f0fff0")
+
+            er = 3 if wide_column == wide_columns[-1] else 2
+            edge_weight = (1, er - 1, 1, 1) if gray else (2, er, 2, 2)
+            set_border(rng, edge_weight, inside_weight=1, edge_color=edge_color)
+
+            if gray:
+                set_font(rng, color="#aaaaaa")
+
+        for wide_column in wide_columns:
+            rng = self.range(wide_column).offset(-2)
+            set_fill(rng, "#eeeeee" if gray else "#e0ffe0")
+
+            el = 3 if wide_column == wide_columns[0] else 2
+            edge_weight = (el - 1, 2, 2, 1) if gray else (el, 3, 3, 2)
+            set_border(rng, edge_weight, inside_weight=0, edge_color=edge_color)
+
+            if gray:
+                set_font(rng, color="#aaaaaa")
+
+        if alignment:
+            self.set_alignment(alignment)
 
     def set_adjacent_column_width(self, width: float) -> None:
         """Set the width of the adjacent empty column."""
@@ -964,7 +953,7 @@ class SheetFrame:
 
         return self.cell.offset(0, len(self.columns) + 1).offset(0, offset)
 
-    def set_columns_alignment(self, alignment: str) -> None:
+    def set_alignment(self, alignment: str) -> None:
         start = self.cell
         end = start.offset(0, len(self.columns) - 1)
         rng = self.sheet.range(start, end)
@@ -980,13 +969,13 @@ class SheetFrame:
     def copy(self, *args, **kwargs) -> SheetFrame:
         return modify.copy(self, *args, **kwargs)
 
-    def distframe(self, *args, **kwargs):
+    def distframe(self, *args, **kwargs) -> DistFrame:
         from xlviews.dist import DistFrame
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist
 
-    def statsframe(self, *args, **kwargs):
+    def statsframe(self, *args, **kwargs) -> StatsFrame:
         from xlviews.stats import StatsFrame
 
         self.stats = StatsFrame(self, *args, **kwargs)
@@ -995,16 +984,16 @@ class SheetFrame:
     def set_chart_position(self, pos: str = "right") -> None:
         set_first_position(self, pos=pos)
 
-    def scatter(self, *args, **kwargs):
+    def scatter(self, *args, **kwargs) -> Scatter:
         return Scatter(*args, data=self, **kwargs)
 
-    def plot(self, *args, **kwargs):
+    def plot(self, *args, **kwargs) -> Plot:
         return Plot(*args, data=self, **kwargs)
 
-    def bar(self, *args, **kwargs):
+    def bar(self, *args, **kwargs) -> Bar:
         return Bar(*args, data=self, **kwargs)
 
-    def grid(self, *args, **kwargs):
+    def grid(self, *args, **kwargs) -> FacetGrid:
         return FacetGrid(self, *args, **kwargs)
 
     # def aggregate(self, func, column: str, by=None, sel=None, **kwargs):

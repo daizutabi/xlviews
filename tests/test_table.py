@@ -100,3 +100,12 @@ def test_table_error():
     msg = "Either rng or sheet and api must be provided"
     with pytest.raises(ValueError, match=msg):
         Table()
+
+
+def test_sheetframe(table: Table):
+    from xlviews.frame import SheetFrame
+
+    sf = SheetFrame(table.sheet, table.cell.row, table.cell.column)
+    assert sf.table
+    assert sf.table.cell.row == table.cell.row
+    assert sf.table.cell.column == table.cell.column

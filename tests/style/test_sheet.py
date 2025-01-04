@@ -255,7 +255,7 @@ def df_mic(df_mc: DataFrame):
 def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
     from xlviews.style import set_frame_style
 
-    sf = SheetFrame(sheet_module, 9, 6, data=df_mic, style=False)
+    sf = SheetFrame(sheet_module, 9, 7, data=df_mic, style=False)
     set_frame_style(sf, autofit=True)
     return sf
 
@@ -263,16 +263,16 @@ def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
 @pytest.mark.parametrize(
     ("cell", "name"),
     [
-        ("F9", "index.name"),
-        ("G10", "index.name"),
-        ("F11", "index"),
-        ("G14", "index"),
-        ("H9", "columns.name"),
-        ("J9", "columns.name"),
-        ("H10", "columns"),
-        ("J10", "columns"),
-        ("H11", "values"),
-        ("J14", "values"),
+        ("G9", "index.name"),
+        ("H10", "index.name"),
+        ("G11", "index"),
+        ("H14", "index"),
+        ("I9", "columns.name"),
+        ("K9", "columns.name"),
+        ("I10", "columns"),
+        ("K10", "columns"),
+        ("I11", "values"),
+        ("K14", "values"),
     ],
 )
 def test_frame_style_multi_index_columns(sf_mic: SheetFrame, cell: str, name: str):

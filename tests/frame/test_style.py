@@ -30,9 +30,22 @@ def test_number_format_dict(sf_nf: SheetFrame):
     assert sf_nf.get_number_format("b") == "0.00"
 
 
-def a():
-    import xlwings as xw
+@pytest.fixture(scope="module")
+def sf_wide(sheet_module: Sheet):
+    df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
+    sf = SheetFrame(sheet_module, 4, 2, data=df, style=False)
+    sf.add_wide_column("u", range(3), autofit=True)
+    sf.add_wide_column("v", range(4), autofit=True)
+    sf.set_style(alignment="left", gray=False)
+    return sf
 
-    book = xw.Book()
-    sheet = book.sheets[0]
-    sheet
+
+@pytest.mark.parametrize(
+    ("cell", "color"),
+    [("G3", "#e0ffe0"), ("M3", "#e0ffe0"), ("G4", "#f0fff0"), ("M4", "#f0fff0")],
+)
+def test_frame_style_basic(sf_wide: SheetFrame, cell: str, color: str):
+    from xlviews.style import rgb
+
+    c = rgb(color)
+    assert sf_wide.sheet[cell].api.Interior.Color == c

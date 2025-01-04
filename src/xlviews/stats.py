@@ -169,7 +169,7 @@ class StatsFrame(SheetFrame):
             self.set_value_style()
 
         if table:
-            self.set_columns_alignment("left")
+            self.set_alignment("left")
 
         if table and autofilter and not isinstance(self.column_func, dict):
             if stats is None:
