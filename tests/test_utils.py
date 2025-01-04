@@ -1,5 +1,6 @@
 import pytest
 from pandas import DataFrame, Series
+from xlwings import Sheet
 
 
 @pytest.mark.parametrize(
@@ -20,6 +21,14 @@ def test_constant(name: str, value: int):
 
     assert constant(name) == value
     assert constant(*name.split(".")) == value
+
+
+@pytest.mark.parametrize("n", [1, 10, 100, 1000, 10000])
+def test_column_name(sheet_module: Sheet, n):
+    from xlviews.utils import int_to_column_name
+
+    rng = sheet_module.range(1, n)
+    assert rng.get_address().split("$")[1] == int_to_column_name(n)
 
 
 @pytest.mark.parametrize(

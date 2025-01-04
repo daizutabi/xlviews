@@ -47,6 +47,27 @@ def constant(type_: str, name: str | None = None) -> int:
     return getattr(type_, name)
 
 
+def int_to_column_name(n: int) -> str:
+    """Return the Excel column name from an integer.
+
+    Examples:
+        >>> int_to_column_name(1)
+        'A'
+        >>> int_to_column_name(26)
+        'Z'
+        >>> int_to_column_name(27)
+        'AA'
+    """
+    name = ""
+
+    while n > 0:
+        n -= 1
+        name = chr(n % 26 + 65) + name
+        n //= 26
+
+    return name
+
+
 def rgb(
     color: int | tuple[int, int, int] | str,
     green: int | None = None,

@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from collections import OrderedDict
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from xlwings import Range
+from xlwings import Range
 
 NONCONST_VALUE = "XXX"
 
@@ -26,58 +22,49 @@ def const(rng: Range, prefix: str = "") -> str:
     return f'{prefix}IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}")'
 
 
-AGGREGATE_FUNCTION = OrderedDict(
-    [
-        ("median", 12),
-        ("soa", 999),
-        ("count", 2),
-        ("min", 5),
-        ("mean", 1),
-        ("max", 4),
-        ("std", 8),
-        ("sum", 9),
-    ],
-)
-AGGREGATE_FUNCTION_: dict[str, int] = OrderedDict()
+AGG_FUNCS = {
+    "median": 12,
+    "soa": 999,
+    "count": 2,
+    "min": 5,
+    "mean": 1,
+    "max": 4,
+    "std": 8,
+    "sum": 9,
+}
+
+AGG_FUNCS_SORTED: dict[str, int] = {}
+
+for key in sorted(AGG_FUNCS.keys()):
+    AGG_FUNCS_SORTED[key] = AGG_FUNCS[key]
+
+AGG_FUNC_NAMES = ",".join(f'"{name}"' for name in AGG_FUNCS_SORTED)
+AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 
-def _sort():
-    for key in sorted(AGGREGATE_FUNCTION.keys()):
-        AGGREGATE_FUNCTION_[key] = AGGREGATE_FUNCTION[key]
-
-
-_sort()
-
-
-# option=7: 非表示の行とエラー値を無視
-def aggregate(func, *ranges, option=7, **kwargs):
-    def get_address(range_, include_sheetname=False, **kwargs_):
-        if hasattr(range_, "get_address"):
-            return range_.get_address(include_sheetname=include_sheetname, **kwargs_)
-        sheetname = range_.Parent.Name
-        range_ = range_.Address
-        if include_sheetname:
-            range_ = ",".join([f"{sheetname}!{range_}" for range_ in range_.split(",")])
-        return range_
-
-    column = ",".join([get_address(range_, **kwargs) for range_ in ranges])
+def aggregate(
+    func: str | Range,
+    *ranges: Range,
+    option: int = 7,  # ignore hidden rows and error values
+    **kwargs,
+) -> str:
     if func == "soa":
-        median = aggregate("median", *ranges, option=option, **kwargs)
         std = aggregate("std", *ranges, option=option, **kwargs)
+        median = aggregate("median", *ranges, option=option, **kwargs)
         return f"{std}/{median}"
-    if func in AGGREGATE_FUNCTION:
-        func = AGGREGATE_FUNCTION[func]
-        return f"AGGREGATE({func},{option},{column})"
-    if hasattr(func, "get_address"):  # funcの参照先は'mean'等の文字列
+
+    column = ",".join([rng.get_address(**kwargs) for rng in ranges])  # type: ignore
+
+    if func in AGG_FUNCS:
+        return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"
+
+    if isinstance(func, Range):
         ref = func.get_address(column_absolute=False, row_absolute=False)
-        funcs, keys = zip(*AGGREGATE_FUNCTION_.items(), strict=False)
-        keys = [f"{key}" for key in keys]
-        keys = ",".join(keys)
-        funcs = [f'"{func}"' for func in funcs]
-        funcs = ",".join(funcs)
+        func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
         soa = aggregate("soa", *ranges, option=option, **kwargs)
-        func = f"LOOKUP({ref},{{{funcs}}},{{{keys}}})"
         return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
+
+    raise NotImplementedError
 
 
 def match_index(ref, sf, columns, column=None, na=False, null=False, error=False):

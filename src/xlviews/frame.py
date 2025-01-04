@@ -3,22 +3,19 @@
 from __future__ import annotations
 
 import re
-from itertools import chain, product, takewhile
+from itertools import chain, takewhile
 from typing import TYPE_CHECKING, overload
 
 import numpy as np
-import pandas as pd
 import xlwings as xw
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Sheet
 
-from xlviews import common
+from xlviews import common, modify
 from xlviews.axes import set_first_position
 from xlviews.decorators import wait_updating
 from xlviews.element import Bar, Plot, Scatter
-from xlviews.formula import aggregate
 from xlviews.grid import FacetGrid
-from xlviews.range import multirange
 from xlviews.style import (
     get_number_format,
     set_alignment,
@@ -983,6 +980,28 @@ class SheetFrame:
         rng = self.sheet.range(start, end)
         set_alignment(rng, alignment)
 
+    def distframe(self, *args, **kwargs):
+        from xlviews.dist import DistFrame
+
+        self.dist = DistFrame(self, *args, **kwargs)
+        return self.dist
+
+    def statsframe(self, *args, **kwargs):
+        from xlviews.stats import StatsFrame
+
+        self.stats = StatsFrame(self, *args, **kwargs)
+        return self.stats
+
+    def move(self, count: int, direction: str = "down", width: int = 0) -> Range:
+        return modify.move(self, count, direction, width)
+
+    def delete(self, direction: str = "up", *, entire: bool = False) -> None:
+        return modify.delete(self, direction, entire=entire)
+
+    @wait_updating
+    def copy(self, *args, **kwargs) -> SheetFrame:
+        return modify.copy(self, *args, **kwargs)
+
     def set_chart_position(self, pos: str = "right") -> None:
         set_first_position(self, pos=pos)
 
@@ -997,237 +1016,6 @@ class SheetFrame:
 
     def grid(self, *args, **kwargs):
         return FacetGrid(self, *args, **kwargs)
-
-    def distframe(self, *args, **kwargs):
-        from xlviews.dist import DistFrame
-
-        self.dist = DistFrame(self, *args, **kwargs)
-        return self.dist
-
-    def statsframe(self, *args, **kwargs):
-        from xlviews.stats import StatsFrame
-
-        self.stats = StatsFrame(self, *args, **kwargs)
-        return self.stats
-
-    def move(self, count, direction="down", width=None):
-        """
-        空の行/列を挿入することで自分自身を右 or 下に移動する。
-
-        Parameters
-        ----------
-        count : int
-            空きを作る行数
-        direction : str
-            'down' or 'right'
-        width : int, optional
-            右方向に追加した時のカラム幅
-
-        Returns
-        -------
-        xw.Range
-           元のセル
-        """
-        if direction == "down":
-            start = self.row - 1
-            if self.cell.offset(-1).formula:
-                end = start + count + 1
-            else:
-                end = start + count
-
-            rows = self.sheet.api.Rows(f"{start}:{end}")
-            rows.Insert(Shift=xw.constants.Direction.xlDown)
-            return self.sheet.range(start + 1, self.column)
-        if direction == "right":
-            start = self.column - 1
-            end = start + count
-            start_ = self.sheet.range(1, start).get_address().split("$")[1]
-            end_ = self.sheet.range(1, end).get_address().split("$")[1]
-            columns = self.sheet.api.Columns(f"{start_}:{end_}")
-            columns.Insert(Shift=xw.constants.Direction.xlToRight)
-            if width:
-                columns = self.sheet.api.Columns(f"{start_}:{end_}")
-                columns.ColumnWidth = width
-            return self.sheet.range(self.row, start + 1)
-
-    def delete(self, direction="up", entire=False):
-        """
-        自分自身を消去する。
-        Parameters
-        ----------
-        direction : str
-            'up' or 'left'
-        entire : bool
-            行/列全体を消去するか
-
-        Returns
-        -------
-        """
-        range_ = self.range()
-        start, end = range_[0], range_[-1]
-        start = start.offset(-1, -1)
-        if self.wide_columns:
-            start = start.offset(-1)
-        end = end.offset(1, 1)
-        range_ = xw.Range(start, end).api
-        if direction == "up":
-            if entire:
-                range_.EntireRow.Delete()
-            else:
-                range_.Delete(Shift=xw.constants.Direction.xlUp)
-        elif direction == "left":
-            if entire:
-                range_.EntireColumn.Delete()
-            else:
-                range_.Delete(Shift=xw.constants.Direction.xlToLeft)
-        else:
-            raise ValueError('directionは"up" or "left"', direction)
-
-    @wait_updating
-    def copy(
-        self,
-        *args,
-        columns=None,
-        n=1,
-        header_ref=False,
-        sort_index=False,
-        sel=None,
-        rows=None,
-        drop_duplicates=False,
-        autofit=True,
-        **kwargs,
-    ):
-        """
-        自分の参照コピーを作成する。
-
-        Parameters
-        ----------
-        *args :
-            SheetFrameの第一引数。コピー先の場所を指定する。
-        columns : list of str, optional
-            コピーするカラム名
-        n : int, optional
-            行の展開数
-        header_ref : bool, optional
-            ヘッダー行を参照するか
-        sort_index : bool, optional
-            インデックスをソートするか
-        sel : dict or list of bool, optional
-            コピーする行を選択する辞書かファンシーインデックスで指定
-        rows: list of int, optional
-            コピーする行を行番号で指定. 0-index
-        drop_duplicates : bool, optional
-            重複するインデックスを削除するか
-        autofit : bool, optional
-            オートフィットするか
-
-        Returns
-        -------
-        SheetFrame
-        """
-        if len(args) == 0:
-            sheet = self.sheet
-            cell = self.get_adjacent_cell()
-        else:
-            sheet, cell = get_sheet_cell_row_column(*args)[:2]
-        include_sheetname = self.sheet != sheet
-
-        if columns is None:
-            columns = self.columns
-        else:
-            columns = iter_columns(self, columns)
-
-        index_columns = self.index_columns
-        for index_level, column in enumerate(columns):
-            if column not in index_columns:
-                break
-        if columns[-1] in index_columns:
-            index_level += 1
-
-        index_data = self[columns[:index_level]]
-
-        if isinstance(sel, dict):
-            sel = self.select(**sel)
-        if sel is not None:
-            index_data = index_data[sel]
-        if rows:
-            index_data = index_data[index_data.index.isin(rows)]
-        if drop_duplicates:
-            index_data = index_data.drop_duplicates()
-        if sort_index:
-            index_data = index_data.sort_values(columns[:index_level])
-
-        header = []
-        header_cell = {}
-        for column in columns:
-            if column not in self.columns:
-                header.append(column)
-            else:
-                header_ = self.range(column, 0)
-                header_cell[column] = header_
-                if header_ref:
-                    header_ = header_.get_address(include_sheetname=include_sheetname)
-                    header.append("=" + header_)
-                else:
-                    header.append(column)
-        values = [header]
-        for row in index_data.index:
-            row_values = []
-            for column in columns:
-                if column in header_cell:
-                    ref = header_cell[column].offset(int(row) + 1)
-                    ref = ref.get_address(include_sheetname=include_sheetname)
-                    value = "=" + ref
-                else:
-                    value = None
-                row_values.append(value)
-            row_values = [row_values] * n
-            values.extend(row_values)
-
-        cell.value = values
-        sf = SheetFrame(cell, index_level=index_level, autofit=False, **kwargs)
-
-        self_columns = self.columns
-        number_format = {
-            column: self.get_number_format(column)
-            for column in columns
-            if column in self_columns
-        }
-        sf.set_number_format(**number_format)
-        if autofit:
-            sf.autofit()
-        return sf
-
-    @wait_updating
-    def product(self, *args, columns=None, **kwargs):
-        """
-        直積シーﾄフレームを生成する。
-
-        sf.product(a=[1,2,3], b=[4,5,6])とすると、元のシートフレームを
-        9倍に伸ばして、(1,4), (1,5), ..., (3,6)のデータを追加する.
-
-        Parameters
-        ----------
-        columns: list
-            積をとるカラム名
-
-        Returns
-        -------
-        SheetFrame
-        """
-        values = []
-        for value in product(*kwargs.values()):
-            values.append(value)
-        df = pd.DataFrame(values, columns=kwargs.keys())
-        if columns is None:
-            columns = self.columns
-        columns += list(df.columns)
-        length = len(self)
-        sf = self.copy(*args, columns=columns, n=len(df))
-        for column in df:
-            sf[column] = list(df[column]) * length
-        sf.set_style(autofit=True)
-        return sf
 
     # def aggregate(self, func, column: str, by=None, sel=None, **kwargs):
     #     column = self.index(column)

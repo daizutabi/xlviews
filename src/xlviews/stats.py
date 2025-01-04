@@ -5,7 +5,7 @@ import pandas as pd
 import xlwings as xw
 
 from xlviews.decorators import wait_updating
-from xlviews.formula import AGGREGATE_FUNCTION, aggregate
+from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
 from xlviews.range import multirange
 from xlviews.style import get_number_format, set_alignment, set_font, set_number_format
@@ -67,7 +67,7 @@ class StatsFrame(SheetFrame):
         """
         self.by = parent.columns_list(by)
         self.func_column = "func"
-        self.func = AGGREGATE_FUNCTION.copy()
+        self.func = AGG_FUNCS.copy()
         self.link = link
         self.grouped = None
         self.length = 1

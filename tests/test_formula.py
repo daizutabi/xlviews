@@ -57,3 +57,63 @@ def test_const(column: Range, const_header: Range, k, value):
 
     const_header.value = const(column, "=")
     assert const_header.value[k] == value
+
+
+@pytest.fixture(scope="module")
+def ranges(sheet_module: Sheet):
+    rng = sheet_module.range("B100")
+    rng.options(transpose=True).value = [1, 2, 3, 4, 0, 5, 6, 7, 8, 9, 10]
+    rng1 = rng.expand("down")
+    sheet_module.range("B104").value = None
+
+    rng = sheet_module.range("C100")
+    rng.options(transpose=True).value = [11, 12, 13, 14, 15, 16, 17, 0, 18, 19, 20]
+    rng2 = rng.expand("down")
+    sheet_module.range("C107").value = None
+
+    return [rng1, rng2]
+
+
+def test_ranges(ranges: list[Range]):
+    assert ranges[0].get_address() == "$B$100:$B$110"
+    assert ranges[1].get_address() == "$C$100:$C$110"
+
+
+def test_aggregate_value(ranges: list[Range]):
+    from xlviews.formula import aggregate
+
+    assert aggregate("count", *ranges) == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
+
+
+FUNC_VALUES = [
+    ("count", 20),
+    ("sum", 210),
+    ("min", 1),
+    ("max", 20),
+    ("mean", 10.5),
+    ("median", 10.5),
+    ("std", np.std(range(1, 21))),
+    ("soa", np.std(range(1, 21)) / 10.5),
+]
+
+
+@pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
+def test_aggregate_str(ranges: list[Range], func, value):
+    from xlviews.formula import aggregate
+
+    formula = aggregate(func, *ranges)
+    cell = ranges[0].sheet.range("D100")
+    cell.value = "=" + formula
+    assert cell.value == value
+
+
+@pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
+def test_aggregate_range(ranges: list[Range], func, value):
+    from xlviews.formula import aggregate
+
+    ref = ranges[0].sheet.range("E100")
+    ref.value = func
+    formula = aggregate(ref, *ranges)
+    cell = ranges[0].sheet.range("D100")
+    cell.value = "=" + formula
+    assert cell.value == value
