@@ -1,6 +1,11 @@
 import pytest
+from pandas import DataFrame, MultiIndex
 from xlwings import Sheet
 from xlwings.constants import BordersIndex
+
+from xlviews.config import rcParams
+from xlviews.frame import SheetFrame
+from xlviews.utils import rgb
 
 
 @pytest.mark.parametrize(("index", "value"), [("Vertical", 11), ("Horizontal", 12)])
@@ -159,9 +164,7 @@ def test_hide_gridlines(sheet: Sheet):
 )
 @pytest.mark.parametrize("gray", [True, False])
 def test_set_style(sheet: Sheet, name, gray):
-    from xlviews.config import rcParams
     from xlviews.style import _set_style
-    from xlviews.utils import rgb
 
     rng = sheet["C3:E5"]
     _set_style(rng[0], rng[-1], name, gray=gray)
@@ -170,9 +173,119 @@ def test_set_style(sheet: Sheet, name, gray):
     assert rng.api.Interior.Color == color
 
 
-def a():
-    import xlwings as xw
+@pytest.fixture(scope="module")
+def sf_basic(sheet_module: Sheet):
+    from xlviews.style import set_frame_style
 
-    book = xw.Book()
-    sheet = book.sheets[0]
-    sheet
+    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    sf = SheetFrame(sheet_module, 2, 2, data=df, style=False)
+    set_frame_style(sf, autofit=True)
+    return sf
+
+
+@pytest.mark.parametrize(
+    ("cell", "name"),
+    [("B2", "index.name"), ("B6", "index"), ("D2", "columns"), ("D5", "values")],
+)
+def test_frame_style_basic(sf_basic: SheetFrame, cell: str, name: str):
+    c = rgb(rcParams[f"frame.{name}.fill.color"])
+    assert sf_basic.sheet[cell].api.Interior.Color == c
+
+
+def test_frame_style_banding_succession(sheet_module: Sheet):
+    from xlviews.style import set_frame_style
+
+    df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    df = df.set_index("x")
+    sf = SheetFrame(sheet_module, 2, 6, data=df, style=False)
+    set_frame_style(sf, autofit=True, banding=True, succession=True)
+    assert sf.sheet["F4"].api.FormatConditions(1)
+    assert sf.sheet["H5"].api.FormatConditions(1)
+
+
+@pytest.fixture(scope="module")
+def df_mc():
+    df_mc = DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    mi = [("a", "b", "c"), ("d", "e", "f"), ("g", "h", "i")]
+    df_mc.columns = MultiIndex.from_tuples(mi)
+    df_mc.columns.names = ["x", "y", "z"]
+    return df_mc
+
+
+@pytest.fixture(scope="module")
+def sf_mc(sheet_module: Sheet, df_mc: DataFrame):
+    from xlviews.style import set_frame_style
+
+    sf = SheetFrame(sheet_module, 9, 2, data=df_mc, style=False)
+    set_frame_style(sf, autofit=True)
+    return sf
+
+
+@pytest.mark.parametrize(
+    ("cell", "name"),
+    [
+        ("B9", "index.name"),
+        ("B11", "index.name"),
+        ("B12", "index"),
+        ("B15", "index"),
+        ("C9", "columns.name"),
+        ("E10", "columns.name"),
+        ("C11", "columns"),
+        ("E11", "columns"),
+        ("C12", "values"),
+        ("E15", "values"),
+    ],
+)
+def test_frame_style_multi_columns(sf_mc: SheetFrame, cell: str, name: str):
+    c = rgb(rcParams[f"frame.{name}.fill.color"])
+    assert sf_mc.sheet[cell].api.Interior.Color == c
+
+
+@pytest.fixture(scope="module")
+def df_mic(df_mc: DataFrame):
+    df_mic = df_mc.copy()
+    df_mic.columns = MultiIndex.from_tuples([("a", "b"), ("c", "d"), ("e", "f")])
+    df_mic.columns.names = ["x", "y"]
+    i = [("i", "j"), ("k", "l"), ("m", "n"), ("o", "p")]
+    df_mic.index = MultiIndex.from_tuples(i)
+    return df_mic
+
+
+@pytest.fixture(scope="module")
+def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
+    from xlviews.style import set_frame_style
+
+    sf = SheetFrame(sheet_module, 9, 6, data=df_mic, style=False)
+    set_frame_style(sf, autofit=True)
+    return sf
+
+
+@pytest.mark.parametrize(
+    ("cell", "name"),
+    [
+        ("F9", "index.name"),
+        ("G10", "index.name"),
+        ("F11", "index"),
+        ("G14", "index"),
+        ("H9", "columns.name"),
+        ("J9", "columns.name"),
+        ("H10", "columns"),
+        ("J10", "columns"),
+        ("H11", "values"),
+        ("J14", "values"),
+    ],
+)
+def test_frame_style_multi_index_columns(sf_mic: SheetFrame, cell: str, name: str):
+    c = rgb(rcParams[f"frame.{name}.fill.color"])
+    assert sf_mic.sheet[cell].api.Interior.Color == c
+
+
+def test_table_style(sheet_module: Sheet):
+    from xlviews.style import set_table_style
+
+    df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    df = df.set_index("x")
+    sf = SheetFrame(sheet_module, 17, 2, data=df, style=False)
+    table = sf.as_table(style=False)
+    set_table_style(table)
+    assert table.sheet.book.api.TableStyles("xlviews")

@@ -230,9 +230,10 @@ def copy(
 
     sf = sf.__class__(cell, index_level=index_level, autofit=False, **kwargs)
 
-    sf.set_number_format(**number_format)
+    sf.set_number_format(autofit=False, **number_format)
+
     if autofit:
-        sf.autofit()
+        sf.range().columns.autofit()
 
     return sf
 

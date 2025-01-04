@@ -10,7 +10,12 @@ import pywintypes
 import seaborn as sns
 import xlwings as xw
 from xlwings import Range, Sheet
-from xlwings.constants import BordersIndex, FormatConditionType, LineStyle
+from xlwings.constants import (
+    BordersIndex,
+    FormatConditionType,
+    LineStyle,
+    TableStyleElementType,
+)
 
 from xlviews.config import rcParams
 from xlviews.decorators import api, wait_updating
@@ -18,6 +23,9 @@ from xlviews.utils import constant, rgb
 
 if TYPE_CHECKING:
     from xlwings._xlwindows import COMRetryObjectWrapper
+
+    from xlviews.frame import SheetFrame
+    from xlviews.table import Table
 
 
 def set_border_line(
@@ -230,11 +238,7 @@ def _set_style(
 
 @wait_updating
 def set_frame_style(
-    cell: Range,
-    index_level: int,
-    columns_level: int,
-    length: int,
-    columns: int,
+    sf: SheetFrame,
     *,
     autofit: bool = False,
     alignment: str | None = "center",
@@ -249,11 +253,7 @@ def set_frame_style(
     """Set style of SheetFrame.
 
     Args:
-        cell: The top-left cell of the frame.
-        index_level: The depth of the index level.
-        columns_level: The depth of the columns level.
-        length: The number of rows.
-        columns: The number of columns excluding the index.
+        sf: The SheetFrame object.
         autofit: Whether to autofit the frame.
         alignment: The alignment of the frame.
         border: Whether to draw the border.
@@ -264,7 +264,9 @@ def set_frame_style(
         gray: Whether to set the frame in gray mode.
         font_size: The font size to specify directly.
     """
-    sheet = cell.sheet
+    cell = sf.cell
+    sheet = sf.sheet
+
     set_style = partial(
         _set_style,
         border=border,
@@ -274,7 +276,11 @@ def set_frame_style(
         font_size=font_size,
     )
 
+    index_level = sf.index_level
+    columns_level = sf.columns_level
+
     if index_level > 0:
+        length = len(sf)
         start = cell
         end = cell.offset(columns_level - 1, index_level - 1)
         set_style(start, end, "index.name")
@@ -292,17 +298,19 @@ def set_frame_style(
             rng = sheet.range(start, end)
             hide_unique(rng, length)
 
+    width = len(sf.value_columns)
+
     if columns_level > 1:
         start = cell.offset(0, index_level)
-        end = cell.offset(columns_level - 2, index_level + columns - 1)
+        end = cell.offset(columns_level - 2, index_level + width - 1)
         set_style(start, end, "columns.name")
 
     start = cell.offset(columns_level - 1, index_level)
-    end = cell.offset(columns_level - 1, index_level + columns - 1)
+    end = cell.offset(columns_level - 1, index_level + width - 1)
     set_style(start, end, "columns")
 
     start = cell.offset(columns_level, index_level)
-    end = cell.offset(columns_level + length - 1, index_level + columns - 1)
+    end = cell.offset(columns_level + length - 1, index_level + width - 1)
     set_style(start, end, "values")
 
     rng = sheet.range(start, end)
@@ -324,17 +332,23 @@ def set_frame_style(
         set_alignment(rng, alignment)
 
 
-def set_table_style(api, even_color=rgb(240, 250, 255), odd_color=rgb(255, 255, 255)):
-    book = api.Range.Parent.Parent
+def set_table_style(
+    table: Table,
+    even_color: int | str = rgb(240, 250, 255),
+    odd_color: int | str = rgb(255, 255, 255),
+) -> None:
+    book = table.sheet.book.api
+
     try:
         style = book.TableStyles("xlviews")
     except pywintypes.com_error:
         style = book.TableStyles.Add("xlviews")
-        odd_type = xw.constants.TableStyleElementType.xlRowStripe1
+        odd_type = TableStyleElementType.xlRowStripe1
         style.TableStyleElements(odd_type).Interior.Color = odd_color
-        even_type = xw.constants.TableStyleElementType.xlRowStripe2
+        even_type = TableStyleElementType.xlRowStripe2
         style.TableStyleElements(even_type).Interior.Color = even_color
-    api.TableStyle = style
+
+    table.api.TableStyle = style
 
 
 def color_palette(n: int) -> list[tuple[int, int, int]]:

@@ -52,7 +52,7 @@ class Table:
             self.add_const_header()
 
         if style:
-            set_table_style(self.api)
+            set_table_style(self)
 
     @property
     def column(self) -> Range:

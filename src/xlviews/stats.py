@@ -8,7 +8,7 @@ from xlviews.decorators import wait_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
 from xlviews.range import multirange
-from xlviews.style import get_number_format, set_alignment, set_font, set_number_format
+from xlviews.style import set_alignment, set_font
 from xlviews.utils import constant, outline_group, outline_levels
 
 

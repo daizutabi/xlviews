@@ -17,13 +17,11 @@ from xlviews.decorators import wait_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.style import (
-    get_number_format,
     set_alignment,
     set_border,
     set_fill,
     set_font,
     set_frame_style,
-    set_number_format,
 )
 from xlviews.table import Table
 from xlviews.utils import array_index, iter_columns
@@ -852,48 +850,40 @@ class SheetFrame:
 
         return index
 
-    def get_number_format(self, column):
-        cell = self.range(column)
-        return get_number_format(cell)
+    def get_number_format(self, column: str | tuple) -> str:
+        return self.range(column).number_format
 
     def set_number_format(
         self,
-        *number_format,
-        autofit=False,
-        split=True,
+        number_format: str | dict | None = None,
+        *,
+        autofit: bool = False,
         **columns_format,
-    ):
-        if number_format:
-            number_format = number_format[0]
-            if isinstance(number_format, dict):
-                columns_format.update(number_format)
-            else:
-                cell = xw.Range(
-                    self.cell.offset(self.columns_level, self.index_level),
-                    self.range()[-1],
-                )
-                set_number_format(cell, number_format)
-                if autofit:
-                    cell.autofit()
-                return
-        if self.columns_level == 1:
-            for column in chain(self.columns, self.wide_columns):
-                if column in self.columns and isinstance(column, str) and split:
-                    column_ = column.split("_")[0]
-                else:
-                    column_ = column
-                if column_ in columns_format:
-                    cell = self.range(column, -1)
-                    set_number_format(cell, columns_format[column_])
+    ) -> None:
+        if isinstance(number_format, str):
+            start = self.cell.offset(self.columns_level, self.index_level)
+            rng = self.sheet.range(start, self.range()[-1])
+            rng.number_format = number_format
+            if autofit:
+                rng.autofit()
+            return
+
+        if isinstance(number_format, dict):
+            columns_format.update(number_format)
+
+        for column in chain(self.columns, self.wide_columns):
+            if not column:
+                continue
+
+            for pattern, number_format in columns_format.items():
+                column_name = column if isinstance(column, str) else column[0]
+
+                if re.match(pattern, column_name):
+                    rng = self.range(column, -1)
+                    rng.number_format = number_format
                     if autofit:
-                        cell.autofit()
-        elif self.index_level == 1:
-            for column in list(self.columns[0]) + ["index"]:
-                if column in columns_format:
-                    cell = self.range(column, -1)
-                    set_number_format(cell, columns_format[column])
-                    if autofit:
-                        cell.autofit()
+                        rng.autofit()
+                    break
 
     def set_style(self, columns_alignment=None, gray=False, **kwargs):
         set_frame_style(
