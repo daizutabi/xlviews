@@ -1,120 +1,114 @@
+from __future__ import annotations
+
 from itertools import product
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 
-import xlviews as xv
 from xlviews.config import rcParams
 from xlviews.decorators import wait_updating
 from xlviews.frame import SheetFrame
 from xlviews.style import set_alignment, set_font
+from xlviews.utils import iter_columns
+
+if TYPE_CHECKING:
+    from xlwings import Range
 
 
 class DistFrame(SheetFrame):
+    parent: SheetFrame
+    dist_func: dict[str, str]
+
     @wait_updating
     def __init__(
-        self, parent, columns=None, dist="norm", by=None, gray=True, autofit=True
-    ):
-        """
-        分布をプロットするためにシートフレームを作成する。
-        Parameters
-        ----------
-        dist : str or dict
-        """
-        self.by = parent.columns_list(by)
-        self.dist_columns = columns if columns else parent.value_columns
-        if isinstance(self.dist_columns, str):
-            self.dist_columns = [self.dist_columns]
-        if isinstance(dist, str):
-            self.dist_func = {column: dist for column in self.dist_columns}
-        else:
-            self.dist_func = dist.copy()
-            for column in self.dist_columns:
-                if column not in self.dist_func:
-                    self.dist_func[column] = "norm"
+        self,
+        parent: SheetFrame,
+        columns: str | list[str] | None = None,
+        *,
+        by: str | list[str] | None = None,
+        dist: str | dict[str, str] = "norm",
+        style: bool = True,
+        gray: bool = True,
+        autofit: bool = True,
+    ) -> None:
+        if columns is None:
+            columns = parent.value_columns
+        elif isinstance(columns, str):
+            columns = [columns]
 
-        self.cell = parent.get_child_cell()
+        self.dist_func = get_dist_func(dist, columns)
 
-        # tableに変換する必要があるのはなぜ？
-        if not parent.is_table:
-            try:
-                parent.astable()
-            except Exception:
-                pass
-        self.parent = parent
+        if not parent.table:
+            parent.as_table()
 
-        super().__init__(
-            data=self.dummy_dataframe(),
-            parent=self.parent,
-            index=self.by is not None,
-            style=False,
-        )
-        if self.by:
-            self.link_to_index()
-        grouped = self.groupby(self.by)
-        for column in self.dist_columns:
+        by = list(iter_columns(parent, by)) if by else None
+        data = get_init_data(parent, columns, by)
+
+        super().__init__(data=data, parent=parent, index=by is not None, style=False)
+
+        if by:
+            self.link_to_index(by)
+
+        grouped = self.groupby(by)
+
+        for column in columns:
             dist = self.dist_func[column]
             parent_column = self.parent.range(column).column
-            column = self.range(column + "_n").column
-            for key, row in grouped.items():
+            column_int = self.range(column + "_n").column
+
+            for row in grouped.values():
                 if len(row) != 1:
-                    raise ValueError("連続する行のみby可能")
+                    raise ValueError("group must be continuous")
+
                 start = row[0][0]
                 length = row[0][1] - start + 1
+
                 parent_cell = self.parent.sheet.range(start, parent_column)
-                cell = self.sheet.range(start, column)
+                cell = self.sheet.range(start, column_int)
+
                 formula = counter(parent_cell)
                 set_formula(cell, length, formula)
+
                 formula = sorted_value(parent_cell, cell, length)
                 set_formula(cell.offset(0, 1), length, formula)
+
                 formula = sigma_value(cell, length, dist)
                 set_formula(cell.offset(0, 2), length, formula)
-        for column in self.dist_columns:
-            parent_cell = self.parent.range(column)
-            number_format = parent_cell.api.NumberFormatLocal
-            self.set_number_format({f"{column}_v": number_format}, split=False)
-            self.set_number_format({f"{column}_s": "0.00"}, split=False)
-        self.set_style(autofit=autofit, gray=gray)
+
+        for column in columns:
+            fmt = self.parent.range(column).number_format
+            self.set_number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
+
+        if style:
+            self.set_style(autofit=autofit, gray=gray)
+
         self.const_values()
 
-    def dummy_dataframe(self):
-        columns = [
-            "_".join([column, name])
-            for column, name in product(self.dist_columns, ["n", "v", "s"])
-        ]
-        array = np.zeros((len(self.parent), len(columns)))
-        df = pd.DataFrame(array, columns=columns)
-        if self.by:
-            index = np.zeros((len(self.parent), len(self.by)))
-            index = pd.DataFrame(index, columns=self.by)
-            df = pd.concat([index, df], axis=1)  # type: pd.DataFrame
-            df.set_index(self.by, inplace=True)
-        return df
-
-    def link_to_index(self):
+    def link_to_index(self, by: list[str]) -> None:
         start = self.row + 1
         end = start + len(self) - 1
-        for by in self.by:
-            ref = self.parent.index(by)
+        for column in by:
+            ref = self.parent.index(column)
             ref = self.parent.sheet.range(start, ref)
             ref = ref.get_address(row_absolute=False)
             formula = f"={ref}"
-            to = self.index(by)
+            to = self.index(column)
             range_ = self.sheet.range((start, to), (end, to))
             range_.value = formula
 
-    def const_values(self):
+    def const_values(self) -> None:
         index = self.parent.index_columns
         array = np.zeros((len(index), 1))
-        df = pd.DataFrame(array, columns=["value"], index=index)
-        sf = xv.SheetFrame(data=df, head=self, gray=True, autofit=False)
+        df = DataFrame(array, columns=["value"], index=index)
+        sf = SheetFrame(data=df, head=self, gray=True, autofit=False)
         head = self.parent.cell.offset(-1, 0)
         tail = sf.cell.offset(1, 1)
         for k in range(len(index)):
             formula = "=" + head.offset(0, k).get_address()
             tail.offset(k, 0).value = formula
 
-    # Plot関連
     def plot(
         self,
         x,
@@ -206,78 +200,67 @@ class DistFrame(SheetFrame):
         cell = self.sheet.range(row, column)
         range_ = self.sheet.range(cell, cell.offset(len(self) - 1))
         range_.api.NumberFormatLocal = "0.00_ "
-        formula = (
-            f"=IF(AND({cell_ref}>=-{sigma}," f"{cell_ref}<={sigma}),{cell_ref},NA())"
-        )
+        formula = f"=IF(AND({cell_ref}>=-{sigma},{cell_ref}<={sigma}),{cell_ref},NA())"
         range_.value = formula
         return column_
 
 
-def counter(parent_cell):
-    column = ":".join(
-        [parent_cell.get_address(), parent_cell.get_address(row_absolute=False)]
-    )
-    return f"=AGGREGATE(3,1,{column})"
-    # self.set_formula(formula, 0, offset, length)
+def get_init_data(
+    sf: SheetFrame,
+    columns: list[str],
+    by: list[str] | None,
+) -> DataFrame:
+    columns = [f"{c}_{suffix}" for c, suffix in product(columns, ["n", "v", "s"])]
+
+    array = np.zeros((len(sf), len(columns)))
+    df = DataFrame(array, columns=columns)
+
+    if by:
+        index = np.zeros((len(sf), len(by)))
+        index = DataFrame(index, columns=by)
+        df = pd.concat([index, df], axis=1)
+        df = df.set_index(by)
+
+    return df
 
 
-def sorted_value(parent_cell, cell, length):
-    end = parent_cell.offset(length - 1)
-    column = ":".join([parent_cell.get_address(), end.get_address()])
+def get_dist_func(dist: str | dict[str, str], columns: list[str]) -> dict[str, str]:
+    if isinstance(dist, str):
+        return {column: dist for column in columns}
 
+    dist = dist.copy()
+    for column in columns:
+        dist.setdefault(column, "norm")
+
+    return dist
+
+
+def counter(cell: Range) -> str:
+    start = cell.get_address()
+    end = cell.get_address(row_absolute=False)
+    return f"=AGGREGATE(3,1,{start}:{end})"
+
+
+def sorted_value(parent_cell: Range, cell: Range, length: int) -> str:
+    start = parent_cell.get_address()
+    end = parent_cell.offset(length - 1).get_address()
     small = cell.get_address(row_absolute=False)
-    return f"=IF({small}>0,AGGREGATE(15,1,{column},{small}),NA())"
-    # self.set_formula(formula, 1, offset, length)
+    return f"=IF({small}>0,AGGREGATE(15,1,{start}:{end},{small}),NA())"
 
 
-def sigma_value(cell, length, dist):
+def sigma_value(cell: Range, length: int, dist: str) -> str:
     small = cell.get_address(row_absolute=False)
-    end = cell.offset(length - 1)
-    end = end.get_address()
+    end = cell.offset(length - 1).get_address()
+
     if dist == "norm":
         return f"=IF({small}>0,NORM.S.INV({small}/({end}+1)),NA())"
+
     if dist == "weibull":
         return f"=IF({small}>0,LN(-LN(1-{small}/({end}+1))),NA())"
+
     raise ValueError("不明な分布", dist)
-    # range_ = self.set_formula(formula, 2, offset, length)
-    # range_.api.NumberFormatLocal = '0.00_ '
 
 
-def set_formula(cell, length, formula):
+def set_formula(cell: Range, length: int, formula: str) -> None:
     end = cell.offset(length - 1)
     cell.sheet.range(cell, end).value = formula
-
-
-def main():
-    import mtj
-    import xlwings as xw
-
-    xw.apps.add()
-    book = xw.books[0]
-    sheet = book.sheets[0]
-
-    directory = mtj.get_directory("remote", "Data")
-    run = mtj.get_paths_dataframe(directory, "SL1050-01", recipe="HR")
-    series = run.iloc[0]
-    path = mtj.get_path(directory, series)
-    with mtj.data(path) as data:
-        data.merge_device()
-        sf = data.sheetframe(
-            sheet,
-            2,
-            2,
-            columns=["wafer", "cad", "sx", "sy", "Rmin", "Rmax", "TMR"],
-            index=":sy",
-            sort_index=True,
-        )
-    sf.set_number_format(Rmin="0.0", TMR="0")
-    sf.distframe(by=":cad")
-    # df.grid(x='cad', left=0).map('plot', ['Rmin', 'Rmax'],
-    #                              xticks=(0, 30, 10),
-    #                              yticks=(-4, 4), marker='o',
-    #                              xlabel='Rmin [kΩ]', ylabel='σ', alpha=0.9,
-    #                              fit=2)
-
-
-if __name__ == "__main__":
-    main()
