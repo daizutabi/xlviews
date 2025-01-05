@@ -65,6 +65,7 @@ class SheetFrame:
         autofit: bool = True,
         number_format: str | None = None,
         font_size: int | None = None,
+        table: bool = False,
         **kwargs,
     ) -> None:
         """Create a DataFrame on an Excel sheet.
@@ -137,6 +138,9 @@ class SheetFrame:
                 columns_level=columns_level,
                 number_format=number_format,
             )
+
+        if table and not self.table:
+            self.table = self.as_table()
 
     def set_data(
         self,

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from pandas import DataFrame
-from scipy import stats
+from scipy.stats import norm
 from xlwings import Sheet
 
 from xlviews.dist import DistFrame
@@ -67,13 +67,13 @@ def sfd(sf: SheetFrame):
         ("J7", 4),
         ("I17", 2),
         ("J17", 2),
-        ("K4", stats.norm.ppf(1 / 6)),
-        ("N5", stats.norm.ppf(2 / 6)),
-        ("K6", stats.norm.ppf(3 / 6)),
-        ("N7", stats.norm.ppf(4 / 6)),
-        ("K8", stats.norm.ppf(5 / 6)),
-        ("N16", stats.norm.ppf(1 / 3)),
-        ("K17", stats.norm.ppf(2 / 3)),
+        ("K4", norm.ppf(1 / 6)),
+        ("N5", norm.ppf(2 / 6)),
+        ("K6", norm.ppf(3 / 6)),
+        ("N7", norm.ppf(4 / 6)),
+        ("K8", norm.ppf(5 / 6)),
+        ("N16", norm.ppf(1 / 3)),
+        ("K17", norm.ppf(2 / 3)),
     ],
 )
 def test_distframe(sfd: DistFrame, cell: str, value: float):
