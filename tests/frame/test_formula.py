@@ -46,6 +46,6 @@ def sf2(sheet_module: Sheet):
     ],
 )
 def test_formula_wide(sf2: SheetFrame, formula, value):
-    sf2.add_formula_column("c", formula)
+    sf2.add_formula_column("c", formula, number_format="0", autofit=True)
     np.testing.assert_array_equal(sf2[("c", 1)], value[0])
     np.testing.assert_array_equal(sf2[("c", 4)], value[1])

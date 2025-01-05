@@ -30,7 +30,7 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
 
 
 def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set_data_from_sheet(index_level=1)
+    sf.set_data_from_sheet(index_level=1, number_format="0")
     assert sf.has_index is True
     assert sf.index_level == 1
 

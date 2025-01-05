@@ -897,17 +897,6 @@ class SheetFrame:
         column = self.column + len(self.columns)
         self.sheet.range(1, column).column_width = width
 
-    def hide(self, *, hidden: bool = True) -> None:
-        """Hide the SheetFrame."""
-        start = self.column
-        end = start + len(self.columns)
-        column = self.sheet.range((1, start), (1, end)).api.EntireColumn
-        column.Hidden = hidden
-
-    def unhide(self) -> None:
-        """Unhide the SheetFrame."""
-        self.hide(hidden=False)
-
     def add_child_frame(self, child: SheetFrame) -> None:
         """Add a child SheetFrame."""
         self.children.append(child)
@@ -924,7 +913,7 @@ class SheetFrame:
         if self.children:
             return self.get_child_cell()
 
-        return self.cell.offset(0, len(self.columns) + 1).offset(0, offset)
+        return self.cell.offset(0, len(self.columns) + offset + 1)
 
     def move(self, count: int, direction: str = "down", width: int = 0) -> Range:
         return modify.move(self, count, direction, width)
