@@ -9,7 +9,7 @@ from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
 from xlviews.range import multirange
 from xlviews.style import set_alignment, set_font
-from xlviews.utils import constant, outline_group, outline_levels
+from xlviews.utils import constant, iter_columns, outline_group, outline_levels
 
 
 class StatsFrame(SheetFrame):
@@ -65,7 +65,7 @@ class StatsFrame(SheetFrame):
         **kwargs
             SheetFrame.__init__関数に渡される。
         """
-        self.by = parent.columns_list(by)
+        self.by = list(iter_columns(parent, by)) if by else None
         self.func_column = "func"
         self.func = AGG_FUNCS.copy()
         self.link = link
@@ -152,7 +152,7 @@ class StatsFrame(SheetFrame):
 
         # オフセット
         if self.grouped:
-            row_offset = len(rows)
+            row_offset = len(list(rows))
             for key, value in self.grouped.items():
                 value = [[v + row_offset for v in vv] for vv in value]
                 self.grouped[key] = value
@@ -160,7 +160,7 @@ class StatsFrame(SheetFrame):
         self._aggregate()
 
         if table:
-            self.astable(autofit=False, header=True)
+            self.as_table(autofit=False, const_header=True)
 
         # 罫線を正しく表示させるために、テーブル化の後にスタイル設定をする。
         self.set_style(autofit=False, succession=succession)
@@ -196,7 +196,9 @@ class StatsFrame(SheetFrame):
         for column in wide_columns:
             ref = parent.range(column, 0)[0]
             column = self.range(column, 0)
-            set_number_format(column, get_number_format(ref))
+            column.number_format = ref.number_format
+
+        print(wide_columns)
         if wide_columns:
             self.set_style()
 
@@ -333,47 +335,57 @@ class StatsFrame(SheetFrame):
         set_font(self.range("func", -1), italic=True)
 
 
-def main():
-    import time
+def main() -> None:
+    from pandas import DataFrame
 
-    import mtj
+    from xlviews.common import quit_apps
+    from xlviews.style import hide_gridlines
 
-    import xlviews as xv
+    quit_apps()
 
-    xw.apps.add()
-    book = xw.books[0]
+    book = xw.Book()
     sheet = book.sheets[0]
+    hide_gridlines(sheet)
 
-    directory = mtj.get_directory("local", "Data")
-    run = mtj.get_paths_dataframe(directory, "S6544", "IB01-06")
-    series = run.iloc[0]
-    path = mtj.get_path(directory, series)
-    with mtj.data(path) as data:
-        data.merge_device()
-        df = data.get(
-            ["wafer", "cad", "sx", "sy", "dx", "dy", "id", "Rmin", "Rmax", "TMR"],
-            sx=(4, 6),
-            sy=(3, 4),
-        )
-        df.set_index(["wafer", "cad", "sx", "sy", "dx", "dy", "id"], inplace=True)
-        sf = xv.SheetFrame(sheet, 2, 3, data=df, sort_index=True)
-        sf.set_number_format(Rmin="0.00", TMR="0.0")
-    sf.astable()
+    df = DataFrame(
+        {
+            "x": ["a"] * 10 + ["b"] * 10,
+            "y": (["c"] * 6 + ["d"] * 4) * 2,
+            "a": range(20),
+            "b": reversed(range(20)),
+            "c": range(0, 40, 2),
+        },
+    )
+    df = df.set_index(["x", "y"])
 
-    start_time = time.time()
-    StatsFrame(sf, by=":sy", stats={"Rmin": "max", "Rmax": "count"}, default=None)
-    # , autofilter=True)
-    # sf.autofilter('func')
-    # sf.autofilter(func='median')
-    elapsed_time = time.time() - start_time
-    print(f"elapsed_time:{elapsed_time}" + "[sec]")
+    sf = SheetFrame(sheet, 3, 2, data=df)
+    sf.as_table()
+    StatsFrame(sf, by=":y", stats={"a": "max", "b": "min", "c": "mean"})
 
+    # directory = mtj.get_directory("local", "Data")
+    # run = mtj.get_paths_dataframe(directory, "S6544", "IB01-06")
+    # series = run.iloc[0]
+    # path = mtj.get_path(directory, series)
+    # with mtj.data(path) as data:
+    #     data.merge_device()
+    #     df = data.get(
+    #         ["wafer", "cad", "sx", "sy", "dx", "dy", "id", "Rmin", "Rmax", "TMR"],
+    #         sx=(4, 6),
+    #         sy=(3, 4),
+    #     )
+    #     df.set_index(["wafer", "cad", "sx", "sy", "dx", "dy", "id"], inplace=True)
+    #     sf = xv.SheetFrame(sheet, 2, 3, data=df, sort_index=True)
+    #     sf.set_number_format(Rmin="0.00", TMR="0.0")
+    # sf.astable()
 
-def process():
-    sf = SheetFrame(3, 3, index_level=7, style=False)
-    StatsFrame(sf, by=":sy", stats={"abc": "count"}, default=None)
+    # start_time = time.time()
+    # StatsFrame(sf, by=":sy", stats={"Rmin": "max", "Rmax": "count"}, default=None)
+    # # , autofilter=True)
+    # # sf.autofilter('func')
+    # # sf.autofilter(func='median')
+    # elapsed_time = time.time() - start_time
+    # print(f"elapsed_time:{elapsed_time}" + "[sec]")
 
 
 if __name__ == "__main__":
-    # main()
-    process()
+    main()

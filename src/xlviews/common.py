@@ -160,3 +160,8 @@ def delete_charts(sheet: Sheet | None = None) -> None:
 
     for chart in sheet.charts:
         chart.delete()
+
+
+def quit_apps() -> None:
+    for app in xw.apps:
+        app.quit()

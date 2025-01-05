@@ -80,30 +80,3 @@ def test_distframe(sfd: DistFrame, cell: str, value: float):
     v = sfd.sheet[cell].value
     assert v is not None
     np.testing.assert_allclose(v, value)
-
-
-# def a():
-#     import xlwings as xw
-#     from pandas import DataFrame
-#     from xlwings import Sheet
-
-#     from xlviews.frame import SheetFrame
-
-#     book = xw.Book()
-#     sheet = book.sheets[0]
-
-#     df = DataFrame(
-#         {
-#             "x": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
-#             "y": [3, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 4, 4],
-#             "a": [5, 4, 3, 2, 1, 4, 3, 2, 1, 3, 2, 1, 2, 1],
-#             "b": [1, 2, 3, 4, 5, 1, 2, 3, 4, 1, 2, 3, 1, 2],
-#         },
-#     )
-
-#     df = df.set_index(["x", "y"])
-
-#     sf = SheetFrame(sheet, 3, 2, data=df, style=False)
-
-#     sheet["I5"].api.Value
-#     sheet.book.app.display_alerts = False

@@ -5,9 +5,10 @@ from xlwings import App, Book
 
 @pytest.fixture(scope="session", autouse=True)
 def teardown():
+    from xlviews.common import quit_apps
+
     yield
-    for app in xlwings.apps:
-        app.quit()
+    quit_apps()
 
 
 @pytest.fixture(scope="session")
