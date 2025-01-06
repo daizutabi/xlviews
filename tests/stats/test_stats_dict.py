@@ -12,16 +12,20 @@ def sf(sf_parent: SheetFrame):
     return StatsFrame(sf_parent, by=":y", stats=stats, table=True)
 
 
+def test_len(sf: SheetFrame):
+    assert len(sf) == 4
+
+
 def test_columns(sf: SheetFrame):
     assert sf.columns == ["x", "y", "z", "a", "b", "c"]
 
 
-def test_value_columns(sf: SheetFrame):
-    assert sf.value_columns == ["a", "b", "c"]
-
-
 def test_index_columns(sf: SheetFrame):
     assert sf.index_columns == ["x", "y", "z"]
+
+
+def test_value_columns(sf: SheetFrame):
+    assert sf.value_columns == ["a", "b", "c"]
 
 
 @pytest.mark.parametrize(

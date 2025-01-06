@@ -9,6 +9,7 @@ from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
 from xlviews.range import multirange
 from xlviews.style import set_alignment, set_font
+from xlviews.table import Table
 from xlviews.utils import constant, iter_columns, outline_group, outline_levels
 
 
@@ -66,7 +67,7 @@ class StatsFrame(SheetFrame):
             SheetFrame.__init__関数に渡される。
         """
         self.by = list(iter_columns(parent, by)) if by else None
-        self.func_column = "func"
+        self.func_index_name = "func"
         self.func = AGG_FUNCS.copy()
         self.link = link
         self.grouped = None
@@ -171,12 +172,12 @@ class StatsFrame(SheetFrame):
         if table:
             self.set_alignment("left")
 
-        if table and autofilter and not isinstance(self.column_func, dict):
+        if self.table and autofilter and not isinstance(self.column_func, dict):
             if stats is None:
                 func = "median"
             else:
                 func = stats[0]
-            self.autofilter(func=func)
+            self.table.auto_filter(func=func)
 
         if group and len(self.func) > 1:
             group = group
@@ -209,14 +210,17 @@ class StatsFrame(SheetFrame):
             self.length = len(self.grouped)
 
         if not isinstance(self.column_func, dict):
-            columns = [self.func_column] + parent.columns
+            columns = [self.func_index_name] + parent.columns
             array = np.zeros((self.length * len(self.func), len(columns)))
             df = pd.DataFrame(array, columns=columns)
-            df[self.func_column] = [
+            df[self.func_index_name] = [
                 agg for _ in range(self.length) for agg in self.func
             ]
             if parent.index_level:
-                df.set_index([self.func_column] + parent.index_columns, inplace=True)
+                df.set_index(
+                    [self.func_index_name] + parent.index_columns,
+                    inplace=True,
+                )
             return df
         columns = parent.columns
         array = np.zeros((self.length, len(columns)))
@@ -245,7 +249,7 @@ class StatsFrame(SheetFrame):
         values = pd.DataFrame(values)
         start_end = list(self.get_group_start_and_end())
         if not isinstance(self.column_func, dict):
-            func_index = self.index(self.func_column)
+            func_index = self.index(self.func_index_name)
         else:
             func_index = None
 
@@ -303,9 +307,9 @@ class StatsFrame(SheetFrame):
     def set_value_style(self):
         start = self.column + self.index_level
         end = self.column + len(self.columns)
-        func_index = self.index(self.func_column)
+        func_index = self.index(self.func_index_name)
         value_columns = ["median", "min", "mean", "max", "std", "sum"]
-        grouped = self.groupby("func")
+        grouped = self.groupby(self.func_index_name)
         columns = [func_index] + list(range(start, end))
         formats = [
             self.parent.get_number_format(column) for column in self.value_columns
@@ -315,10 +319,10 @@ class StatsFrame(SheetFrame):
             for column, format_ in zip(columns, formats, strict=False):
                 cell = multirange(self.sheet, rows, column)
                 if func in value_columns:
-                    set_number_format(cell, format_)
+                    cell.number_format = format_
                 if func == "soa":
                     if column != func_index:
-                        set_number_format(cell, "0.0%")
+                        cell.number_format = "0.0%"
                     set_font(cell, color="#5555FF", italic=True)
                 elif func == "min":
                     set_font(cell, color="#7777FF")
@@ -332,7 +336,11 @@ class StatsFrame(SheetFrame):
                     set_font(cell, color="#aaaaaa")
                 elif func == "count":
                     set_font(cell, color="gray")
-        set_font(self.range("func", -1), italic=True)
+        set_font(self.range(self.func_index_name, -1), italic=True)
+
+    def auto_filter(self, func: str | list[str]) -> None:
+        if self.table:
+            self.table.auto_filter(self.func_index_name, func)
 
 
 def main() -> None:
@@ -363,11 +371,10 @@ def main() -> None:
 
     sf = SheetFrame(sheet, 2, 3, data=df, table=True)
     # sf.as_table()
-    StatsFrame(sf, by=":y", stats={"a": "max", "b": "std", "c": "mean"}, table=True)
+    # StatsFrame(sf, by=":y", stats={"a": "max", "b": "std", "c": "mean"}, table=True)
+    sf = StatsFrame(sf, by=":y", stats=["count", "max", "median", "soa"], table=True)
     # StatsFrame(sf, stats={"a": "max", "b": "min", "c": "mean"})
-    from scipy.stats import norm
-
-    print(norm.std([1, 2, 3]))
+    sf.auto_filter("soa")
 
     # directory = mtj.get_directory("local", "Data")
     # run = mtj.get_paths_dataframe(directory, "S6544", "IB01-06")
