@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
 import xlwings as xw
+from pandas import DataFrame
 
 from xlviews.decorators import wait_updating
 from xlviews.formula import AGG_FUNCS, aggregate
@@ -17,18 +20,19 @@ class StatsFrame(SheetFrame):
     @wait_updating
     def __init__(
         self,
-        parent,
-        by=None,
-        stats=None,
-        group=False,
+        parent: SheetFrame,
+        *,
+        by: str | list[str] | None = None,
+        stats: str | list[str] | dict[str, str] | None = None,
         link=False,
         autofilter=True,
         table=True,
-        wrap=None,
-        na=False,
-        null=False,
-        default="median",
-        succession=False,
+        wrap: str | dict[str, str] | None = None,
+        na: str | list[str] | bool = False,
+        null: str | list[str] | bool = False,
+        default: str = "median",
+        succession: bool = False,
+        # group=False,
         **kwargs,
     ):
         """
@@ -66,6 +70,8 @@ class StatsFrame(SheetFrame):
         **kwargs
             SheetFrame.__init__関数に渡される。
         """
+        self.wrap = get_wrap(wrap, na=na, null=null)
+
         self.by = list(iter_columns(parent, by)) if by else None
         self.func_index_name = "func"
         self.func = AGG_FUNCS.copy()
@@ -73,23 +79,6 @@ class StatsFrame(SheetFrame):
         self.grouped = None
         self.length = 1
         self.wrap = None
-
-        if na is True:
-            self.wrap = "IFERROR({},NA())"
-        elif null is True:
-            self.wrap = 'IFERROR({},"")'
-        elif wrap:
-            self.wrap = wrap
-        else:
-            self.wrap = {}
-            if na:
-                nas = [na] if isinstance(na, str) else na  # type: list
-                for na in nas:
-                    self.wrap[na] = "IFERROR({},NA())"
-            if null:
-                nulls = [null] if isinstance(null, str) else null  # type: list
-                for null in nulls:
-                    self.wrap[null] = 'IFERROR({},"")'
 
         self.default = default
 
@@ -179,11 +168,11 @@ class StatsFrame(SheetFrame):
                 func = stats[0]
             self.table.auto_filter(func=func)
 
-        if group and len(self.func) > 1:
-            group = group
-            if group is True and not stats:
-                group = [1, 2]
-            self.group(group, level=1)
+        # if group and len(self.func) > 1:
+        #     group = group
+        #     if group is True and not stats:
+        #         group = [1, 2]
+        #     self.group(group, level=1)
 
         # wide_columns = []
         # for k in range(len(parent.value_columns)):
@@ -295,15 +284,6 @@ class StatsFrame(SheetFrame):
         column_offset = 0 if isinstance(self.column_func, dict) else 1
         self.cell.offset(1, column_offset).value = values.values
 
-    def group(self, group, level=1):
-        for i in range(self.length):
-            end = self.row + (i + 1) * len(self.func)
-            for g in group:
-                start = self.row + i * len(self.func) + g + 1
-                outline_group(self.sheet, start, end)
-        if level:
-            outline_levels(self.sheet, level)
-
     def set_value_style(self):
         start = self.column + self.index_level
         end = self.column + len(self.columns)
@@ -342,64 +322,71 @@ class StatsFrame(SheetFrame):
         if self.table:
             self.table.auto_filter(self.func_index_name, func)
 
-
-def main() -> None:
-    from pandas import DataFrame
-
-    from xlviews.common import quit_apps
-    from xlviews.style import hide_gridlines
-
-    quit_apps()
-
-    book = xw.Book()
-    sheet = book.sheets[0]
-    hide_gridlines(sheet)
-
-    df = DataFrame(
-        {
-            "x": ["a"] * 10 + ["b"] * 10,
-            "y": (["c"] * 6 + ["d"] * 4) * 2,
-            "z": range(1, 21),
-            "a": range(20),
-            "b": list(range(10)) + list(range(0, 30, 3)),
-            "c": list(range(20, 40, 2)) + list(range(0, 20, 2)),
-        },
-    )
-    df = df.set_index(["x", "y", "z"])
-    df.iloc[[4, -1], 0] = np.nan
-    df.iloc[[3, 6, 9], -1] = np.nan
-
-    sf = SheetFrame(sheet, 2, 3, data=df, table=True)
-    # sf.as_table()
-    # StatsFrame(sf, by=":y", stats={"a": "max", "b": "std", "c": "mean"}, table=True)
-    sf = StatsFrame(sf, by=":y", stats=["count", "max", "median", "soa"], table=True)
-    # StatsFrame(sf, stats={"a": "max", "b": "min", "c": "mean"})
-    sf.auto_filter("soa")
-
-    # directory = mtj.get_directory("local", "Data")
-    # run = mtj.get_paths_dataframe(directory, "S6544", "IB01-06")
-    # series = run.iloc[0]
-    # path = mtj.get_path(directory, series)
-    # with mtj.data(path) as data:
-    #     data.merge_device()
-    #     df = data.get(
-    #         ["wafer", "cad", "sx", "sy", "dx", "dy", "id", "Rmin", "Rmax", "TMR"],
-    #         sx=(4, 6),
-    #         sy=(3, 4),
-    #     )
-    #     df.set_index(["wafer", "cad", "sx", "sy", "dx", "dy", "id"], inplace=True)
-    #     sf = xv.SheetFrame(sheet, 2, 3, data=df, sort_index=True)
-    #     sf.set_number_format(Rmin="0.00", TMR="0.0")
-    # sf.astable()
-
-    # start_time = time.time()
-    # StatsFrame(sf, by=":sy", stats={"Rmin": "max", "Rmax": "count"}, default=None)
-    # # , autofilter=True)
-    # # sf.autofilter('func')
-    # # sf.autofilter(func='median')
-    # elapsed_time = time.time() - start_time
-    # print(f"elapsed_time:{elapsed_time}" + "[sec]")
+    # def group(self, group, level=1):
+    #     for i in range(self.length):
+    #         end = self.row + (i + 1) * len(self.func)
+    #         for g in group:
+    #             start = self.row + i * len(self.func) + g + 1
+    #             outline_group(self.sheet, start, end)
+    #     if level:
+    #         outline_levels(self.sheet, level)
 
 
-if __name__ == "__main__":
-    main()
+def get_wrap(
+    wrap: str | dict[str, str] | None = None,
+    *,
+    na: str | list[str] | bool = False,
+    null: str | list[str] | bool = False,
+) -> str | dict[str, str]:
+    if wrap:
+        return wrap
+
+    if na is True:
+        return "IFERROR({},NA())"
+
+    if null is True:
+        return 'IFERROR({},"")'
+
+    wrap = {}
+
+    if na:
+        nas = [na] if isinstance(na, str) else na
+        for na in nas:
+            wrap[na] = "IFERROR({},NA())"
+
+    if null:
+        nulls = [null] if isinstance(null, str) else null
+        for null in nulls:
+            wrap[null] = 'IFERROR({},"")'
+
+    return wrap
+
+
+def get_init_data(
+    sf: StatsFrame,
+    parent: SheetFrame,
+    *,
+    by: list[str] | None = None,
+) -> DataFrame:
+    if sf.by:
+        sf.grouped = OrderedDict()
+        sf.grouped.update(parent.groupby(sf.by))
+        sf.length = len(sf.grouped)
+
+    if not isinstance(sf.column_func, dict):
+        columns = [sf.func_index_name] + parent.columns
+        array = np.zeros((sf.length * len(sf.func), len(columns)))
+        df = pd.DataFrame(array, columns=columns)
+        df[sf.func_index_name] = [agg for _ in range(sf.length) for agg in sf.func]
+        if parent.index_level:
+            df.set_index(
+                [sf.func_index_name] + parent.index_columns,
+                inplace=True,
+            )
+        return df
+    columns = parent.columns
+    array = np.zeros((sf.length, len(columns)))
+    df = pd.DataFrame(array, columns=columns)
+    if parent.index_level:
+        df.set_index(parent.index_columns, inplace=True)
+    return df
