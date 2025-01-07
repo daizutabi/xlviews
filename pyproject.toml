@@ -34,8 +34,7 @@ dev-dependencies = [
     "pytest-clarity>=1",
     "pytest-cov>=6.0",
     "pytest-randomly>=3.16",
-    "ruff>=0.8",
-    "scipy",
+    "scipy>=1.5",
 ]
 
 [tool.hatch.build.targets.sdist]
@@ -59,6 +58,7 @@ disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
 exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
+skip_covered = true
 
 [tool.ruff]
 line-length = 88

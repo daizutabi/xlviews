@@ -1,4 +1,9 @@
+import numpy as np
 import pytest
+from pandas import DataFrame
+from xlwings import Sheet
+
+from xlviews.frame import SheetFrame
 
 
 def test_wrap_wrap():
@@ -32,3 +37,82 @@ def test_wrap_none():
     from xlviews.stats import get_wrap
 
     assert get_wrap() == {}
+
+
+def test_func_none():
+    from xlviews.stats import get_func
+
+    func = ["count", "max", "mean", "median", "min", "soa"]
+    assert sorted(get_func(None)) == func
+
+
+def test_func_str():
+    from xlviews.stats import get_func
+
+    assert get_func("count") == ["count"]
+
+
+@pytest.mark.parametrize("func", [["count"], {"a": "count"}])
+def test_func_else(func):
+    from xlviews.stats import get_func
+
+    assert get_func(func) == func
+
+
+def test_init_data_list(sf_parent: SheetFrame):
+    from xlviews.stats import get_init_data
+
+    df = get_init_data(sf_parent, ["count", "max"], 3, "func")
+    assert df.shape == (6, 3)
+    assert df.index.names == ["func", "x", "y", "z"]
+    func = df.index.get_level_values("func")
+    np.testing.assert_array_equal(func, ["count", "max"] * 3)
+
+
+def test_init_data_dict(sf_parent: SheetFrame):
+    from xlviews.stats import get_init_data
+
+    df = get_init_data(sf_parent, {}, 3, "func")
+    assert df.shape == (3, 3)
+    assert df.index.names == ["x", "y", "z"]
+
+
+def test_has_header(sf_parent: SheetFrame):
+    from xlviews.stats import has_header
+
+    assert has_header(sf_parent)
+
+
+def test_move_down(sheet: Sheet):
+    from xlviews.stats import move_down
+
+    df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
+    sf = SheetFrame(sheet, 3, 3, data=df, style=False)
+    assert sheet["D3:F3"].value == ["a", "b", "c"]
+    assert sheet["D2:F2"].value == [None, None, None]
+    assert move_down(sf, 3) == 3
+    assert sheet["D6:F6"].value == ["a", "b", "c"]
+    assert sheet["D5:F5"].value == [None, None, None]
+    assert sf.row == 6
+
+
+def test_move_down_header(sheet: Sheet):
+    from xlviews.stats import move_down
+
+    df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
+    sf = SheetFrame(sheet, 3, 3, data=df, style=False)
+    sheet["D2"].value = "x"
+    assert sheet["D3:F3"].value == ["a", "b", "c"]
+    assert sheet["D2:F2"].value == ["x", None, None]
+    assert move_down(sf, 3) == 4
+    assert sheet["D7:F7"].value == ["a", "b", "c"]
+    assert sheet["D6:F6"].value == ["x", None, None]
+    assert sf.row == 7
+
+
+def test_column_ranges(sheet_module: Sheet):
+    from xlviews.stats import get_column_ranges
+
+    rngs = get_column_ranges(sheet_module, [[1, 5], [9, 12]], 2)
+    assert rngs[0].get_address() == "$B$1:$B$5"
+    assert rngs[1].get_address() == "$B$9:$B$12"

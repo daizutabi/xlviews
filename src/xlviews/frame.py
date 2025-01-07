@@ -824,13 +824,12 @@ class SheetFrame:
         sel: NDArray[np.bool_] | None = None,
     ) -> dict[Hashable, list[list[int]]]:
         """Group by the specified column and return the group key and row number."""
-        if by is None:
-            if self.columns_names is None:
-                values = [None] * len(self)
-            else:
-                values = [None] * len(self.value_columns)
+        if not by:
+            start = self.row + self.columns_level
+            end = start + len(self) - 1
+            return {None: [[start, end]]}
 
-        elif self.columns_names is None:
+        if self.columns_names is None:
             if isinstance(by, list) or ":" in by:
                 by = list(iter_columns(self, by))
             values = self[by]

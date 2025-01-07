@@ -258,4 +258,4 @@ def test_groupby_list(sf: SheetFrame):
 def test_groupby_none(sf: SheetFrame):
     g = sf.groupby(None)
     assert len(g) == 1
-    assert g[None] == [[5, 8]]
+    assert g[None] == [[22, 26]]
