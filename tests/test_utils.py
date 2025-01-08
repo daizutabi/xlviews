@@ -116,3 +116,15 @@ def test_array_index_empty():
     from xlviews.utils import array_index
 
     assert not array_index([])
+
+
+def test_validate_list(sheet: Sheet):
+    from xlviews.utils import add_validate_list
+
+    rng = sheet.range("a1")
+    add_validate_list(rng, [1, 2, 3], 2)
+    assert rng.value == 2
+
+    assert rng.api.Validation.Type == 3
+    assert rng.api.Validation.Operator == 3
+    assert rng.api.Validation.Formula1 == "1,2,3"

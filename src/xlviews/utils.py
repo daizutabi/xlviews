@@ -10,6 +10,7 @@ import matplotlib as mpl
 import xlwings as xw
 from pandas import DataFrame, Series
 from xlwings import Range, Sheet
+from xlwings.constants import DVType, FormatConditionOperator
 
 from xlviews.config import rcParams
 
@@ -202,17 +203,19 @@ def array_index(
     return index
 
 
-def add_validation(cell, value, default=None):
+def add_validate_list(
+    rng: Range,
+    value: list[object],
+    default: object | None = None,
+) -> None:
     if default:
-        cell.value = default
-    if isinstance(value, list):
-        type_ = constant("DVType.xlValidateList")
-        operator = constant("FormatConditionOperator.xlEqual")
-        value = ",".join([str(x) for x in value])
-    else:
-        raise ValueError("未実装")
+        rng.value = default
 
-    cell.api.Validation.Add(Type=type_, Operator=operator, Formula1=value)
+    type_ = DVType.xlValidateList
+    operator = FormatConditionOperator.xlEqual
+    formula = ",".join(map(str, value))
+
+    rng.api.Validation.Add(Type=type_, Operator=operator, Formula1=formula)
 
 
 def label_func_from_list(columns, post=None):
