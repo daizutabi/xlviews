@@ -110,8 +110,11 @@ class Table:
             clear_filter.update(field_criteria)
             field_criteria = clear_filter
 
-        for name, criteria in zip(args[::2], args[1::2], strict=True):
-            field_criteria[name] = criteria
+        if args and isinstance(args[0], dict):
+            field_criteria.update(args[0])
+        else:
+            for name, criteria in zip(args[::2], args[1::2], strict=True):
+                field_criteria[name] = criteria
 
         autofilter = self.api.Range.AutoFilter  # type: ignore
         operator = xw.constants.AutoFilterOperator

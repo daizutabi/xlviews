@@ -88,9 +88,15 @@ def test_unlist(df: DataFrame, sheet: Sheet):
         ("c", [4, 6], [NONCONST_VALUE, NONCONST_VALUE, NONCONST_VALUE]),
     ],
 )
-def test_auto_filter(table: Table, name, value, const):
+@pytest.mark.parametrize("to_dict", [True, False])
+def test_auto_filter(table: Table, name, value, const, to_dict):
     table.add_const_header()
-    table.auto_filter(name, value)
+
+    if to_dict:
+        table.auto_filter({name: value})
+    else:
+        table.auto_filter(name, value)
+
     assert table.const_header.value == const
     table.auto_filter(clear=True)
     table.add_const_header(clear=True)

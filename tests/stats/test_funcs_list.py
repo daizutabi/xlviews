@@ -7,8 +7,8 @@ from xlviews.stats import StatsFrame
 
 @pytest.fixture(scope="module")
 def sf(sf_parent: SheetFrame):
-    stats = ["count", "max", "median", "soa"]
-    return StatsFrame(sf_parent, by=":y", stats=stats, table=True)
+    funcs = ["count", "max", "median", "soa"]
+    return StatsFrame(sf_parent, funcs, by=":y", table=True)
 
 
 def test_len(sf: StatsFrame):
@@ -37,7 +37,8 @@ def test_value_columns(sf: StatsFrame):
     ],
 )
 def test_value_len(sf: StatsFrame, func, n):
-    sf.auto_filter(func)
+    assert sf.table
+    sf.table.auto_filter("func", func)
     df = sf.visible_data
     assert len(df) == n
 
@@ -45,19 +46,20 @@ def test_value_len(sf: StatsFrame, func, n):
 @pytest.mark.parametrize(
     ("func", "column", "value"),
     [
-        ("count", "a", [5, 4, 6, 3]),
-        ("count", "b", [6, 4, 6, 4]),
-        ("count", "c", [5, 2, 6, 4]),
-        ("max", "a", [5, 9, 15, 18]),
-        ("max", "b", [5, 9, 15, 27]),
-        ("max", "c", [30, 36, 10, 18]),
-        ("median", "a", [2, 7.5, 12.5, 17]),
-        ("median", "b", [2.5, 7.5, 7.5, 22.5]),
-        ("median", "c", [24, 35, 5, 15]),
+        ("count", "a", [7, 3, 4, 4]),
+        ("count", "b", [8, 4, 4, 4]),
+        ("count", "c", [7, 3, 3, 4]),
+        ("max", "a", [18, 7, 11, 15]),
+        ("max", "b", [27, 7, 9, 15]),
+        ("max", "c", [24, 34, 36, 10]),
+        ("median", "a", [3, 6, 9.5, 13.5]),
+        ("median", "b", [10.5, 5.5, 5.5, 10.5]),
+        ("median", "c", [18, 30, 2, 7]),
     ],
 )
 def test_value_float(sf: StatsFrame, func, column, value):
-    sf.auto_filter(func)
+    assert sf.table
+    sf.table.auto_filter("func", func)
     df = sf.visible_data
     np.testing.assert_allclose(df[column], value)
 
@@ -65,13 +67,14 @@ def test_value_float(sf: StatsFrame, func, column, value):
 @pytest.mark.parametrize(
     ("column", "value"),
     [
-        ("a", [[0, 1, 2, 3, 5], [6, 7, 8, 9]]),
-        ("b", [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9]]),
-        ("c", [[20, 22, 24, 28, 30], [34, 36]]),
+        ("a", [[0, 1, 2, 3, 16, 17, 18], [5, 6, 7]]),
+        ("b", [[0, 1, 2, 3, 18, 21, 24, 27], [4, 5, 6, 7]]),
+        ("c", [[20, 22, 24, 12, 14, 16, 18], [28, 30, 34]]),
     ],
 )
 def test_value_soa(sf: StatsFrame, column, value):
-    sf.auto_filter("soa")
+    assert sf.table
+    sf.table.auto_filter("func", "soa")
     df = sf.visible_data
     soa = [np.std(x) / np.median(x) for x in value]
     np.testing.assert_allclose(df[column].iloc[:2], soa)

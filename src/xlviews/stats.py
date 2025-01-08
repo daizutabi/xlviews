@@ -13,11 +13,12 @@ from xlviews.frame import SheetFrame
 from xlviews.range import multirange
 from xlviews.style import set_alignment, set_font
 from xlviews.table import Table
-from xlviews.utils import constant, iter_columns, outline_group, outline_levels
+from xlviews.utils import constant, iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
 
+    from numpy.typing import NDArray
     from xlwings import Range, Sheet
 
 
@@ -31,7 +32,15 @@ class GroupedRange:
         self.by = list(iter_columns(sf, by)) if by else []
         self.grouped = sf.groupby(self.by)
 
-    def iter_row_ranges(self, column: str) -> Iterator[str | list[Range]]:
+    def get_length(self, funcs: list[str] | dict[str, str]) -> int:
+        n = 1 if isinstance(funcs, dict) else len(funcs)
+        return len(self.grouped) * n
+
+    def iter_row_ranges(
+        self,
+        column: str,
+        offset: int = 0,
+    ) -> Iterator[str | list[Range]]:
         column_index = self.sf.index(column)
         if not isinstance(column_index, int):
             raise NotImplementedError
@@ -42,22 +51,23 @@ class GroupedRange:
         for row in self.grouped.values():
             if column in self.by:
                 start = row[0][0]
-                yield sheet.range(start, column_index).get_address()
+                yield sheet.range(start, column_index).offset(offset).get_address()
 
             elif column in index_columns:
                 yield ""
 
             else:
-                yield get_column_ranges(sheet, row, column_index)
+                yield get_column_ranges(sheet, row, column_index, offset)
 
     def iter_formulas(
         self,
         column: str,
         funcs: list[str] | dict[str, str],
         wrap: str | None = None,
+        offset: int = 0,
         default: str = "median",
     ) -> Iterator[str]:
-        for ranges in self.iter_row_ranges(column):
+        for ranges in self.iter_row_ranges(column, offset):
             if isinstance(funcs, dict):
                 funcs = [funcs.get(column, default)]
 
@@ -67,12 +77,58 @@ class GroupedRange:
     def get_index(self, funcs: list[str]) -> list[str]:
         return funcs * len(self.grouped)
 
+    def get_columns(
+        self,
+        funcs: list[str] | dict[str, str],
+        func_column_name: str = "func",
+    ) -> list[str]:
+        columns = self.sf.columns
 
-def get_column_ranges(sheet: Sheet, row: list[list[int]], column: int) -> list[Range]:
+        if isinstance(funcs, list):
+            columns = [func_column_name, *columns]
+
+        return columns
+
+    def get_values(
+        self,
+        funcs: list[str] | dict[str, str],
+        wrap: str | dict[str, str] | None = None,
+        offset: int = 0,
+        default: str = "median",
+    ) -> NDArray[np.str_]:
+        values = [self.get_index(funcs)] if isinstance(funcs, list) else []
+
+        for column in self.sf.columns:
+            wrap_ = wrap.get(column) if isinstance(wrap, dict) else wrap
+            it = self.iter_formulas(column, funcs, wrap_, offset, default)
+            values.append(list(it))
+
+        return np.array(values).T
+
+    def get_frame(
+        self,
+        funcs: list[str] | dict[str, str],
+        wrap: str | dict[str, str] | None = None,
+        offset: int = 0,
+        default: str = "median",
+        func_column_name: str = "func",
+    ) -> DataFrame:
+        values = self.get_values(funcs, wrap, offset, default)
+        columns = self.get_columns(funcs, func_column_name)
+        df = DataFrame(values, columns=columns)
+        return df.set_index(columns[: -len(self.sf.value_columns)])
+
+
+def get_column_ranges(
+    sheet: Sheet,
+    row: list[list[int]],
+    column: int,
+    offset: int = 0,
+) -> list[Range]:
     rngs = []
 
     for start, end in row:
-        ref = sheet.range((start, column), (end, column))
+        ref = sheet.range((start + offset, column), (end + offset, column))
         rngs.append(ref)
 
     return rngs
@@ -89,26 +145,16 @@ def get_formula(
     if isinstance(ranges, str):
         return f"={ranges}"
 
-    if not (formula := aggregate(func, *ranges)):
-        return ""
+    formula = aggregate(func, *ranges)
 
     if wrap:
         formula = wrap.format(formula)
 
-    if formula:
-        return "=" + formula
-
-    return ""
+    return f"={formula}"
 
 
 class StatsFrame(SheetFrame):
     parent: SheetFrame
-    funcs: list[str] | dict[str, str]
-    by: list[str]
-    wrap: str | dict[str, str]
-    grouped: dict[Hashable, list[list[int]]]
-    func_index_name: str = "func"
-    default: str = "median"
 
     @wait_updating
     def __init__(
@@ -117,13 +163,14 @@ class StatsFrame(SheetFrame):
         funcs: str | list[str] | dict[str, str] | None = None,
         *,
         by: str | list[str] | None = None,
-        autofilter: bool = True,
         table: bool = True,
         wrap: str | dict[str, str] | None = None,
         na: str | list[str] | bool = False,
         null: str | list[str] | bool = False,
+        default: str = "median",
+        func_column_name: str = "func",
         succession: bool = False,
-        # group=False,
+        auto_filter: bool = True,
         **kwargs,
     ) -> None:
         """
@@ -134,7 +181,7 @@ class StatsFrame(SheetFrame):
         parent : SheetFrame
             集計対象シートフレーム
         funcs : str, list of str, dict, optional
-            集計関数を指定する。指定できる関数は以下：
+            集計関数を指定する。指定できる関数は以下
                 'count', 'sum', 'min', 'max', 'mean', 'median', 'std', 'soa%'
             Noneとするとデフォルト関数を使う。
         by : str, list of str, optional
@@ -155,21 +202,19 @@ class StatsFrame(SheetFrame):
         **kwargs
             SheetFrame.__init__関数に渡される。
         """
-        self.wrap = get_wrap(wrap, na=na, null=null)
-        self.funcs = get_func(funcs)
+        wrap = get_wrap(wrap, na=na, null=null)
+        funcs = get_func(funcs)
+        gr = GroupedRange(parent, by)
 
-        self.by = list(iter_columns(parent, by)) if by else []
-        self.grouped = parent.groupby(self.by)
-
-        groups = len(self.grouped)
-        df = get_init_data(parent, self.funcs, groups, self.func_index_name)
+        offset = gr.get_length(funcs) + 2
 
         row = parent.row
         column = parent.column
-        if isinstance(self.funcs, list):
+        if isinstance(funcs, list):
             column -= 1
 
-        row_offset = move_down(parent, len(df) + 2)
+        offset = move_down(parent, offset)
+        df = gr.get_frame(funcs, wrap, offset, default, func_column_name)
 
         super().__init__(
             parent.sheet,
@@ -183,189 +228,59 @@ class StatsFrame(SheetFrame):
         )
         self.parent = parent
 
-        if self.grouped:
-            for key, value in self.grouped.items():
-                self.grouped[key] = [[x + row_offset for x in v] for v in value]
-
-        self.aggregate()
-
-        return
-
         if table:
             self.as_table(autofit=False, const_header=True)
 
-        # 罫線を正しく表示させるために、テーブル化の後にスタイル設定をする。
         self.set_style(autofit=False, succession=succession)
 
-        if not isinstance(self.funcs, dict):
-            self.set_value_style()
+        if isinstance(funcs, list):
+            self.set_value_style(func_column_name)
 
         if table:
             self.set_alignment("left")
 
-        if self.table and autofilter and not isinstance(self.funcs, dict):
-            if stats is None:
-                funcs = "median"
-            else:
-                funcs = stats[0]
-            self.table.auto_filter(func=funcs)
+        if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
+            func = "median" if "median" in funcs else funcs[0]
+            self.table.auto_filter(func_column_name, func)
 
-    def iter_rows(self, column: str) -> Iterator[str]:
-        if self.link:  # noqa: SIM108
-            func_index = self.index(self.func_index_name)
-        else:
-            func_index = None
-
-        if isinstance(self.wrap, dict):  # noqa: SIM108
-            wrap = self.wrap.get(column, "{}")
-        else:
-            wrap = self.wrap
-
-        for k, ranges in enumerate(self.iter_row_ranges(column)):
-            if isinstance(self.funcs, dict):
-                funcs = [self.funcs.get(column, self.default)]
-            elif self.link:
-                n = len(self.funcs)
-                row = self.row + k * n
-                funcs = [self.sheet.range(row + i, func_index) for i in range(n)]
-            else:
-                funcs = self.funcs
-
-            for func in funcs:
-                yield get_formula(func, ranges, self.wrap, column)
-
-            # else:
-            #     funcs = self.func
-
-            # formula_ = aggregate(func, *formula)
-            # if self.wrap and formula_:
-            #     if isinstance(self.wrap, dict):
-            #         wrap = self.wrap.get(column, "{}")
-
-            # if isinstance(self.func, dict):
-            #     if isinstance(ranges, str):
-            #         yield ranges
-            #     else:
-            #         for range in ranges:
-            #             yield range.get_address()
-            # else:
-            #     yield ranges
-
-    def aggregate(self):
-        parent_columns = self.parent.columns
-        parent_index_columns = self.parent.index_columns
-
-        groups = len(self.grouped) or 1
-        values = get_empty_data(self.parent, self.funcs, groups)
-
-        if not isinstance(self.funcs, dict):
-            func_index = self.index(self.func_index_name)
-        else:
-            func_index = None
-
-        for j, column in enumerate(parent_columns):
-            column_index = self.parent.index(column)
-
-            for i, start_end in enumerate(self.grouped.values()):
-                if column in self.by:
-                    start = start_end[0][0]
-                    formula = self.sheet.range(start, column_index).get_address()
-                elif column in parent_index_columns:
-                    continue
-                else:
-                    formula = get_column_ranges(self.sheet, start_end, column_index)
-
-                if isinstance(self.funcs, list):
-                    for r, func in enumerate(self.funcs):
-                        index = i * len(self.funcs) + r
-                        row = index + self.row + 1
-
-                        if isinstance(formula, str):
-                            formula_ = formula
-                        else:
-                            if isinstance(self.funcs, dict):
-                                func = self.funcs.get(column, self.default)
-                            elif self.link:
-                                func = self.sheet.range(row, func_index)
-                            formula_ = aggregate(func, *formula)
-                            if self.wrap and formula_:
-                                if isinstance(self.wrap, dict):
-                                    wrap = self.wrap.get(column, "{}")
-                                else:
-                                    wrap = self.wrap
-                                formula_ = wrap.format(formula_)
-                        if formula_:
-                            values.loc[index, j] = "=" + formula_
-                else:
-                    index = i * len(self.funcs) + r
-                    row = index + self.row + 1
-
-                    if isinstance(formula, str):
-                        formula_ = formula
-                    else:
-                        if isinstance(self.funcs, dict):
-                            func = self.funcs.get(column, self.default)
-                        elif self.link:
-                            func = self.sheet.range(row, func_index)
-                        formula_ = aggregate(func, *formula)
-                        if self.wrap and formula_:
-                            if isinstance(self.wrap, dict):
-                                wrap = self.wrap.get(column, "{}")
-                            else:
-                                wrap = self.wrap
-                            formula_ = wrap.format(formula_)
-                    if formula_:
-                        values.loc[index, j] = "=" + formula_
-
-            column_offset = 0 if isinstance(self.funcs, dict) else 1
-        self.cell.offset(1, column_offset).value = values.values
-
-    def set_value_style(self):
+    def set_value_style(self, func_column_name: str) -> None:  # noqa: C901
         start = self.column + self.index_level
         end = self.column + len(self.columns)
-        func_index = self.index(self.func_index_name)
+        func_index = self.index(func_column_name)
+
         value_columns = ["median", "min", "mean", "max", "std", "sum"]
-        grouped = self.groupby(self.func_index_name)
-        columns = [func_index] + list(range(start, end))
-        formats = [
-            self.parent.get_number_format(column) for column in self.value_columns
-        ]
-        formats = [None] + formats
+
+        grouped = self.groupby(func_column_name)
+        columns = [func_index, *range(start, end)]
+        get_fmt = self.parent.get_number_format
+        formats = [get_fmt(column) for column in self.value_columns]
+        formats = [None, *formats]
+
         for func, rows in grouped.items():
-            for column, format_ in zip(columns, formats, strict=False):
-                cell = multirange(self.sheet, rows, column)
+            for column, fmt in zip(columns, formats, strict=False):
+                cell = multirange(self.sheet, rows, column)  # type: ignore
                 if func in value_columns:
-                    cell.number_format = format_
-                if func == "soa":
-                    if column != func_index:
-                        cell.number_format = "0.0%"
-                    set_font(cell, color="#5555FF", italic=True)
-                elif func == "min":
-                    set_font(cell, color="#7777FF")
-                elif func == "mean":
-                    set_font(cell, color="#33aa33")
-                elif func == "max":
-                    set_font(cell, color="#FF7777")
-                elif func == "sum":
-                    set_font(cell, color="purple", italic=True)
-                elif func == "std":
-                    set_font(cell, color="#aaaaaa")
-                elif func == "count":
-                    set_font(cell, color="gray")
-        set_font(self.range(self.func_index_name, -1), italic=True)
+                    cell.number_format = fmt
 
-    def auto_filter(self, func: str | list[str]) -> None:
-        if self.table:
-            self.table.auto_filter(self.func_index_name, func)
+                match func:
+                    case "soa":
+                        if column != func_index:
+                            cell.number_format = "0.0%"
+                        set_font(cell, color="#5555FF", italic=True)
+                    case "min":
+                        set_font(cell, color="#7777FF")
+                    case "mean":
+                        set_font(cell, color="#33aa33")
+                    case "max":
+                        set_font(cell, color="#FF7777")
+                    case "sum":
+                        set_font(cell, color="purple", italic=True)
+                    case "std":
+                        set_font(cell, color="#aaaaaa")
+                    case "count":
+                        set_font(cell, color="gray")
 
-    # def group(self, group, level=1):
-    #     for i in range(self.length):
-    #         end = self.row + (i + 1) * len(self.func)
-    #         for g in group:
-    #             start = self.row + i * len(self.func) + g + 1
-    #             outline_group(self.sheet, start, end)
-    #     if level:
-    #         outline_levels(self.sheet, level)
+        set_font(self.range(func_column_name, -1), italic=True)
 
 
 def get_wrap(
@@ -373,7 +288,7 @@ def get_wrap(
     *,
     na: str | list[str] | bool = False,
     null: str | list[str] | bool = False,
-) -> str | dict[str, str]:
+) -> str | dict[str, str] | None:
     if wrap:
         return wrap
 
@@ -395,7 +310,7 @@ def get_wrap(
         for null in nulls:
             wrap[null] = 'IFERROR({},"")'
 
-    return wrap
+    return wrap or None
 
 
 def get_func(
@@ -422,44 +337,15 @@ def has_header(sf: SheetFrame) -> bool:
 
 
 def move_down(sf: SheetFrame, length: int) -> int:
-    start = sf.row
-    end = sf.row + length - 1
+    start = sf.row - 1
+    end = sf.row + length - 2
 
     if has_header(sf):
-        start -= 1
+        end += 1
 
     rows = sf.sheet.api.Rows(f"{start}:{end}")
     rows.Insert(Shift=Direction.xlDown)
-    return len(list(rows))
-
-
-def get_init_data(
-    sf: SheetFrame,
-    func: list | dict,
-    groups: int,
-    func_index_name: str,
-) -> DataFrame:
-    if isinstance(func, dict):
-        columns = sf.columns
-        array = np.zeros((groups, len(columns)))
-
-        df = DataFrame(array, columns=columns)
-
-        if sf.index_level:
-            df = df.set_index(sf.index_columns)
-
-        return df
-
-    columns = [func_index_name, *sf.columns]
-    array = np.zeros((groups * len(func), len(columns)))
-
-    df = DataFrame(array, columns=columns)
-    df[func_index_name] = [f for _ in range(groups) for f in func]
-
-    if sf.index_level:
-        df = df.set_index([func_index_name, *sf.index_columns])
-
-    return df
+    return end - start + 1
 
 
 if __name__ == "__main__":
@@ -485,10 +371,10 @@ if __name__ == "__main__":
     quit_apps()
     book = xw.Book()
     sheet = book.sheets.add()
-    sf = SheetFrame(sheet, 2, 3, data=df, table=True)
-    # sf = StatsFrame(
-    #     sf,
-    #     by="x",
-    #     stats={"a": "count", "b": "median", "c": "std"},
-    #     table=True,
-    # )
+    sf = SheetFrame(sheet, 3, 3, data=df, table=False)
+    sf = StatsFrame(
+        sf,
+        by=":y",
+        funcs=["count", "max", "median", "soa"],
+        table=True,
+    )

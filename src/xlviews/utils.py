@@ -215,38 +215,6 @@ def add_validation(cell, value, default=None):
     cell.api.Validation.Add(Type=type_, Operator=operator, Formula1=value)
 
 
-def outline_group(sheet, start: int, end: int, axis=0):
-    """
-    セルをグループする。
-    """
-    outline = sheet.api.Outline
-    if axis == 0:
-        outline.SummaryRow = constant("SummaryRow.xlSummaryAbove")
-        sheet.range((start, 1), (end, 1)).api.EntireRow.Group()
-    else:
-        outline.SummaryColumn = constant("SummaryColumn.xlSummaryOnLeft")
-        sheet.range((1, start), (1, end)).api.EntireRow.Group()
-
-
-def show_group(start: int, axis=0, show=True):
-    app = xw.apps.active
-    if axis == 0:
-        app.api.ExecuteExcel4Macro(f"SHOW.DETAIL(1,{start},{show})")
-    else:
-        raise ValueError("未実装")
-
-
-def hide_group(start: int, axis=0):
-    show_group(start, axis=axis, show=False)
-
-
-def outline_levels(sheet, levels: int, axis=0):
-    if axis == 0:
-        sheet.api.Outline.ShowLevels(RowLevels=levels)
-    else:
-        sheet.api.Outline.ShowLevels(ColumnLevels=levels)
-
-
 def label_func_from_list(columns, post=None):
     """
     カラム名のリストからラベル関数を作成して返す。
@@ -365,3 +333,34 @@ def format_label(data, fmt, sel=None, default=None):
 #     # sheet_to.range('A1').api.Select()
 #     sheet_to.api.PasteSpecial(Format="図 (PNG)", Link=False, DisplayAsIcon=False)
 #     sheet_to.pictures[-1].name = name
+
+# def outline_group(sheet, start: int, end: int, axis=0):
+#     """
+#     セルをグループする。
+#     """
+#     outline = sheet.api.Outline
+#     if axis == 0:
+#         outline.SummaryRow = constant("SummaryRow.xlSummaryAbove")
+#         sheet.range((start, 1), (end, 1)).api.EntireRow.Group()
+#     else:
+#         outline.SummaryColumn = constant("SummaryColumn.xlSummaryOnLeft")
+#         sheet.range((1, start), (1, end)).api.EntireRow.Group()
+
+
+# def show_group(start: int, axis=0, show=True):
+#     app = xw.apps.active
+#     if axis == 0:
+#         app.api.ExecuteExcel4Macro(f"SHOW.DETAIL(1,{start},{show})")
+#     else:
+#         raise ValueError("未実装")
+
+
+# def hide_group(start: int, axis=0):
+#     show_group(start, axis=axis, show=False)
+
+
+# def outline_levels(sheet, levels: int, axis=0):
+#     if axis == 0:
+#         sheet.api.Outline.ShowLevels(RowLevels=levels)
+#     else:
+#         sheet.api.Outline.ShowLevels(ColumnLevels=levels)

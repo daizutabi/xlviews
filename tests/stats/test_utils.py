@@ -36,7 +36,7 @@ def test_wrap_list():
 def test_wrap_none():
     from xlviews.stats import get_wrap
 
-    assert get_wrap() == {}
+    assert get_wrap() is None
 
 
 def test_func_none():
@@ -57,24 +57,6 @@ def test_func_else(func):
     from xlviews.stats import get_func
 
     assert get_func(func) == func
-
-
-def test_init_data_list(sf_parent: SheetFrame):
-    from xlviews.stats import get_init_data
-
-    df = get_init_data(sf_parent, ["count", "max"], 3, "func")
-    assert df.shape == (6, 3)
-    assert df.index.names == ["func", "x", "y", "z"]
-    func = df.index.get_level_values("func")
-    np.testing.assert_array_equal(func, ["count", "max"] * 3)
-
-
-def test_init_data_dict(sf_parent: SheetFrame):
-    from xlviews.stats import get_init_data
-
-    df = get_init_data(sf_parent, {}, 3, "func")
-    assert df.shape == (3, 3)
-    assert df.index.names == ["x", "y", "z"]
 
 
 def test_has_header(sf_parent: SheetFrame):
@@ -116,3 +98,11 @@ def test_column_ranges(sheet_module: Sheet):
     rngs = get_column_ranges(sheet_module, [[1, 5], [9, 12]], 2)
     assert rngs[0].get_address() == "$B$1:$B$5"
     assert rngs[1].get_address() == "$B$9:$B$12"
+
+
+def test_column_ranges_offset(sheet_module: Sheet):
+    from xlviews.stats import get_column_ranges
+
+    rngs = get_column_ranges(sheet_module, [[1, 5], [9, 12]], 2, 10)
+    assert rngs[0].get_address() == "$B$11:$B$15"
+    assert rngs[1].get_address() == "$B$19:$B$22"
