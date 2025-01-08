@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 
     from xlviews.frame import SheetFrame
 
-FIRST_POSITION = {"left": 50, "top": 80}
+FIRST_POSITION = {"left": 50, "top": 50}
 
 
-def clear_first_position(left: int = 50, top: int = 80) -> None:
+def clear_first_position(left: int = 50, top: int = 50) -> None:
     FIRST_POSITION["left"] = left
     FIRST_POSITION["top"] = top
 

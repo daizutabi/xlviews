@@ -11,9 +11,8 @@ from xlviews.decorators import wait_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
 from xlviews.range import multirange
-from xlviews.style import set_alignment, set_font
-from xlviews.table import Table
-from xlviews.utils import constant, iter_columns
+from xlviews.style import set_font
+from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
@@ -346,35 +345,3 @@ def move_down(sf: SheetFrame, length: int) -> int:
     rows = sf.sheet.api.Rows(f"{start}:{end}")
     rows.Insert(Shift=Direction.xlDown)
     return end - start + 1
-
-
-if __name__ == "__main__":
-    import xlwings as xw
-
-    from xlviews.common import quit_apps
-    from xlviews.frame import SheetFrame
-
-    df = DataFrame(
-        {
-            "x": ["a"] * 8 + ["b"] * 8 + ["a"] * 4,
-            "y": (["c"] * 4 + ["d"] * 4) * 2 + ["c"] * 4,
-            "z": range(1, 21),
-            "a": range(20),
-            "b": list(range(10)) + list(range(0, 30, 3)),
-            "c": list(range(20, 40, 2)) + list(range(0, 20, 2)),
-        },
-    )
-    df = df.set_index(["x", "y", "z"])
-    df.iloc[[4, -1], 0] = np.nan
-    df.iloc[[3, 6, 9], -1] = np.nan
-
-    quit_apps()
-    book = xw.Book()
-    sheet = book.sheets.add()
-    sf = SheetFrame(sheet, 3, 3, data=df, table=False)
-    sf = StatsFrame(
-        sf,
-        by=":y",
-        funcs=["count", "max", "median", "soa"],
-        table=True,
-    )

@@ -37,7 +37,6 @@ def test_multirange_error(sheet_module: Sheet):
         ([(3, 5)], 3, "$E$3:$E$5"),
         ([(3, 5), 7], 4, "$E$3:$E$5,$E$7"),
         ([(3, 5), (7, 10)], 7, "$E$3:$E$5,$E$7:$E$10"),
-        ([3, 8], 6, "$E$3:$E$8"),  # TODO: Delete
     ],
 )
 def test_multirange_row(sheet_module: Sheet, index, n, rng):
@@ -55,7 +54,6 @@ def test_multirange_row(sheet_module: Sheet, index, n, rng):
         ([(3, 5)], 3, "$C$10:$E$10"),
         ([(3, 5), 7], 4, "$C$10:$E$10,$G$10"),
         ([(3, 5), (7, 10)], 7, "$C$10:$E$10,$G$10:$J$10"),
-        ([3, 8], 6, "$C$10:$H$10"),  # TODO: Delete
     ],
 )
 def test_multirange_column(sheet_module: Sheet, index, n, rng):

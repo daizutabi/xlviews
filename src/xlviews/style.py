@@ -229,7 +229,7 @@ def _set_style(
         _set_style_font(rng, name, gray=gray, font_size=font_size)
 
 
-def _set_style_fill(rng: Range, name: str, *, gray: bool = False):
+def _set_style_fill(rng: Range, name: str, *, gray: bool = False) -> None:
     if gray and name != "values":
         color = "#eeeeee"
     else:

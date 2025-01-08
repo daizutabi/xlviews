@@ -51,10 +51,6 @@ def multirange(
 
         return sheet.range((start, column), (end, column))
 
-    # TODO: Delete
-    if len(index) == 2 and isinstance(index[0], int) and isinstance(index[1], int):
-        index = [tuple(index)]
-
     union = sheet.book.app.api.Union
 
     apis = [get_range(i).api for i in index]
