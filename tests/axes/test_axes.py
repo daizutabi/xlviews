@@ -1,45 +1,44 @@
 import pytest
 from xlwings import Sheet
+from xlwings.constants import ChartType, TickMark
 
-# from xlviews import constant
 from xlviews.axes import Axes
 
-# from xlviews.frame import SheetFrame
+
+@pytest.fixture
+def ax(sheet_module: Sheet):
+    ct = ChartType.xlXYScatterLines
+    return Axes(300, 10, chart_type=ct, sheet=sheet_module)
 
 
-@pytest.fixture(scope="module")
-def axes(sheet_module: Sheet):
-    return Axes(sheet=sheet_module)
+def test_chart_position(ax: Axes):
+    assert ax.chart.left == 300
+    assert ax.chart.top == 9.75
 
 
-# @pytest.mark.parametrize("axis", ["xaxis", "yaxis"])
-# def test_xaxis(axes: Axes, axis: str):
-#     mark = constant("TickMark", "TickMarkInside")
-#     assert getattr(axes, axis).MajorTickMark == mark
+def test_chart_dimensions(ax: Axes):
+    assert ax.chart.width == 200
+    assert ax.chart.height == 199.5
 
 
-# @pytest.mark.parametrize(
-#     ("chart_type_str", "chart_type_int"),
-#     [("XYScatter", 74), ("Line", 65), ("XYScatterLines", 74)],
-# )
-# def test_chart_type(axes: Axes, chart_type_str: str, chart_type_int: int):
-#     axes.set_chart_type(chart_type_str)
-#     assert axes.chart_type == chart_type_str
-#     assert axes.chart.api[1].ChartType == chart_type_int
+def test_chart_type(ax: Axes):
+    assert ax.chart.api[1].ChartType == ChartType.xlXYScatterLines
+    assert ax.chart.chart_type == "xy_scatter_lines"
 
 
-# def test_add_series(axes: Axes):
-#     pass
+def test_chart_type_none(sheet_module: Sheet):
+    ax = Axes(sheet=sheet_module)
+    assert ax.chart.api[1].ChartType == ChartType.xlColumnClustered
+    assert ax.chart.chart_type == "column_clustered"
 
 
-if __name__ == "__main__":
-    import xlwings as xw
+def test_chart_row_column(sheet_module: Sheet):
+    ax = Axes(row=2, column=3, sheet=sheet_module)
+    assert ax.chart.left == 104
+    assert ax.chart.top == 18
 
-    from xlviews.axes import Axes
-    from xlviews.common import quit_apps
 
-    quit_apps()
-    book = xw.Book()
-    sheet = book.sheets.add()
-    axes = Axes(sheet=sheet)
-    # print(1)
+@pytest.mark.parametrize("axis", ["xaxis", "yaxis"])
+def test_axis(ax: Axes, axis: str):
+    mark = TickMark.xlTickMarkInside
+    assert getattr(ax, axis).MajorTickMark == mark

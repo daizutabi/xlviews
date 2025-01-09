@@ -103,8 +103,7 @@ def set_font_api(
     italic: bool | None = None,
     color: int | str | None = None,
 ) -> None:
-    if name is None:
-        name = rcParams["chart.font.name"]
+    name = name or rcParams["chart.font.name"]
 
     font = api.Font
     font.Name = name  # type: ignore
@@ -617,24 +616,40 @@ def set_ticklabels(axis, name=None, size=None, format=None):
         axis.TickLabels.NumberFormatLocal = format
 
 
-def set_dimensions(obj, left=None, top=None, width=None, height=None):
+def set_dimensions(
+    api,  # noqa: ANN001
+    left: float | None = None,
+    top: float | None = None,
+    width: float | None = None,
+    height: float | None = None,
+) -> None:
     if left is not None:
-        obj.Left = left
+        api.Left = left
+
     if top is not None:
-        obj.Top = top
+        api.Top = top
+
     if width is not None:
-        obj.Width = width
+        api.Width = width
+
     if height is not None:
-        obj.Height = height
+        api.Height = height
 
 
-def set_area(obj, border=None, fill=None, alpha=None):
+def set_area_format(
+    api,  # noqa: ANN001
+    border: str | int | tuple[int, int, int] | None = None,
+    fill: str | int | tuple[int, int, int] | None = None,
+    alpha: float | None = None,
+) -> None:
     if border is not None:
-        obj.Format.Line.Visible = True
-        obj.Format.Line.ForeColor.RGB = rgb(border)
+        api.Format.Line.Visible = True
+        api.Format.Line.ForeColor.RGB = rgb(border)
+
     if fill is not None:
-        obj.Format.Fill.Visible = True
-        obj.Format.Fill.ForeColor.RGB = rgb(fill)
+        api.Format.Fill.Visible = True
+        api.Format.Fill.ForeColor.RGB = rgb(fill)
+
     if alpha is not None:
-        obj.Format.Line.Transparency = alpha
-        obj.Format.Fill.Transparency = alpha
+        api.Format.Line.Transparency = alpha
+        api.Format.Fill.Transparency = alpha

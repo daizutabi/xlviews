@@ -62,12 +62,15 @@ def multirange(
     return sheet.range(api.Address)
 
 
-def reference(sheet: Sheet, cell: str | Range) -> str:
+def reference(cell: str | tuple[int, int] | Range, sheet: Sheet | None = None) -> str:
     """Return a reference to a cell."""
     if isinstance(cell, str):
         return cell
 
-    if isinstance(cell, tuple):
-        cell = cell[0]
+    if sheet is None:
+        if isinstance(cell, tuple):
+            raise ValueError("sheet is required when cell is a tuple")
+
+        sheet = cell.sheet
 
     return "=" + sheet.range(*cell).get_address(include_sheetname=True)

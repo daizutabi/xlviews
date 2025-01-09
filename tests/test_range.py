@@ -67,7 +67,7 @@ def test_multirange_column(sheet_module: Sheet, index, n, rng):
 def test_reference_str(sheet_module: Sheet):
     from xlviews.range import reference
 
-    assert reference(sheet_module, "x") == "x"
+    assert reference("x", sheet_module) == "x"
 
 
 def test_reference_range(sheet_module: Sheet):
@@ -75,5 +75,19 @@ def test_reference_range(sheet_module: Sheet):
 
     cell = sheet_module.range(4, 5)
 
-    ref = reference(sheet_module, cell)
+    ref = reference(cell)
     assert ref == f"={sheet_module.name}!$E$4"
+
+
+def test_reference_tuple(sheet_module: Sheet):
+    from xlviews.range import reference
+
+    ref = reference((4, 5), sheet_module)
+    assert ref == f"={sheet_module.name}!$E$4"
+
+
+def test_reference_error(sheet_module: Sheet):
+    from xlviews.range import reference
+
+    with pytest.raises(ValueError, match="sheet is required when cell is a tuple"):
+        reference((4, 5))

@@ -1,21 +1,23 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import xlwings as xw
+from xlwings import Range
+from xlwings.constants import AxisType, Placement, TickMark
 
 from xlviews.config import rcParams
-from xlviews.range import multirange, reference
+from xlviews.range import reference
 from xlviews.style import (
-    set_area,
+    set_area_format,
     set_dimensions,
-    set_font,
+    set_font_api,
     set_label,
     set_scale,
     set_ticklabels,
     set_ticks,
 )
-from xlviews.utils import constant
 
 if TYPE_CHECKING:
     from xlwings import Chart, Sheet
@@ -81,7 +83,7 @@ def chart_position(sheet: Sheet, left: int | None, top: int | None) -> tuple[int
 class Axes:
     sheet: Sheet
     chart: Chart
-    chart_type: str
+    chart_type: int
     series_collection: list[COMRetryObjectWrapper]
     labels: list[str]
 
@@ -95,6 +97,7 @@ class Axes:
         row: int | None = None,
         column: int | None = None,
         sheet: Sheet | None = None,
+        chart_type: int | None = None,
         border_width: int = 0,
         visible_only: bool = True,
         has_legend: bool = True,
@@ -111,20 +114,25 @@ class Axes:
 
         width = width or rcParams["chart.width"]
         height = height or rcParams["chart.height"]
+
         self.chart = self.sheet.charts.add(left, top, width, height)
 
-        self.chart_type = ""
+        if chart_type is None:
+            self.chart_type = self.chart.api[1].ChartType
+        else:
+            self.chart_type = chart_type
+            self.chart.api[1].ChartType = chart_type
 
         # self.chart.api[0].Placement = xw.constants.Placement.xlMove
-        self.chart.api[0].Placement = xw.constants.Placement.xlFreeFloating
+        self.chart.api[0].Placement = Placement.xlFreeFloating
         self.chart.api[0].Border.LineStyle = border_width
         self.chart.api[1].PlotVisibleOnly = visible_only
 
-        self.xaxis.MajorTickMark = xw.constants.TickMark.xlTickMarkInside
-        self.yaxis.MajorTickMark = xw.constants.TickMark.xlTickMarkInside
+        self.xaxis.MajorTickMark = TickMark.xlTickMarkInside
+        self.yaxis.MajorTickMark = TickMark.xlTickMarkInside
 
         self.chart.api[1].HasLegend = has_legend
-        self.legend.IncludeInLayout = include_in_layout
+        self.chart.api[1].Legend.IncludeInLayout = include_in_layout
 
         self.series_collection = []
         self.labels = []
@@ -132,198 +140,147 @@ class Axes:
     @property
     def xaxis(self) -> COMRetryObjectWrapper:
         chart = self.chart.api[1]
-        return chart.Axes(xw.constants.AxisType.xlCategory)
+        return chart.Axes(AxisType.xlCategory)
 
     @property
     def yaxis(self) -> COMRetryObjectWrapper:
         chart = self.chart.api[1]
-        return chart.Axes(xw.constants.AxisType.xlValue)
+        return chart.Axes(AxisType.xlValue)
 
-    @property
-    def legend(self) -> COMRetryObjectWrapper:
-        return self.chart.api[1].Legend
-
-    def set_chart_type(self, chart_type: str) -> None:
-        """Set the chart type.
-
-        Args:
-            chart_type (str): Specify the members of `xlwings.constants.ChartType`
-                as strings such as XYScatter. Omit the leading `xl`.
-        """
-        chart = self.chart.api[1]
-        self.chart_type = chart_type
-        chart.ChartType = constant("ChartType", chart_type)
-
-    def add_series(  # noqa: C901
+    def add_series(
         self,
-        index=None,
-        columns=None,
-        name=None,
-        sheet=None,
-        series=None,
-        axis=1,
-        chart_type=None,
-    ):
-        """Add a series to the chart.
+        x: Range,
+        y: Range | None = None,
+        label: str | tuple[int, int] | Range = "",
+        sheet: Sheet | None = None,
+        chart_type: int | None = None,
+    ) -> COMRetryObjectWrapper:
+        sheet = sheet or self.sheet
 
-        Args:
-            index : list or xlwings.Range
-                データインデックス
-                See also: xlviews.utils.multirange
-            columns : int or list or xlwings.Range, optional
-                intの場合、yの値のみ、listの場合(x, y)の値
-            name : tuple or str
-                tuple の場合、(row, col)
-            sheet : str
-                データソースのあるシート名
-            series : Excelチャートのシリーズ
-                指定したばあい、すでに存在するシリーズを変更する。
-            axis : int
-                データの方向
-            chart_type : int or str, optional
-                チャートタイプ
+        api = self.chart.api[1]
+        series = api.SeriesCollection().NewSeries()
+        self.series_collection.append(series)
 
-        Returns
-        -------
-        series : Series
-            シリーズオブジェクト
-        """
-        if sheet is None:
-            sheet = self.sheet
-        if series is None:
-            chart = self.chart.api[1]
-            series = chart.SeriesCollection().NewSeries()
-            print(series)
-            self.series_collection.append(series)
-            self.labels.append(name)
-        if name:
-            name = reference(sheet, name)
-            series.Name = name
+        if not isinstance(label, str):
+            label = reference(label, sheet)
 
-        def _multirange(index_, column):
-            if axis == 1:
-                values = multirange(sheet, index_, column)
-            else:
-                values = multirange(sheet, column, index_)
-            return values
+        series.Name = label
+        self.labels.append(label)
 
-        if not isinstance(index, list) and columns is not None:
-            series.XValues = index.api
-            series.Values = columns.api
-        elif isinstance(columns, int):
-            series.Values = _multirange(index, columns)
-        elif isinstance(columns, list):
-            series.XValues = _multirange(index, columns[0])
-            series.Values = _multirange(index, columns[1])
+        if chart_type is None:
+            chart_type = self.chart_type
+
+        series.ChartType = chart_type
+
+        if y:
+            series.XValues = x.api
+            series.Values = y.api
+
         else:
-            raise ValueError("columnsが指定されていない。")
-
-        if chart_type and self.chart_type != chart_type:
-            if isinstance(chart_type, str):
-                chart_type = constant("ChartType", chart_type)
-            series.ChartType = chart_type
+            series.Values = x.api
 
         return series
 
     @property
-    def title(self):
-        return self.chart.api[1].ChartTitle
+    def title(self) -> str | None:
+        api = self.chart.api[1]
 
-    def set_title(self, title=None, name=None, size=None, sheet=None, **kwargs):
-        """
-        チャートのタイトルを設定する。
+        if api.HasTitle:
+            return api.ChartTitle.Text
 
-        Parameters
-        ----------
-        title : str or list or range
-            文字列で直接設定するか、[row, column]の参照
-        name : str
-            フォント名
-        size : int
-            文字サイズ
-        sheet : シートオブジェクト
-            セル参照するときのシート
-        """
-        chart = self.chart.api[1]
-        if sheet is None:
-            sheet = self.chart.parent
+        return None
+
+    @title.setter
+    def title(self, value: str | tuple[int, int] | None) -> None:
+        self.set_title(value)
+
+    def set_title(
+        self,
+        title: str | tuple[int, int] | Range | None = None,
+        *,
+        name: str | None = None,
+        size: int | None = None,
+        sheet: Sheet | None = None,
+        **kwargs,
+    ) -> None:
+        api = self.chart.api[1]
+
         if title is None:
-            chart.HasTitle = False
+            api.HasTitle = False
             return
-        chart.HasTitle = True
-        chart_title = chart.ChartTitle
-        chart_title.Text = reference(sheet, title)
-        if size is None:
-            size = rcParams["chart.title.font.size"]
-        set_font(chart_title, name=name, size=size, **kwargs)
+
+        sheet = sheet or self.chart.parent
+
+        api.HasTitle = True
+        chart_title = api.ChartTitle
+        chart_title.Text = reference(title, sheet)
+
+        size = size or rcParams["chart.title.font.size"]
+        set_font_api(chart_title, name, size=size, **kwargs)
+
+    def delete_legend(self) -> None:
+        api = self.chart.api[1]
+        if api.HasLegend:
+            api.Legend.Delete()
 
     def set_legend(
         self,
-        legend=True,
-        name=None,
-        size=None,
-        left=None,
-        top=None,
-        width=None,
-        height=None,
-        fill="yellow",
-        border="gray",
-        alpha=0.8,
-        position=(1, 1),
-        margin=3,
-        entry_height_scale=1,
-    ):
-        if self.chart.api[1].HasLegend:
-            self.legend.Delete()
-        if not legend:
-            return
-        # 表示されないLegendEntryのHeightやWidthを取得できないため
-        self.chart.api[1].HasLegend = True
-        self.legend.IncludeInLayout = False
+        left: float | None = None,
+        top: float | None = None,
+        width: float | None = None,
+        height: float | None = None,
+        *,
+        name: str | None = None,
+        size: int | None = None,
+        border: str | int = "gray",
+        fill: str | int = "yellow",
+        alpha: float = 0.8,
+        position: tuple[float, float] | None = (1, 1),
+        margin: float = 3,
+        entry_height_scale: float = 1,
+    ) -> None:
+        self.delete_legend()
+        api = self.chart.api[1]
+        api.HasLegend = True
 
-        legend_entries = list(self.legend.LegendEntries())
-        labels = [label for label in self.labels if label != "__trendline__"]
-        labels += [None for label in self.labels if label == "__trendline__"]
-        for entry, label in zip(legend_entries, labels, strict=False):
-            if label is None:
+        legend = api.Legend
+        legend.IncludeInLayout = False
+
+        legend_entries = list(legend.LegendEntries())
+        for entry, label in zip(legend_entries, self.labels, strict=True):
+            if not label:
                 entry.Delete()
 
-        if size is None:
-            size = rcParams["chart.legend.font.size"]
-        # ここでチェックしないとだめ
-        if self.chart.api[1].HasLegend is False:
-            return
-        set_font(self.legend, name=name, size=size)
+        size = size or rcParams["chart.legend.font.size"]
 
-        # TODO: 凡例が一列以外の場合
+        if api.HasLegend is False:
+            return
+
+        set_font_api(legend, name, size=size)
+
         if height is None:
             heights = [0]
-            for entry in self.legend.LegendEntries():
-                try:
+            for entry in legend.LegendEntries():
+                with suppress(Exception):
                     heights.append(entry.Height * entry_height_scale)
-                except Exception:
-                    pass
             height = sum(heights)
+
         if width is None:
             widths = [0]
-            for entry in self.legend.LegendEntries():
-                try:
+            for entry in legend.LegendEntries():
+                with suppress(Exception):
                     widths.append(entry.Width)
-                except Exception:
-                    pass
             width = max(widths)
 
-        set_dimensions(self.legend, left, top, width, height)
-        set_area(self.legend, fill=fill, border=border, alpha=alpha)
+        set_dimensions(legend, left, top, width, height)
+        set_area_format(legend, border, fill, alpha)
 
         if position:
-            legend = self.legend
-            plot_area = self.plot_area
             x, y = position
             x = (x + 1) / 2
             y = (1 - y) / 2
 
-            # マージン分だけInsideAreaを縮小する。
+            plot_area = self.plot_area
             inside_left = plot_area.InsideLeft + margin
             inside_top = plot_area.InsideTop + margin
             inside_width = plot_area.InsideWidth - 2 * margin
@@ -331,7 +288,8 @@ class Axes:
 
             left = inside_left + x * inside_width - x * legend.Width
             top = inside_top + y * inside_height - y * legend.Height
-            set_dimensions(self.legend, left, top)
+
+            set_dimensions(legend, left, top)
 
     def set_xscale(self, scale=None, **kwargs):
         set_scale(self.xaxis, scale, **kwargs)
