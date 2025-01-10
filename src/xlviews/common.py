@@ -22,7 +22,7 @@ def get_book(name: str | None = None, *, app: App | None = None) -> Book:
         if app.books:
             return app.books.active
 
-        return app.books.add()
+        return app.books.add()  # no cov: depend on the order of tests
 
     for book in app.books:
         if book.name == name:

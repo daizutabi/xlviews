@@ -13,11 +13,9 @@ def teardown():
 
 @pytest.fixture(scope="session")
 def app():
-    app = xlwings.apps.add()
+    return xlwings.apps.add()
 
-    yield app
-
-    app.quit()
+    # app.quit() # Avoids quitting the app to execute `quit_apps()` later
 
 
 @pytest.fixture(scope="session")
