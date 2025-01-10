@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import matplotlib as mpl
 import xlwings as xw
 from pandas import DataFrame, Series
-from xlwings import Range, Sheet
+from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
 from xlviews.config import rcParams

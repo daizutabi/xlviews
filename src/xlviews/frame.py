@@ -13,7 +13,7 @@ from xlwings import Sheet
 
 from xlviews import common, modify
 from xlviews.axes import set_first_position
-from xlviews.decorators import wait_updating
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
@@ -49,7 +49,7 @@ class SheetFrame:
     stats: StatsFrame | None
     dist: DistFrame | None
 
-    @wait_updating
+    @turn_off_screen_updating
     def __init__(
         self,
         *args,
@@ -924,7 +924,7 @@ class SheetFrame:
     def delete(self, direction: str = "up", *, entire: bool = False) -> None:
         return modify.delete(self, direction, entire=entire)
 
-    @wait_updating
+    @turn_off_screen_updating
     def copy(self, *args, **kwargs) -> SheetFrame:
         return modify.copy(self, *args, **kwargs)
 

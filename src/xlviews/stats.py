@@ -7,7 +7,7 @@ import xlwings as xw
 from pandas import DataFrame
 from xlwings.constants import Direction
 
-from xlviews.decorators import wait_updating
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
 from xlviews.range import multirange
@@ -155,7 +155,7 @@ def get_formula(
 class StatsFrame(SheetFrame):
     parent: SheetFrame
 
-    @wait_updating
+    @turn_off_screen_updating
     def __init__(
         self,
         parent: SheetFrame,

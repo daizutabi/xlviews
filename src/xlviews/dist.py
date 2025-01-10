@@ -8,7 +8,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from xlviews.config import rcParams
-from xlviews.decorators import wait_updating
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.frame import SheetFrame
 from xlviews.style import set_alignment, set_font
 from xlviews.utils import iter_columns
@@ -21,7 +21,7 @@ class DistFrame(SheetFrame):
     parent: SheetFrame
     dist_func: dict[str, str]
 
-    @wait_updating
+    @turn_off_screen_updating
     def __init__(
         self,
         parent: SheetFrame,
@@ -32,6 +32,7 @@ class DistFrame(SheetFrame):
         style: bool = True,
         gray: bool = True,
         autofit: bool = True,
+        **kwargs,
     ) -> None:
         if columns is None:
             columns = parent.value_columns
@@ -46,7 +47,13 @@ class DistFrame(SheetFrame):
         by = list(iter_columns(parent, by)) if by else None
         data = get_init_data(parent, columns, by)
 
-        super().__init__(data=data, parent=parent, index=by is not None, style=False)
+        super().__init__(
+            data=data,
+            parent=parent,
+            index=by is not None,
+            style=False,
+            **kwargs,
+        )
 
         if by:
             self.link_to_index(by)

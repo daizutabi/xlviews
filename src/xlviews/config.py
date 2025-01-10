@@ -44,5 +44,11 @@ class Config:
 
         params[keys[-1]] = value
 
+    def get(self, key: str, default: Any) -> Any:
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
 
 rcParams = Config()  # noqa: N816

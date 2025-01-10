@@ -9,40 +9,19 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-def wait_updating(func: Callable) -> Callable:
-    """Wait for the processing to finish before updating the screen."""
+def turn_off_screen_updating(func: Callable) -> Callable:
+    """Turn screen updating off to speed up your script."""
 
     @wraps(func)
     def _func(*args, **kwargs):  # noqa: ANN202
-        active = xw.apps.active
-
-        if active:
-            is_updating = active.screen_updating
-            active.screen_updating = False
-        else:
-            is_updating = None
+        if app := xw.apps.active:
+            is_updating = app.screen_updating
+            app.screen_updating = False
 
         try:
-            result = func(*args, **kwargs)
+            return func(*args, **kwargs)
         finally:
-            if active:
-                active.screen_updating = is_updating
-
-        return result
-
-    return _func
-
-
-def api(func: Callable) -> Callable:
-    """If the first argument is an xlwings object, cast it to a win32com object."""
-
-    @wraps(func)
-    def _func(obj: object, *args, **kwargs):  # noqa: ANN202
-        try:  # noqa: SIM105
-            obj = obj.api  # type: ignore
-        except Exception:  # noqa: BLE001, S110
-            pass
-
-        return func(obj, *args, **kwargs)
+            if app:
+                app.screen_updating = is_updating
 
     return _func

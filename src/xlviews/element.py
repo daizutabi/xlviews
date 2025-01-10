@@ -6,7 +6,7 @@ import pandas as pd
 # import spin.pandas as spd
 from xlviews.axes import Axes, chart_position
 from xlviews.config import rcParams
-from xlviews.decorators import wait_updating
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.style import palette, set_series_style
 from xlviews.utils import format_label, label_func_from_list
 
@@ -247,8 +247,8 @@ class Element:
             xformat = rcParams.get(f"axis.format.{x}", None)
         if yformat == "auto":
             yformat = rcParams.get(f"axis.format.{y}", None)
-        axes.set_xticklabels(format=xformat)
-        axes.set_yticklabels(format=yformat)
+        axes.set_xtick_labels(format=xformat)
+        axes.set_ytick_labels(format=yformat)
 
         if xlabel:
             if xlabel == "auto":
@@ -263,7 +263,7 @@ class Element:
                     ylabel = label_y + " " + ylabel[ylabel.index("[") :]
             axes.set_ylabel(ylabel)
 
-    @wait_updating
+    @turn_off_screen_updating
     @autohandle
     @autolegend
     def _plot(
@@ -625,7 +625,7 @@ class Bar(Element):
         super().__init__(data)
         self.bar(x, y, label=label, **kwargs)
 
-    @wait_updating
+    @turn_off_screen_updating
     def bar(self, x, y, label="auto", stacked=False, **kwargs):
         if isinstance(x, list):
             xs, x = x, x[0]

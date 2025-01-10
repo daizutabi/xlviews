@@ -10,12 +10,15 @@ from xlwings.constants import AxisType, Placement, TickMark
 from xlviews.config import rcParams
 from xlviews.range import reference
 from xlviews.style import (
+    get_axis_label,
+    get_axis_scale,
+    get_ticks,
     set_area_format,
+    set_axis_label,
+    set_axis_scale,
     set_dimensions,
     set_font_api,
-    set_label,
-    set_scale,
-    set_ticklabels,
+    set_tick_labels,
     set_ticks,
 )
 
@@ -138,12 +141,12 @@ class Axes:
         self.labels = []
 
     @property
-    def xaxis(self) -> COMRetryObjectWrapper:
+    def xaxis(self):  # noqa: ANN201
         chart = self.chart.api[1]
         return chart.Axes(AxisType.xlCategory)
 
     @property
-    def yaxis(self) -> COMRetryObjectWrapper:
+    def yaxis(self):  # noqa: ANN201
         chart = self.chart.api[1]
         return chart.Axes(AxisType.xlValue)
 
@@ -191,7 +194,7 @@ class Axes:
         return None
 
     @title.setter
-    def title(self, value: str | tuple[int, int] | None) -> None:
+    def title(self, value: str | tuple[int, int] | Range | None) -> None:
         self.set_title(value)
 
     def set_title(
@@ -209,14 +212,90 @@ class Axes:
             api.HasTitle = False
             return
 
-        sheet = sheet or self.chart.parent
-
         api.HasTitle = True
         chart_title = api.ChartTitle
-        chart_title.Text = reference(title, sheet)
+        chart_title.Text = reference(title, sheet or self.chart.parent)
 
         size = size or rcParams["chart.title.font.size"]
         set_font_api(chart_title, name, size=size, **kwargs)
+
+    @property
+    def xlabel(self) -> str | None:
+        return get_axis_label(self.xaxis)
+
+    @xlabel.setter
+    def xlabel(self, value: str | tuple[int, int] | Range | None) -> None:
+        self.set_xlabel(value)
+
+    @property
+    def ylabel(self) -> str | None:
+        return get_axis_label(self.yaxis)
+
+    @ylabel.setter
+    def ylabel(self, value: str | tuple[int, int] | Range | None) -> None:
+        self.set_ylabel(value)
+
+    def set_xlabel(
+        self,
+        label: str | tuple[int, int] | Range | None = None,
+        sheet: Sheet | None = None,
+        **kwargs,
+    ) -> None:
+        sheet = sheet or self.chart.parent
+        set_axis_label(self.xaxis, label, sheet=sheet, **kwargs)
+
+    def set_ylabel(
+        self,
+        label: str | tuple[int, int] | Range | None = None,
+        sheet: Sheet | None = None,
+        **kwargs,
+    ) -> None:
+        sheet = sheet or self.chart.parent
+        set_axis_label(self.yaxis, label, sheet=sheet, **kwargs)
+
+    @property
+    def xticks(self) -> tuple[float, float, float, float]:
+        return get_ticks(self.xaxis)
+
+    @xticks.setter
+    def xticks(self, value: tuple[float, ...]) -> None:
+        set_ticks(self.xaxis, *value)
+
+    @property
+    def yticks(self) -> tuple[float, float, float, float]:
+        return get_ticks(self.yaxis)
+
+    @yticks.setter
+    def yticks(self, value: tuple[float, ...]) -> None:
+        set_ticks(self.yaxis, *value)
+
+    def set_xticks(self, *args, **kwargs) -> None:
+        set_ticks(self.xaxis, *args, **kwargs)
+
+    def set_yticks(self, *args, **kwargs) -> None:
+        set_ticks(self.yaxis, *args, **kwargs)
+
+    def set_xtick_labels(self, *args, **kwargs) -> None:
+        set_tick_labels(self.xaxis, *args, **kwargs)
+
+    def set_ytick_labels(self, *args, **kwargs) -> None:
+        set_tick_labels(self.yaxis, *args, **kwargs)
+
+    @property
+    def xscale(self) -> str | None:
+        return get_axis_scale(self.xaxis)
+
+    @xscale.setter
+    def xscale(self, scale: str | None) -> None:
+        set_axis_scale(self.xaxis, scale)
+
+    @property
+    def yscale(self) -> str | None:
+        return get_axis_scale(self.yaxis)
+
+    @yscale.setter
+    def yscale(self, scale: str | None) -> None:
+        set_axis_scale(self.yaxis, scale)
 
     def delete_legend(self) -> None:
         api = self.chart.api[1]
@@ -235,7 +314,7 @@ class Axes:
         border: str | int = "gray",
         fill: str | int = "yellow",
         alpha: float = 0.8,
-        position: tuple[float, float] | None = (1, 1),
+        loc: tuple[float, float] | None = (1, 1),
         margin: float = 3,
         entry_height_scale: float = 1,
     ) -> None:
@@ -275,12 +354,12 @@ class Axes:
         set_dimensions(legend, left, top, width, height)
         set_area_format(legend, border, fill, alpha)
 
-        if position:
-            x, y = position
+        if loc:
+            x, y = loc
             x = (x + 1) / 2
             y = (1 - y) / 2
 
-            plot_area = self.plot_area
+            plot_area = api.PlotArea
             inside_left = plot_area.InsideLeft + margin
             inside_top = plot_area.InsideTop + margin
             inside_width = plot_area.InsideWidth - 2 * margin
@@ -291,83 +370,45 @@ class Axes:
 
             set_dimensions(legend, left, top)
 
-    def set_xscale(self, scale=None, **kwargs):
-        set_scale(self.xaxis, scale, **kwargs)
+    def tight_layout(self, title_height_scale: float = 0.7) -> None:
+        api = self.chart.api[1]
+        xaxis = self.xaxis
+        yaxis = self.yaxis
 
-    def set_yscale(self, scale=None, **kwargs):
-        set_scale(self.yaxis, scale, **kwargs)
-
-    def set_xlabel(self, label=None, **kwargs):
-        set_label(self.xaxis, label, **kwargs)
-
-    def set_ylabel(self, label=None, **kwargs):
-        set_label(self.yaxis, label, **kwargs)
-
-    def set_xticks(self, *args, **kwargs):
-        set_ticks(self.xaxis, *args, **kwargs)
-
-    def set_yticks(self, *args, **kwargs):
-        set_ticks(self.yaxis, *args, **kwargs)
-
-    def set_xticklabels(self, *args, **kwargs):
-        set_ticklabels(self.xaxis, *args, **kwargs)
-
-    def set_yticklabels(self, *args, **kwargs):
-        set_ticklabels(self.yaxis, *args, **kwargs)
-
-    @property
-    def plot_area(self):
-        return self.chart.api[1].PlotArea
-
-    @property
-    def graph_area(self):
-        return self.chart.api[0]
-
-    def tight_layout(self, title_height_scale=0.7):
-        # TODO : タイトル、軸ラベルがない場合でもtight_layout可能にする。
-        if not (
-            self.chart.api[1].HasTitle and self.xaxis.HasTitle and self.yaxis.HasTitle
-        ):
+        if not (api.HasTitle and xaxis.HasTitle and yaxis.HasTitle):
             return
 
-        self.title.Top = 0
-        self.yaxis.AxisTitle.Left = 0
-        self.xaxis.AxisTitle.Top = self.graph_area.Height - self.xaxis.AxisTitle.Height
-        self.plot_area.Top = title_height_scale * self.title.Height
-        self.plot_area.Left = self.yaxis.AxisTitle.Width
-        self.plot_area.Width = self.graph_area.Width - self.plot_area.Left - 0
-        self.plot_area.Height = (
-            self.graph_area.Height
-            - self.plot_area.Top
-            - self.xaxis.AxisTitle.Height
-            - 0
+        title = api.ChartTitle
+        pa = api.PlotArea
+        ga = self.chart.api[0]
+
+        title.Top = 0
+        yaxis.AxisTitle.Left = 0
+        xaxis.AxisTitle.Top = ga.Height - xaxis.AxisTitle.Height
+
+        pa.Top = title_height_scale * title.Height
+        pa.Left = yaxis.AxisTitle.Width
+        pa.Width = ga.Width - pa.Left
+        pa.Height = ga.Height - pa.Top - xaxis.AxisTitle.Height
+
+        title.Left = pa.InsideLeft + pa.InsideWidth / 2 - title.Width / 2
+
+        xaxis.AxisTitle.Left = (
+            pa.InsideLeft + pa.InsideWidth / 2 - xaxis.AxisTitle.Width / 2
+        )
+        yaxis.AxisTitle.Top = (
+            pa.InsideTop + pa.InsideHeight / 2 - yaxis.AxisTitle.Height / 2
         )
 
-        self.title.Left = (
-            self.plot_area.InsideLeft
-            + self.plot_area.InsideWidth / 2
-            - self.title.Width / 2
-        )
-
-        self.xaxis.AxisTitle.Left = (
-            self.plot_area.InsideLeft
-            + self.plot_area.InsideWidth / 2
-            - self.xaxis.AxisTitle.Width / 2
-        )
-        self.yaxis.AxisTitle.Top = (
-            self.plot_area.InsideTop
-            + self.plot_area.InsideHeight / 2
-            - self.yaxis.AxisTitle.Height / 2
-        )
-
-    def set_plot_area_style(self):
-        # Major罫線に線を書く。
+    def set_plot_area_style(self) -> None:
         # msoElementPrimaryCategoryGridLinesMajor = 334
-        self.chart.api[1].SetElement(334)
+        api = self.chart.api[1]
+        api.SetElement(334)
         # msoElementPrimaryValueGridLinesMajor == 330
-        self.chart.api[1].SetElement(330)
+        api.SetElement(330)
 
-        line = self.plot_area.Format.Line
+        plot_area = api.PlotArea
+        line = plot_area.Format.Line
         line.Visible = True
         line.ForeColor.RGB = 0
         line.Weight = 1.25
@@ -384,3 +425,11 @@ class Axes:
         line.ForeColor.RGB = 0
         line.Weight = 1
         line.Transparency = 0.7
+
+    # @property
+    # def plot_area(self) -> COMRetryObjectWrapper:
+    #     return self.chart.api[1].PlotArea
+
+    # @property
+    # def graph_area(self) -> COMRetryObjectWrapper:
+    #     return self.chart.api[0]

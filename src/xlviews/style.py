@@ -14,14 +14,19 @@ from xlwings.constants import (
     BordersIndex,
     FormatConditionType,
     LineStyle,
+    MarkerStyle,
+    ScaleType,
     TableStyleElementType,
 )
 
 from xlviews.config import rcParams
-from xlviews.decorators import api, wait_updating
+from xlviews.decorators import turn_off_screen_updating
+from xlviews.range import reference
 from xlviews.utils import constant, rgb
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.frame import SheetFrame
@@ -98,7 +103,7 @@ def set_font_api(
     api: COMRetryObjectWrapper,
     name: str | None = None,
     *,
-    size: int | None = None,
+    size: float | None = None,
     bold: bool | None = None,
     italic: bool | None = None,
     color: int | str | None = None,
@@ -251,7 +256,7 @@ def _set_style_font(
     set_font(rng, color=color, bold=bold, size=size)
 
 
-@wait_updating
+@turn_off_screen_updating
 def set_frame_style(
     sf: SheetFrame,
     *,
@@ -433,187 +438,116 @@ def palette(name: str, n: int) -> list[str] | list[tuple[int, int, int]] | list[
     return [None] * n
 
 
-@api
-def set_series_style(
-    series,
-    marker=False,
-    size=False,
-    line=False,
-    color=False,
-    fill_color=False,
-    edge_color=False,
-    line_color=False,
-    width=False,
-    edge_width=False,
-    line_width=False,
-    alpha=False,
-    fill_alpha=False,
-    edge_alpha=False,
-    line_alpha=False,
-):
-    """
-    Seriesのスタイルを設定する.
-    Noneが有効な指定であるため、指定しないことを示すデフォルト値をFalseとする。
-    """
-    # size = 10
-    # edge_width = 3
-    fill = series.Format.Fill
-    edge = series.Format.Line
-    border = series.Border
+def get_axis_label(axis) -> str | None:  # noqa: ANN001
+    if not axis.HasTitle:
+        return None
 
-    has_line = line or border.LineStyle != xw.constants.LineStyle.xlLineStyleNone
-    has_marker = (
-        marker or series.MarkerStyle != xw.constants.MarkerStyle.xlMarkerStyleNone
-    )
-
-    # 'is not False' は 0 が有効な指定であるため
-    if color is not False and color is not None:
-        if line_color is False and has_line:
-            line_color = color
-        if fill_color is False and has_marker:
-            fill_color = color
-        if edge_color is False and has_marker:
-            edge_color = color
-
-    if alpha is not False and alpha is not None:
-        if line_alpha is False and has_line:
-            line_alpha = alpha
-        if fill_alpha is False and has_marker:
-            fill_alpha = alpha
-        if edge_alpha is False and has_marker:
-            edge_alpha = alpha / 2
-
-    if marker is None:
-        series.MarkerStyle = xw.constants.MarkerStyle.xlMarkerStyleNone
-    elif marker:
-        marker = MARKER_DICT.get(marker, marker)
-        marker = "xlMarkerStyle" + marker[0].upper() + marker[1:]
-        marker = getattr(xw.constants.MarkerStyle, marker)
-        series.MarkerStyle = marker
-    if size:
-        series.MarkerSize = size
-
-    # 以下の通りの順番に実行することが重要！！
-    # edge を指定すると、lineの変わってしまうため覚えておく
-    line_style = border.LineStyle
-
-    if fill_color is not False:
-        fill.Visible = True
-        fill.BackColor.RGB = rgb(fill_color)
-    if fill_alpha is not False:
-        fill.Transparency = fill_alpha
-    if fill_color is not False:
-        fill.ForeColor.RGB = rgb(fill_color)
-
-    if edge_color is not False:
-        edge.Visible = True
-        edge.BackColor.RGB = rgb(edge_color)
-    if edge_alpha is not False:
-        edge.Transparency = edge_alpha
-        # lineとedgeの透明度は独立に指定する方法が分からない。そのため、
-        # lineの透明度を指定したときにはマーカーのエッジを消す。
-        line_width_ = border.Weight
-        edge.Weight = 0
-        border.Weight = line_width_
-    if edge_color is not False:
-        edge.ForeColor.RGB = rgb(edge_color)
-    if edge_width is not False:
-        edge.Weight = edge_width
-
-    if line is False:
-        border.LineStyle = line_style
-    elif line is None:
-        border.LineStyle = xw.constants.LineStyle.xlLineStyleNone
-    elif line:
-        line = LINE_DICT.get(line, line)
-        line = "xl" + line[0].upper() + line[1:]
-        line = getattr(xw.constants.LineStyle, line)
-        border.LineStyle = line
-
-    if line_color is not False:
-        border.Color = rgb(line_color)
-    if line_alpha is not False:
-        edge.Transparency = line_alpha
-        # lineとedgeの透明度は独立に指定する方法が分からない。そのため、
-        # lineの透明度を指定したときにはマーカーのエッジを消す。
-        line_width_ = border.Weight
-        edge.Weight = 0
-        border.Weight = line_width_
-    if line_width is not False:
-        border.Weight = line_width
-
-    if line is None:
-        edge.Visible = False
+    return axis.AxisTitle.Text
 
 
-@api
-def set_scale(axis, scale):
-    if not scale:
-        return
-    if scale == "log":
-        axis.ScaleType = xw.constants.ScaleType.xlScaleLogarithmic
-    elif scale == "linear":
-        axis.ScaleType = xw.constants.ScaleType.xlScaleLinear
-
-
-@api
-def set_label(axis, label, size=None, name=None, **kwargs):
+def set_axis_label(
+    axis,  # noqa: ANN001
+    label: str | tuple[int, int] | Range | None = None,
+    name: str | None = None,
+    size: float | None = None,
+    sheet: Sheet | None = None,
+    **kwargs,
+) -> None:
     if not label:
         axis.HasTitle = False
         return
+
     axis.HasTitle = True
     axis_title = axis.AxisTitle
-    axis_title.Text = label
-    if size is None:
-        size = rcParams["chart.axis.title.font.size"]
-    set_font(axis_title, size=size, name=name, **kwargs)
+    axis_title.Text = reference(label, sheet)
+    size = size or rcParams["chart.axis.title.font.size"]
+
+    set_font_api(axis_title, name, size=size, **kwargs)
 
 
-@api
+def get_ticks(axis) -> tuple[float, float, float, float]:  # noqa: ANN001
+    return (
+        axis.MinimumScale,
+        axis.MaximumScale,
+        axis.MajorUnit,
+        axis.MinorUnit,
+    )
+
+
 def set_ticks(
-    axis,
+    axis,  # noqa: ANN001
     *args,
-    min=None,
-    max=None,
-    major=None,
-    minor=None,
-    gridlines=True,
-    **kwargs,
-):
-    args = (list(args) + [None, None, None, None])[:4]
-    min = min or args[0]
-    max = max or args[1]
+    min: float | None = None,  # noqa: A002
+    max: float | None = None,  # noqa: A002
+    major: float | None = None,
+    minor: float | None = None,
+    gridlines: bool = True,
+) -> None:
+    args = [*args, None, None, None, None][:4]
+
+    min = min or args[0]  # noqa: A001
+    max = max or args[1]  # noqa: A001
     major = major or args[2]
     minor = minor or args[3]
 
     if min is not None:
         axis.MinimumScale = min
+
     if max is not None:
         axis.MaximumScale = max
+
     if major is not None:
         axis.MajorUnit = major
+
         if gridlines:
             axis.HasMajorGridlines = True
         else:
             axis.HasMajorGridlines = False
+
     if minor is not None:
         axis.MinorUnit = minor
+
         if gridlines:
             axis.HasMinorGridlines = True
         else:
             axis.HasMinorGridlines = False
+
     if min:
         axis.CrossesAt = min
 
 
-@api
-def set_ticklabels(axis, name=None, size=None, format=None):
-    if size is None:
-        size = rcParams["chart.axis.ticklabels.font.size"]
-    set_font(axis.TickLabels, name=name, size=size)
-    # set_font(axis.Format.TextFrame2.TextRange, name=name, size=size)
-    if format:
-        axis.TickLabels.NumberFormatLocal = format
+def set_tick_labels(
+    axis,  # noqa: ANN001
+    name: str | None = None,
+    size: float | None = None,
+    number_format: str | None = None,
+) -> None:
+    size = size or rcParams["chart.axis.ticklabels.font.size"]
+    set_font_api(axis.TickLabels, name, size=size)
+
+    if number_format:
+        axis.TickLabels.NumberFormatLocal = number_format
+
+
+def get_axis_scale(axis) -> str | None:  # noqa: ANN001
+    if axis.ScaleType == ScaleType.xlScaleLogarithmic:
+        return "log"
+
+    if axis.ScaleType == ScaleType.xlScaleLinear:
+        return "linear"
+
+    return None
+
+
+def set_axis_scale(axis, scale: str | None) -> None:  # noqa: ANN001
+    if not scale:
+        return
+
+    if scale == "log":
+        axis.ScaleType = ScaleType.xlScaleLogarithmic
+
+    elif scale == "linear":
+        axis.ScaleType = ScaleType.xlScaleLinear
 
 
 def set_dimensions(
@@ -653,3 +587,136 @@ def set_area_format(
     if alpha is not None:
         api.Format.Line.Transparency = alpha
         api.Format.Fill.Transparency = alpha
+
+
+def set_series_style(  # noqa: C901
+    series,  # noqa: ANN001
+    marker: str | None | Literal[False] = False,
+    size: float | None = None,
+    line: str | None | Literal[False] = False,
+    color: str | int | None = None,
+    fill_color: str | int | None = None,
+    edge_color: str | int | None = None,
+    line_color: str | int | None = None,
+    alpha: float | None = None,
+    fill_alpha: float | None = None,
+    edge_alpha: float | None = None,
+    line_alpha: float | None = None,
+    edge_weight: float | None = None,
+    line_weight: float | None = None,
+) -> None:
+    fill = series.Format.Fill
+    edge = series.Format.Line
+    border = series.Border
+
+    has_line = line or border.LineStyle != LineStyle.xlLineStyleNone
+    has_marker = marker or series.MarkerStyle != MarkerStyle.xlMarkerStyleNone
+
+    if color is not None:
+        if line_color is None and has_line:
+            line_color = color
+        if fill_color is None and has_marker:
+            fill_color = color
+        if edge_color is None and has_marker:
+            edge_color = color
+
+    if alpha is not None:
+        if line_alpha is None and has_line:
+            line_alpha = alpha
+        if fill_alpha is None and has_marker:
+            fill_alpha = alpha
+        if edge_alpha is None and has_marker:
+            edge_alpha = alpha / 2
+
+    if marker is None:
+        series.MarkerStyle = MarkerStyle.xlMarkerStyleNone
+    elif marker:
+        marker = MARKER_DICT.get(marker, marker)
+        marker = "xlMarkerStyle" + marker[0].upper() + marker[1:]
+        marker = getattr(MarkerStyle, marker)
+        series.MarkerStyle = marker
+    if size:
+        series.MarkerSize = size
+
+    # The order of execution is important
+    # Setting edge overrides line, so we need to remember it
+    line_style = border.LineStyle
+
+    if fill_color is not None:
+        fill.Visible = True
+        fill.BackColor.RGB = rgb(fill_color)
+    if fill_alpha is not None:
+        fill.Transparency = fill_alpha
+    if fill_color is not None:
+        fill.ForeColor.RGB = rgb(fill_color)
+
+    if edge_color is not None:
+        edge.Visible = True
+        edge.BackColor.RGB = rgb(edge_color)
+    if edge_alpha is not None:
+        edge.Transparency = edge_alpha
+        line_width_ = border.Weight
+        edge.Weight = 0
+        border.Weight = line_width_
+    if edge_color is not None:
+        edge.ForeColor.RGB = rgb(edge_color)
+    if edge_weight is not None:
+        edge.Weight = edge_weight
+
+    if line is False:
+        border.LineStyle = line_style
+    elif line is None:
+        border.LineStyle = LineStyle.xlLineStyleNone
+    elif line:
+        line = LINE_DICT.get(line, line)
+        line = "xl" + line[0].upper() + line[1:]
+        line = getattr(LineStyle, line)
+        border.LineStyle = line
+
+    if line_color is not None:
+        border.Color = rgb(line_color)
+    if line_alpha is not None:
+        edge.Transparency = line_alpha
+        line_width_ = border.Weight
+        edge.Weight = 0
+        border.Weight = line_width_
+    if line_weight is not None:
+        border.Weight = line_weight
+
+    if line is None:
+        edge.Visible = False
+
+
+if __name__ == "__main__":
+    import xlwings as xw
+    from xlwings.constants import ChartType
+
+    from xlviews.axes import Axes
+    from xlviews.common import quit_apps
+
+    quit_apps()
+    book = xw.Book()
+    sheet_module = book.sheets.add()
+
+    ct = ChartType.xlXYScatterLines
+    ax = Axes(300, 10, chart_type=ct, sheet=sheet_module)
+    x = sheet_module["B2:B11"]
+    y = sheet_module["C2:C11"]
+    z = sheet_module["D2:D11"]
+    x.options(transpose=True).value = list(range(10))
+    y.options(transpose=True).value = list(range(10, 20))
+    z.options(transpose=True).value = list(range(20, 30))
+    sheet_module["C1"].value = "Y"
+    sheet_module["D1"].value = "Z"
+    ax.add_series(x, y, label=sheet_module["C1"])
+    ax.add_series(x, z, label=(1, 4))
+    ax.title = "abc"
+    ax.xlabel = sheet_module["C1"]
+    ax.ylabel = sheet_module["C2"]
+    ax.xticks = (0, 40, 10)
+    ax.yticks = (0, 40, 10)
+    ax.set_xtick_labels(name="Arial", size=10, number_format="0")
+    ax.set_ytick_labels(name="Times", size=10, number_format="0")
+    ax.set_plot_area_style()
+    ax.tight_layout()
+    ax.set_legend(loc=(1, 1))
