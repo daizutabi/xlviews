@@ -1,7 +1,7 @@
 from xlviews.common import open_or_create
-from xlviews.dist import DistFrame
-from xlviews.frame import SheetFrame
-from xlviews.stats import StatsFrame
+from xlviews.distframe import DistFrame
+from xlviews.sheetframe import SheetFrame
+from xlviews.statsframe import StatsFrame
 from xlviews.utils import constant
 
 __all__ = ["DistFrame", "SheetFrame", "StatsFrame", "constant", "open_or_create"]

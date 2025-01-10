@@ -1,8 +1,8 @@
 import pytest
 from xlwings import Range
 
-from xlviews.frame import SheetFrame
-from xlviews.stats import GroupedRange
+from xlviews.sheetframe import SheetFrame
+from xlviews.statsframe import GroupedRange
 
 
 @pytest.mark.parametrize(

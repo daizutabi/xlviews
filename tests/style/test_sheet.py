@@ -4,7 +4,7 @@ from xlwings import Sheet
 from xlwings.constants import BordersIndex
 
 from xlviews.config import rcParams
-from xlviews.frame import SheetFrame
+from xlviews.sheetframe import SheetFrame
 from xlviews.utils import rgb
 
 

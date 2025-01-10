@@ -3,7 +3,7 @@ import pytest
 from pandas import DataFrame, Series
 from xlwings import Sheet
 
-from xlviews.frame import SheetFrame
+from xlviews.sheetframe import SheetFrame
 
 
 @pytest.fixture(scope="module")

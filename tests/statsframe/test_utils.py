@@ -3,11 +3,11 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.frame import SheetFrame
+from xlviews.sheetframe import SheetFrame
 
 
 def test_wrap_wrap():
-    from xlviews.stats import get_wrap
+    from xlviews.statsframe import get_wrap
 
     assert get_wrap(wrap="wrap") == "wrap"
     assert get_wrap(wrap={"a": "wrap"}) == {"a": "wrap"}
@@ -18,13 +18,13 @@ def test_wrap_wrap():
     [("na", "IFERROR({},NA())"), ("null", 'IFERROR({},"")')],
 )
 def test_wrap_true(kwarg, value):
-    from xlviews.stats import get_wrap
+    from xlviews.statsframe import get_wrap
 
     assert get_wrap(**{kwarg: True}) == value  # type: ignore
 
 
 def test_wrap_list():
-    from xlviews.stats import get_wrap
+    from xlviews.statsframe import get_wrap
 
     x = get_wrap(na=["a", "b"], null="c")
     assert isinstance(x, dict)
@@ -34,39 +34,39 @@ def test_wrap_list():
 
 
 def test_wrap_none():
-    from xlviews.stats import get_wrap
+    from xlviews.statsframe import get_wrap
 
     assert get_wrap() is None
 
 
 def test_func_none():
-    from xlviews.stats import get_func
+    from xlviews.statsframe import get_func
 
     func = ["count", "max", "mean", "median", "min", "soa"]
     assert sorted(get_func(None)) == func
 
 
 def test_func_str():
-    from xlviews.stats import get_func
+    from xlviews.statsframe import get_func
 
     assert get_func("count") == ["count"]
 
 
 @pytest.mark.parametrize("func", [["count"], {"a": "count"}])
 def test_func_else(func):
-    from xlviews.stats import get_func
+    from xlviews.statsframe import get_func
 
     assert get_func(func) == func
 
 
 def test_has_header(sf_parent: SheetFrame):
-    from xlviews.stats import has_header
+    from xlviews.statsframe import has_header
 
     assert has_header(sf_parent)
 
 
 def test_move_down(sheet: Sheet):
-    from xlviews.stats import move_down
+    from xlviews.statsframe import move_down
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
     sf = SheetFrame(sheet, 3, 3, data=df, style=False)
@@ -79,7 +79,7 @@ def test_move_down(sheet: Sheet):
 
 
 def test_move_down_header(sheet: Sheet):
-    from xlviews.stats import move_down
+    from xlviews.statsframe import move_down
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
     sf = SheetFrame(sheet, 3, 3, data=df, style=False)
@@ -93,7 +93,7 @@ def test_move_down_header(sheet: Sheet):
 
 
 def test_column_ranges(sheet_module: Sheet):
-    from xlviews.stats import get_column_ranges
+    from xlviews.statsframe import get_column_ranges
 
     rngs = get_column_ranges(sheet_module, [[1, 5], [9, 12]], 2)
     assert rngs[0].get_address() == "$B$1:$B$5"
@@ -101,7 +101,7 @@ def test_column_ranges(sheet_module: Sheet):
 
 
 def test_column_ranges_offset(sheet_module: Sheet):
-    from xlviews.stats import get_column_ranges
+    from xlviews.statsframe import get_column_ranges
 
     rngs = get_column_ranges(sheet_module, [[1, 5], [9, 12]], 2, 10)
     assert rngs[0].get_address() == "$B$11:$B$15"

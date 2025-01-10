@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from xlviews.frame import SheetFrame
-from xlviews.stats import StatsFrame
+from xlviews.sheetframe import SheetFrame
+from xlviews.statsframe import StatsFrame
 
 
 @pytest.fixture(scope="module", params=[True, False])

@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 from scipy.stats import norm
 
-from xlviews.dist import DistFrame
-from xlviews.frame import SheetFrame
+from xlviews.distframe import DistFrame
+from xlviews.sheetframe import SheetFrame
 
 
 def test_init_data(sf: SheetFrame):
-    from xlviews.dist import get_init_data
+    from xlviews.distframe import get_init_data
 
     df = get_init_data(sf, ["a", "b"], ["x", "y"])
     c = ["a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]
@@ -17,14 +17,14 @@ def test_init_data(sf: SheetFrame):
 
 
 def test_dist_func_str():
-    from xlviews.dist import get_dist_func
+    from xlviews.distframe import get_dist_func
 
     df = get_dist_func("norm", ["a", "b"])
     assert df == {"a": "norm", "b": "norm"}
 
 
 def test_dist_func_dict():
-    from xlviews.dist import get_dist_func
+    from xlviews.distframe import get_dist_func
 
     df = get_dist_func({"a": "none"}, ["a", "b"])
     assert df == {"a": "none", "b": "norm"}
@@ -32,7 +32,7 @@ def test_dist_func_dict():
 
 @pytest.fixture(scope="module")
 def sfd(sf: SheetFrame):
-    from xlviews.dist import DistFrame
+    from xlviews.distframe import DistFrame
 
     return DistFrame(sf, ["a", "b"], by=["x", "y"])
 

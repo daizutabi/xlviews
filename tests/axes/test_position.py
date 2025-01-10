@@ -3,7 +3,7 @@ from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.axes import Axes
-from xlviews.frame import SheetFrame
+from xlviews.sheetframe import SheetFrame
 
 
 @pytest.mark.parametrize(

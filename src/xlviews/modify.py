@@ -14,7 +14,7 @@ from xlviews.utils import int_to_column_name, iter_columns
 if TYPE_CHECKING:
     from xlwings import Range
 
-    from xlviews.frame import SheetFrame
+    from xlviews.sheetframe import SheetFrame
 
 
 def _move_down(sf: SheetFrame, count: int) -> Range:

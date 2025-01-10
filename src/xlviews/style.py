@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from xlwings._xlwindows import COMRetryObjectWrapper
 
-    from xlviews.frame import SheetFrame
+    from xlviews.sheetframe import SheetFrame
     from xlviews.table import Table
 
 

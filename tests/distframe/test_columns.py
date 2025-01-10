@@ -2,9 +2,9 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.dist import DistFrame
+from xlviews.distframe import DistFrame
 from xlviews.formula import NONCONST_VALUE
-from xlviews.frame import SheetFrame
+from xlviews.sheetframe import SheetFrame
 
 
 @pytest.mark.parametrize(

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import numpy as np
     from numpy.typing import NDArray
 
-    from xlviews.frame import SheetFrame
+    from xlviews.sheetframe import SheetFrame
 
 
 def constant(type_: str, name: str | None = None) -> int:

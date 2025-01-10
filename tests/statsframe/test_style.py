@@ -2,8 +2,8 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.frame import SheetFrame
-from xlviews.stats import StatsFrame
+from xlviews.sheetframe import SheetFrame
+from xlviews.statsframe import StatsFrame
 from xlviews.utils import rgb
 
 
