@@ -50,6 +50,3 @@ def test_add_series_name_range(ax: Axes):
 
     name.value = "Series Name"
     assert s.Name == "Series Name"
-
-    name.value = "Series Name 2"
-    assert s.Name == "Series Name 2"

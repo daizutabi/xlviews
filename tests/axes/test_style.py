@@ -181,3 +181,18 @@ def test_tight_layout(ax: Axes):
 def test_plot_area_style(ax: Axes):
     ax.set_plot_area_style()
     assert ax.chart.api[1].PlotArea.Format.Line.Visible
+
+
+def test_legend_none(sheet: Sheet):
+    ct = ChartType.xlXYScatterLines
+    ax = Axes(300, 10, chart_type=ct, sheet=sheet)
+    x = sheet["B2:B11"]
+    y = sheet["C2:C11"]
+    z = sheet["D2:D11"]
+    x.options(transpose=True).value = list(range(1, 11))
+    y.options(transpose=True).value = list(range(10, 20))
+    z.options(transpose=True).value = list(range(20, 30))
+    ax.add_series(x, y)
+    ax.add_series(x, z)
+    ax.set_legend()
+    assert ax.chart.api[1].HasLegend is False

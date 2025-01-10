@@ -57,7 +57,12 @@ filterwarnings = []
 disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
-exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
+exclude_lines = [
+    "no cov",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__",
+]
 skip_covered = true
 
 [tool.ruff]

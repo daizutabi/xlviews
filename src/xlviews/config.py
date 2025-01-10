@@ -44,7 +44,7 @@ class Config:
 
         params[keys[-1]] = value
 
-    def get(self, key: str, default: Any) -> Any:
+    def get(self, key: str, default: Any = None) -> Any:
         try:
             return self[key]
         except KeyError:

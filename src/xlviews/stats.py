@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-import xlwings as xw
 from pandas import DataFrame
 from xlwings.constants import Direction
 
+from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
@@ -242,7 +242,7 @@ class StatsFrame(SheetFrame):
             func = "median" if "median" in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
 
-    def set_value_style(self, func_column_name: str) -> None:  # noqa: C901
+    def set_value_style(self, func_column_name: str) -> None:
         start = self.column + self.index_level
         end = self.column + len(self.columns)
         func_index = self.index(func_column_name)
@@ -261,23 +261,12 @@ class StatsFrame(SheetFrame):
                 if func in value_columns:
                     cell.number_format = fmt
 
-                match func:
-                    case "soa":
-                        if column != func_index:
-                            cell.number_format = "0.0%"
-                        set_font(cell, color="#5555FF", italic=True)
-                    case "min":
-                        set_font(cell, color="#7777FF")
-                    case "mean":
-                        set_font(cell, color="#33aa33")
-                    case "max":
-                        set_font(cell, color="#FF7777")
-                    case "sum":
-                        set_font(cell, color="purple", italic=True)
-                    case "std":
-                        set_font(cell, color="#aaaaaa")
-                    case "count":
-                        set_font(cell, color="gray")
+                color = rcParams.get(f"stats.{func}.color")
+                italic = rcParams.get(f"stats.{func}.italic")
+                set_font(cell, color=color, italic=italic)
+
+                if func == "soa" and column != func_index:
+                    cell.number_format = "0.0%"
 
         set_font(self.range(func_column_name, -1), italic=True)
 

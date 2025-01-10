@@ -529,25 +529,26 @@ def set_tick_labels(
         axis.TickLabels.NumberFormatLocal = number_format
 
 
-def get_axis_scale(axis) -> str | None:  # noqa: ANN001
+def get_axis_scale(axis) -> str:  # noqa: ANN001
     if axis.ScaleType == ScaleType.xlScaleLogarithmic:
         return "log"
 
     if axis.ScaleType == ScaleType.xlScaleLinear:
         return "linear"
 
-    return None
+    raise NotImplementedError
 
 
-def set_axis_scale(axis, scale: str | None) -> None:  # noqa: ANN001
-    if not scale:
-        return
-
+def set_axis_scale(axis, scale: str) -> None:  # noqa: ANN001
     if scale == "log":
         axis.ScaleType = ScaleType.xlScaleLogarithmic
+        return
 
-    elif scale == "linear":
+    if scale == "linear":
         axis.ScaleType = ScaleType.xlScaleLinear
+        return
+
+    raise NotImplementedError
 
 
 def set_dimensions(
@@ -693,6 +694,7 @@ if __name__ == "__main__":
 
     from xlviews.axes import Axes
     from xlviews.common import quit_apps
+    from xlviews.style import set_series_style
 
     quit_apps()
     book = xw.Book()
@@ -702,21 +704,8 @@ if __name__ == "__main__":
     ax = Axes(300, 10, chart_type=ct, sheet=sheet_module)
     x = sheet_module["B2:B11"]
     y = sheet_module["C2:C11"]
-    z = sheet_module["D2:D11"]
     x.options(transpose=True).value = list(range(10))
     y.options(transpose=True).value = list(range(10, 20))
-    z.options(transpose=True).value = list(range(20, 30))
-    sheet_module["C1"].value = "Y"
-    sheet_module["D1"].value = "Z"
-    ax.add_series(x, y, label=sheet_module["C1"])
-    ax.add_series(x, z, label=(1, 4))
-    ax.title = "abc"
-    ax.xlabel = sheet_module["C1"]
-    ax.ylabel = sheet_module["C2"]
-    ax.xticks = (0, 40, 10)
-    ax.yticks = (0, 40, 10)
-    ax.set_xtick_labels(name="Arial", size=10, number_format="0")
-    ax.set_ytick_labels(name="Times", size=10, number_format="0")
-    ax.set_plot_area_style()
-    ax.tight_layout()
-    ax.set_legend(loc=(1, 1))
+
+    s = ax.add_series(x, y, label="a")
+    set_series_style(s, marker="d", size=10, line="--", color="red", alpha=0.5)

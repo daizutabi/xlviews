@@ -282,19 +282,19 @@ class Axes:
         set_tick_labels(self.yaxis, *args, **kwargs)
 
     @property
-    def xscale(self) -> str | None:
+    def xscale(self) -> str:
         return get_axis_scale(self.xaxis)
 
     @xscale.setter
-    def xscale(self, scale: str | None) -> None:
+    def xscale(self, scale: str) -> None:
         set_axis_scale(self.xaxis, scale)
 
     @property
-    def yscale(self) -> str | None:
+    def yscale(self) -> str:
         return get_axis_scale(self.yaxis)
 
     @yscale.setter
-    def yscale(self, scale: str | None) -> None:
+    def yscale(self, scale: str) -> None:
         set_axis_scale(self.yaxis, scale)
 
     def delete_legend(self) -> None:
