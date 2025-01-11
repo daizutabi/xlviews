@@ -149,6 +149,23 @@ def test_yscale(ax: Axes, scale: str):
     ax.yscale = "linear"
 
 
+def test_set(ax: Axes):
+    ax.set(
+        xlabel="1",
+        ylabel="2",
+        xticks=(1, 10, 4, 1),
+        yticks=(2, 20, 4, 1),
+        xscale="linear",
+        yscale="linear",
+    )
+    assert ax.xlabel == "1"
+    assert ax.ylabel == "2"
+    assert ax.xticks == (1, 10, 4, 1)
+    assert ax.yticks == (2, 20, 4, 1)
+    assert ax.xscale == "linear"
+    assert ax.yscale == "linear"
+
+
 @pytest.mark.parametrize(
     ("loc", "left", "top"),
     [

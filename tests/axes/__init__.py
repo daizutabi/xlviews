@@ -4,7 +4,6 @@ if __name__ == "__main__":
 
     from xlviews.axes import Axes
     from xlviews.common import quit_apps
-    from xlviews.style import set_series_style
 
     quit_apps()
     book = xw.Book()
@@ -18,4 +17,3 @@ if __name__ == "__main__":
     y.options(transpose=True).value = list(range(10, 20))
 
     s = ax.add_series(x, y, label="a")
-    set_series_style(s, marker="d", size=10, line="--", color="red", alpha=0.5)

@@ -24,8 +24,6 @@ from xlviews.range import reference
 from xlviews.utils import constant, rgb
 
 if TYPE_CHECKING:
-    from typing import Literal
-
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.sheetframe import SheetFrame
@@ -405,24 +403,44 @@ def color_palette(n: int) -> list[tuple[int, int, int]]:
     return [tuple(int(c * 255) for c in p) for p in palette]  # type: ignore
 
 
-MARKER_DICT: dict[str, str] = {
-    "o": "circle",
-    "^": "triangle",
-    "s": "square",
-    "d": "diamond",
-    "+": "plus",
-    "x": "x",
-    ".": "dot",
-    "-": "dash",
-    "*": "star",
+MARKER_DICT: dict[str, int] = {
+    "o": MarkerStyle.xlMarkerStyleCircle,
+    "^": MarkerStyle.xlMarkerStyleTriangle,
+    "s": MarkerStyle.xlMarkerStyleSquare,
+    "d": MarkerStyle.xlMarkerStyleDiamond,
+    "+": MarkerStyle.xlMarkerStylePlus,
+    "x": MarkerStyle.xlMarkerStyleX,
+    ".": MarkerStyle.xlMarkerStyleDot,
+    "-": MarkerStyle.xlMarkerStyleDash,
+    "*": MarkerStyle.xlMarkerStyleStar,
 }
 
-LINE_DICT: dict[str, str] = {
-    "-": "continuous",
-    "--": "dash",
-    "-.": "dashDot",
-    ".": "Dot",
+LINE_DICT: dict[str, int] = {
+    "-": LineStyle.xlContinuous,
+    "--": LineStyle.xlDash,
+    "-.": LineStyle.xlDashDot,
+    ".": LineStyle.xlDot,
 }
+
+
+def get_marker_style(marker: int | str | None) -> int:
+    if isinstance(marker, int):
+        return marker
+
+    if marker is None:
+        return MarkerStyle.xlMarkerStyleNone
+
+    return MARKER_DICT[marker]
+
+
+def get_line_style(line: int | str | None) -> int:
+    if isinstance(line, int):
+        return line
+
+    if line is None:
+        return LineStyle.xlLineStyleNone
+
+    return LINE_DICT[line]
 
 
 def marker_palette(n: int) -> list[str]:
@@ -590,101 +608,3 @@ def set_area_format(
     if alpha is not None:
         api.Format.Line.Transparency = alpha
         api.Format.Fill.Transparency = alpha
-
-
-def set_series_style(  # noqa: C901
-    api,  # noqa: ANN001
-    marker: str | None | Literal[False] = False,
-    size: float | None = None,
-    line: str | None | Literal[False] = False,
-    color: str | int | None = None,
-    fill_color: str | int | None = None,
-    edge_color: str | int | None = None,
-    line_color: str | int | None = None,
-    alpha: float | None = None,
-    fill_alpha: float | None = None,
-    edge_alpha: float | None = None,
-    line_alpha: float | None = None,
-    edge_weight: float | None = None,
-    line_weight: float | None = None,
-) -> None:
-    fill = api.Format.Fill
-    edge = api.Format.Line
-    border = api.Border
-
-    has_line = line or border.LineStyle != LineStyle.xlLineStyleNone
-    has_marker = marker or api.MarkerStyle != MarkerStyle.xlMarkerStyleNone
-
-    if color is not None:
-        if line_color is None and has_line:
-            line_color = color
-        if fill_color is None and has_marker:
-            fill_color = color
-        if edge_color is None and has_marker:
-            edge_color = color
-
-    if alpha is not None:
-        if line_alpha is None and has_line:
-            line_alpha = alpha
-        if fill_alpha is None and has_marker:
-            fill_alpha = alpha
-        if edge_alpha is None and has_marker:
-            edge_alpha = alpha / 2
-
-    if marker is None:
-        api.MarkerStyle = MarkerStyle.xlMarkerStyleNone
-    elif marker:
-        marker = MARKER_DICT.get(marker, marker)
-        marker = "xlMarkerStyle" + marker[0].upper() + marker[1:]
-        marker = getattr(MarkerStyle, marker)
-        api.MarkerStyle = marker
-    if size:
-        api.MarkerSize = size
-
-    # The order of execution is important
-    # Setting edge overrides line, so we need to remember it
-    line_style = border.LineStyle
-
-    if fill_color is not None:
-        fill.Visible = True
-        fill.BackColor.RGB = rgb(fill_color)
-    if fill_alpha is not None:
-        fill.Transparency = fill_alpha
-    if fill_color is not None:
-        fill.ForeColor.RGB = rgb(fill_color)
-
-    if edge_color is not None:
-        edge.Visible = True
-        edge.BackColor.RGB = rgb(edge_color)
-    if edge_alpha is not None:
-        edge.Transparency = edge_alpha
-        line_width_ = border.Weight
-        edge.Weight = 0
-        border.Weight = line_width_
-    if edge_color is not None:
-        edge.ForeColor.RGB = rgb(edge_color)
-    if edge_weight is not None:
-        edge.Weight = edge_weight
-
-    if line is False:
-        border.LineStyle = line_style
-    elif line is None:
-        border.LineStyle = LineStyle.xlLineStyleNone
-    elif line:
-        line = LINE_DICT.get(line, line)
-        line = "xl" + line[0].upper() + line[1:]
-        line = getattr(LineStyle, line)
-        border.LineStyle = line
-
-    if line_color is not None:
-        border.Color = rgb(line_color)
-    if line_alpha is not None:
-        edge.Transparency = line_alpha
-        line_width_ = border.Weight
-        edge.Weight = 0
-        border.Weight = line_width_
-    if line_weight is not None:
-        border.Weight = line_weight
-
-    if line is None:
-        edge.Visible = False

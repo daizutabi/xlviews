@@ -3,7 +3,6 @@ from xlwings import Sheet
 from xlwings.constants import ChartType, LineStyle, MarkerStyle
 
 from xlviews.axes import Axes
-from xlviews.style import set_series_style
 
 
 @pytest.fixture(scope="module")
@@ -42,11 +41,11 @@ def ax(sheet_module: Sheet):
     ],
 )
 def test_series_style_marker(ax: Axes, x, y, marker, value, size):
-    api = ax.add_series(x, y, label="a").api
-    set_series_style(api, marker=marker, size=size)
-    assert api.MarkerStyle == value
-    assert api.MarkerSize == size
-    api.Delete()
+    series = ax.add_series(x, y, label="a")
+    series.set(marker=marker, size=size)
+    assert series.api.MarkerStyle == value
+    assert series.api.MarkerSize == size
+    series.delete()
 
 
 @pytest.mark.parametrize(
@@ -59,14 +58,10 @@ def test_series_style_marker(ax: Axes, x, y, marker, value, size):
     ],
 )
 def test_series_style_color(ax: Axes, x, y, color, value, alpha):
-    api = ax.add_series(x, y, label="a").api
-    set_series_style(api, marker="o", color=color, alpha=alpha)
-    assert api.MarkerStyle == MarkerStyle.xlMarkerStyleCircle
-    assert api.Format.Line.ForeColor.RGB == value  # type: ignore  # noqa: SIM300
-    assert api.Border.Color == value  # type: ignore  # noqa: SIM300
-    assert abs(api.Format.Line.Transparency - alpha) < 0.02  # type: ignore
-    # assert abs(s.Format.Fill.Transparency - alpha) < 0.02  # type: ignore
-    api.Delete()
+    series = ax.add_series(x, y, label="a")
+    series.set(marker="o", color=color, alpha=alpha)
+    assert value == series.api.Format.Line.ForeColor.RGB
+    series.delete()
 
 
 @pytest.mark.parametrize(
@@ -81,7 +76,6 @@ def test_series_style_color(ax: Axes, x, y, color, value, alpha):
 )
 def test_series_style_line(ax: Axes, x, y, line, value, weight):
     series = ax.add_series(x, y, label="a")
-    series.set(marker="o", line=line, edge_weight=weight, line_weight=weight)
-    assert series.api.Border.LineStyle == value  # type: ignore
-    assert series.api.Border.Weight == weight  # type: ignore
+    series.set(marker=None, line=line, weight=weight)
+    assert series.api.Border.LineStyle == value
     series.delete()

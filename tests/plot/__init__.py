@@ -5,7 +5,6 @@ if __name__ == "__main__":
 
     from xlviews.axes import Axes
     from xlviews.common import quit_apps
-    from xlviews.plot import _plot
     from xlviews.sheetframe import SheetFrame
 
     quit_apps()

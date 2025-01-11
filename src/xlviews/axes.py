@@ -24,6 +24,8 @@ from xlviews.style import (
 )
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from xlwings import Chart, Sheet
 
     from xlviews.sheetframe import SheetFrame
@@ -154,8 +156,8 @@ class Axes:
 
     def add_series(
         self,
-        x: Range,
-        y: Range | None = None,
+        x: Any,
+        y: Any | None = None,
         label: str | tuple[int, int] | Range = "",
         sheet: Sheet | None = None,
         chart_type: int | None = None,
@@ -282,6 +284,28 @@ class Axes:
     @yscale.setter
     def yscale(self, scale: str) -> None:
         set_axis_scale(self.yaxis, scale)
+
+    def set(
+        self,
+        xlabel: str | tuple[int, int] | Range | None = "",
+        ylabel: str | tuple[int, int] | Range | None = "",
+        xticks: tuple[float, ...] | None = None,
+        yticks: tuple[float, ...] | None = None,
+        xscale: str | None = None,
+        yscale: str | None = None,
+    ) -> None:
+        if xlabel != "":
+            self.xlabel = xlabel
+        if ylabel != "":
+            self.ylabel = ylabel
+        if xticks:
+            self.xticks = xticks
+        if yticks:
+            self.yticks = yticks
+        if xscale:
+            self.xscale = xscale
+        if yscale:
+            self.yscale = yscale
 
     def delete_legend(self) -> None:
         api = self.chart.api[1]

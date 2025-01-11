@@ -3,19 +3,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from xlwings import Range
+from xlwings.constants import LineStyle
 
 from xlviews.range import reference
-from xlviews.style import set_series_style
+from xlviews.style import get_line_style, get_marker_style
+from xlviews.utils import rgb
 
 if TYPE_CHECKING:
     from typing import Any
 
     from xlwings import Chart, Sheet
-    from xlwings._xlwindows import COMRetryObjectWrapper
 
 
 class Series:
-    api: COMRetryObjectWrapper
+    api: Any
     label: str
 
     def __init__(
@@ -79,12 +80,46 @@ class Series:
         else:
             self.api.Values = y
 
-    @property
-    def values(self) -> Range:
-        return Range(self.api.Values)
-
-    def set(self, **kwargs) -> None:
-        set_series_style(self.api, **kwargs)
-
     def delete(self) -> None:
         self.api.Delete()
+
+    def set(
+        self,
+        marker: str | None = "o",
+        line: str | None = "-",
+        color: str | int | tuple[int, int, int] = "black",
+        size: int = 5,
+        weight: float = 2,
+        alpha: float = 0,
+        **kwargs,
+    ) -> None:
+        if line is None:
+            weight = min(size / 4, weight)
+            line_alpha = alpha / 2
+        else:
+            line_alpha = alpha
+
+        set_marker(self.api, get_marker_style(marker), size)
+        set_fill(self.api, rgb(color), alpha)
+        set_line(self.api, rgb(color), get_line_style(line), weight, line_alpha)
+
+
+def set_marker(api: Any, style: int, size: int) -> None:
+    api.MarkerStyle = style
+    api.MarkerSize = size
+
+
+def set_fill(api: Any, color: int, alpha: float) -> None:
+    api.Format.Fill.Visible = True
+    api.Format.Fill.BackColor.RGB = color
+    api.Format.Fill.Transparency = alpha
+    api.Format.Fill.ForeColor.RGB = color
+
+
+def set_line(api: Any, color: int, style: int, weight: float, alpha: float) -> None:
+    api.Border.LineStyle = LineStyle.xlContinuous
+    api.Format.Line.Visible = True
+    api.Format.Line.Weight = weight
+    api.Format.Line.Transparency = alpha
+    api.Format.Line.ForeColor.RGB = color
+    api.Border.LineStyle = style

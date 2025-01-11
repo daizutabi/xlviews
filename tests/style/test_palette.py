@@ -44,3 +44,15 @@ def test_palette_color(name: str, p):
     from xlviews.style import palette
 
     assert palette(name, 2) == p
+
+
+def test_marker_style_int():
+    from xlviews.style import get_marker_style
+
+    assert get_marker_style(1) == 1
+
+
+def test_line_style_int():
+    from xlviews.style import get_line_style
+
+    assert get_line_style(1) == 1
