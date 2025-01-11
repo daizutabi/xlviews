@@ -3,7 +3,6 @@ from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.sheetframe import SheetFrame
-from xlviews.statsframe import StatsFrame
 from xlviews.utils import rgb
 
 
@@ -25,7 +24,7 @@ def sf(df: DataFrame, sheet: Sheet):
     ],
 )
 def test_value_style(sf: SheetFrame, func, color):
-    sf = StatsFrame(sf, func, by="x", table=True)
+    sf = sf.statsframe(func, by="x", table=True)
     sf.set_value_style("func")
     for c in ["a", "b", "c"]:
         rng = sf.range(c)

@@ -49,7 +49,7 @@ def test_group_const(sheet: Sheet):
     df = df.set_index(["x", "y"])
 
     sf = SheetFrame(sheet, 3, 2, data=df, style=False)
-    sf = DistFrame(sf, by=["x", "y"])
+    sf = sf.distframe(by=["x", "y"])
 
     assert sf.sheet["H20"].value == 1
     assert sf.sheet["H21"].value == NONCONST_VALUE

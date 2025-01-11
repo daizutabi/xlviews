@@ -954,16 +954,3 @@ class SheetFrame:
 
     def grid(self, *args, **kwargs) -> FacetGrid:
         return FacetGrid(self, *args, **kwargs)
-
-    # def aggregate(self, func, column: str, by=None, sel=None, **kwargs):
-    #     column = self.index(column)
-    #     if sel is not None:
-    #         sel = self.select(**sel)
-    #     grouped = self.groupby(by, sel)
-    #     dicts = []
-    #     for key, row in grouped.items():
-    #         d = dict(zip(by, key, strict=False))
-    #         range_ = multirange(self.sheet, row, column)
-    #         d["formula"] = aggregate(func, range_, **kwargs)
-    #         dicts.append(d)
-    #     return DataFrame(dicts)
