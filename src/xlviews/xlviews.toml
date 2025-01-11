@@ -49,6 +49,11 @@ fill.color = "#f0fff0"
 font.color = "#004455"
 font.bold = false
 
+[frame.gray]
+fill.color = "#eeeeee"
+font.color = "#aaaaaa"
+border.color = "#aaaaaa"
+
 [frame.values]
 fill.color = "#ffffff"
 font.color = "#001122"

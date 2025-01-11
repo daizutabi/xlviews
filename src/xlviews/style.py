@@ -19,8 +19,8 @@ from xlwings.constants import (
     TableStyleElementType,
 )
 
+from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
 from xlviews.range import reference
 from xlviews.utils import constant, rgb
 
@@ -224,7 +224,7 @@ def _set_style(
     rng = start.sheet.range(start, end)
 
     if border:
-        set_border(rng, edge_color="#aaaaaa" if gray else 0)
+        set_border(rng, edge_color=rcParams["frame.gray.border.color"] if gray else 0)
 
     if fill:
         _set_style_fill(rng, name, gray=gray)
@@ -235,7 +235,7 @@ def _set_style(
 
 def _set_style_fill(rng: Range, name: str, *, gray: bool = False) -> None:
     if gray and name != "values":
-        color = "#eeeeee"
+        color = rcParams["frame.gray.fill.color"]
     else:
         color = rcParams[f"frame.{name}.fill.color"]
 
@@ -249,7 +249,10 @@ def _set_style_font(
     gray: bool = False,
     font_size: int | None = None,
 ) -> None:
-    color = "#aaaaaa" if gray else rcParams[f"frame.{name}.font.color"]
+    if gray:
+        color = rcParams["frame.gray.font.color"]
+    else:
+        color = rcParams[f"frame.{name}.font.color"]
     bold = rcParams[f"frame.{name}.font.bold"]
     size = font_size or rcParams["frame.font.size"]
 
@@ -342,7 +345,7 @@ def set_frame_style(
 
     if border:
         ew = 2 if gray else 3
-        ec = "#aaaaaa" if gray else 0
+        ec = rcParams["frame.gray.border.color"] if gray else 0
         set_border(rng, edge_weight=ew, inside_weight=0, edge_color=ec)
 
     if autofit:
@@ -354,7 +357,7 @@ def set_frame_style(
 
 def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
     wide_columns = sf.wide_columns
-    edge_color = "#aaaaaa" if gray else 0
+    edge_color = rcParams["frame.gray.border.color"] if gray else 0
 
     for wide_column in wide_columns:
         rng = sf.range(wide_column).offset(-1)

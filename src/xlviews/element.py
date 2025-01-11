@@ -5,8 +5,8 @@ import pandas as pd
 
 # import spin.pandas as spd
 from xlviews.axes import Axes, chart_position
+from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
 from xlviews.style import palette, set_series_style
 from xlviews.utils import format_label, label_func_from_list
 

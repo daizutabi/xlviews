@@ -13,7 +13,7 @@ from xlwings import Sheet
 
 from xlviews import common, modify
 from xlviews.axes import set_first_position
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.common import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style

@@ -6,8 +6,8 @@ import numpy as np
 from pandas import DataFrame
 from xlwings.constants import Direction
 
+from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.range import multirange
 from xlviews.sheetframe import SheetFrame

@@ -8,7 +8,7 @@ from xlwings import Sheet
 from xlwings.constants import Direction
 
 from xlviews import common
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.common import turn_off_screen_updating
 from xlviews.utils import int_to_column_name, iter_columns
 
 if TYPE_CHECKING:
