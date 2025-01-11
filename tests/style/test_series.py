@@ -42,11 +42,11 @@ def ax(sheet_module: Sheet):
     ],
 )
 def test_series_style_marker(ax: Axes, x, y, marker, value, size):
-    s = ax.add_series(x, y, label="a")
-    set_series_style(s, marker=marker, size=size)
-    assert s.MarkerStyle == value
-    assert s.MarkerSize == size
-    s.Delete()
+    api = ax.add_series(x, y, label="a").api
+    set_series_style(api, marker=marker, size=size)
+    assert api.MarkerStyle == value
+    assert api.MarkerSize == size
+    api.Delete()
 
 
 @pytest.mark.parametrize(
@@ -59,14 +59,14 @@ def test_series_style_marker(ax: Axes, x, y, marker, value, size):
     ],
 )
 def test_series_style_color(ax: Axes, x, y, color, value, alpha):
-    s = ax.add_series(x, y, label="a")
-    set_series_style(s, marker="o", color=color, alpha=alpha)
-    assert s.MarkerStyle == MarkerStyle.xlMarkerStyleCircle
-    assert s.Format.Line.ForeColor.RGB == value  # type: ignore  # noqa: SIM300
-    assert s.Border.Color == value  # type: ignore  # noqa: SIM300
-    assert abs(s.Format.Line.Transparency - alpha) < 0.02  # type: ignore
+    api = ax.add_series(x, y, label="a").api
+    set_series_style(api, marker="o", color=color, alpha=alpha)
+    assert api.MarkerStyle == MarkerStyle.xlMarkerStyleCircle
+    assert api.Format.Line.ForeColor.RGB == value  # type: ignore  # noqa: SIM300
+    assert api.Border.Color == value  # type: ignore  # noqa: SIM300
+    assert abs(api.Format.Line.Transparency - alpha) < 0.02  # type: ignore
     # assert abs(s.Format.Fill.Transparency - alpha) < 0.02  # type: ignore
-    s.Delete()
+    api.Delete()
 
 
 @pytest.mark.parametrize(
@@ -80,9 +80,8 @@ def test_series_style_color(ax: Axes, x, y, color, value, alpha):
     ],
 )
 def test_series_style_line(ax: Axes, x, y, line, value, weight):
-    s = ax.add_series(x, y, label="a")
-    set_series_style(s, marker="o", line=line, edge_weight=weight, line_weight=weight)
-    assert s.Border.LineStyle == value  # type: ignore
-    assert s.Border.Weight == weight  # type: ignore
-    # assert s.Format.Line.Weight == weight  # type: ignore
-    s.Delete()
+    series = ax.add_series(x, y, label="a")
+    series.set(marker="o", line=line, edge_weight=weight, line_weight=weight)
+    assert series.api.Border.LineStyle == value  # type: ignore
+    assert series.api.Border.Weight == weight  # type: ignore
+    series.delete()

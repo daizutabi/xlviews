@@ -301,9 +301,9 @@ def set_frame_style(
 
     index_level = sf.index_level
     columns_level = sf.columns_level
+    length = len(sf)
 
     if index_level > 0:
-        length = len(sf)
         start = cell
         end = cell.offset(columns_level - 1, index_level - 1)
         set_style(start, end, "index.name")
@@ -594,7 +594,7 @@ def set_area_format(
 
 
 def set_series_style(  # noqa: C901
-    series,  # noqa: ANN001
+    api,  # noqa: ANN001
     marker: str | None | Literal[False] = False,
     size: float | None = None,
     line: str | None | Literal[False] = False,
@@ -609,12 +609,12 @@ def set_series_style(  # noqa: C901
     edge_weight: float | None = None,
     line_weight: float | None = None,
 ) -> None:
-    fill = series.Format.Fill
-    edge = series.Format.Line
-    border = series.Border
+    fill = api.Format.Fill
+    edge = api.Format.Line
+    border = api.Border
 
     has_line = line or border.LineStyle != LineStyle.xlLineStyleNone
-    has_marker = marker or series.MarkerStyle != MarkerStyle.xlMarkerStyleNone
+    has_marker = marker or api.MarkerStyle != MarkerStyle.xlMarkerStyleNone
 
     if color is not None:
         if line_color is None and has_line:
@@ -633,14 +633,14 @@ def set_series_style(  # noqa: C901
             edge_alpha = alpha / 2
 
     if marker is None:
-        series.MarkerStyle = MarkerStyle.xlMarkerStyleNone
+        api.MarkerStyle = MarkerStyle.xlMarkerStyleNone
     elif marker:
         marker = MARKER_DICT.get(marker, marker)
         marker = "xlMarkerStyle" + marker[0].upper() + marker[1:]
         marker = getattr(MarkerStyle, marker)
-        series.MarkerStyle = marker
+        api.MarkerStyle = marker
     if size:
-        series.MarkerSize = size
+        api.MarkerSize = size
 
     # The order of execution is important
     # Setting edge overrides line, so we need to remember it
@@ -689,26 +689,3 @@ def set_series_style(  # noqa: C901
 
     if line is None:
         edge.Visible = False
-
-
-if __name__ == "__main__":
-    import xlwings as xw
-    from xlwings.constants import ChartType
-
-    from xlviews.axes import Axes
-    from xlviews.common import quit_apps
-    from xlviews.style import set_series_style
-
-    quit_apps()
-    book = xw.Book()
-    sheet_module = book.sheets.add()
-
-    ct = ChartType.xlXYScatterLines
-    ax = Axes(300, 10, chart_type=ct, sheet=sheet_module)
-    x = sheet_module["B2:B11"]
-    y = sheet_module["C2:C11"]
-    x.options(transpose=True).value = list(range(10))
-    y.options(transpose=True).value = list(range(10, 20))
-
-    s = ax.add_series(x, y, label="a")
-    set_series_style(s, marker="d", size=10, line="--", color="red", alpha=0.5)

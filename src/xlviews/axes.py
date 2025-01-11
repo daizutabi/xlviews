@@ -9,6 +9,7 @@ from xlwings.constants import AxisType, Placement, TickMark
 
 from xlviews.config import rcParams
 from xlviews.range import reference
+from xlviews.series import Series
 from xlviews.style import (
     get_axis_label,
     get_axis_scale,
@@ -24,7 +25,6 @@ from xlviews.style import (
 
 if TYPE_CHECKING:
     from xlwings import Chart, Sheet
-    from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.sheetframe import SheetFrame
 
@@ -53,7 +53,11 @@ def set_first_position(sf: SheetFrame, pos: str = "right") -> None:
         FIRST_POSITION["top"] = cell.top
 
 
-def chart_position(sheet: Sheet, left: int | None, top: int | None) -> tuple[int, int]:
+def chart_position(
+    sheet: Sheet,
+    left: float | None,
+    top: float | None,
+) -> tuple[float, float]:
     """Return the position of the chart.
 
     If left is 0 and top is None, it will create a new row.
@@ -87,15 +91,14 @@ class Axes:
     sheet: Sheet
     chart: Chart
     chart_type: int
-    series_collection: list[COMRetryObjectWrapper]
-    labels: list[str]
+    series_collection: list[Series]
 
     def __init__(
         self,
-        left: int | None = None,
-        top: int | None = None,
-        width: int = 0,
-        height: int = 0,
+        left: float | None = None,
+        top: float | None = None,
+        width: float = 0,
+        height: float = 0,
         *,
         row: int | None = None,
         column: int | None = None,
@@ -118,7 +121,7 @@ class Axes:
         width = width or rcParams["chart.width"]
         height = height or rcParams["chart.height"]
 
-        self.chart = self.sheet.charts.add(left, top, width, height)
+        self.chart = self.sheet.charts.add(left, top, width, height)  # type: ignore
 
         if chart_type is None:
             self.chart_type = self.chart.api[1].ChartType
@@ -138,7 +141,6 @@ class Axes:
         self.chart.api[1].Legend.IncludeInLayout = include_in_layout
 
         self.series_collection = []
-        self.labels = []
 
     @property
     def xaxis(self):  # noqa: ANN201
@@ -157,30 +159,14 @@ class Axes:
         label: str | tuple[int, int] | Range = "",
         sheet: Sheet | None = None,
         chart_type: int | None = None,
-    ) -> COMRetryObjectWrapper:
+    ) -> Series:
         sheet = sheet or self.sheet
-
-        api = self.chart.api[1]
-        series = api.SeriesCollection().NewSeries()
-        self.series_collection.append(series)
-
-        if not isinstance(label, str):
-            label = reference(label, sheet)
-
-        series.Name = label
-        self.labels.append(label)
 
         if chart_type is None:
             chart_type = self.chart_type
 
-        series.ChartType = chart_type
-
-        if y:
-            series.XValues = x.api
-            series.Values = y.api
-
-        else:
-            series.Values = x.api
+        series = Series(self.chart, x, y, label, chart_type, sheet)
+        self.series_collection.append(series)
 
         return series
 
@@ -326,8 +312,9 @@ class Axes:
         legend.IncludeInLayout = False
 
         legend_entries = list(legend.LegendEntries())
-        for entry, label in zip(legend_entries, self.labels, strict=True):
-            if not label:
+        it = zip(legend_entries, self.series_collection, strict=True)
+        for entry, series in it:
+            if not series.label:
                 entry.Delete()
 
         size = size or rcParams["chart.legend.font.size"]
