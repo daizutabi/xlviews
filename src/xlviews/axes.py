@@ -67,7 +67,7 @@ def chart_position(
         return left, top
 
     if not sheet.charts:
-        return FIRST_POSITION["left"], FIRST_POSITION["top"]
+        return left or FIRST_POSITION["left"], top or FIRST_POSITION["top"]
 
     if left == 0 and top is None:  # New row
         left = FIRST_POSITION["left"]
@@ -297,8 +297,8 @@ class Axes:
         *,
         name: str | None = None,
         size: int | None = None,
-        border: str | int = "gray",
-        fill: str | int = "yellow",
+        border: str | int = "#aaaaaa",
+        fill: str | int = "#eeeeee",
         alpha: float = 0.8,
         loc: tuple[float, float] | None = (1, 1),
         margin: float = 3,
