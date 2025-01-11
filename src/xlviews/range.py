@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from xlwings import Range, Sheet
 
 
@@ -51,13 +53,18 @@ def multirange(
 
         return sheet.range((start, column), (end, column))
 
+    return union(get_range(i) for i in index)
+
+
+def union(ranges: Iterable[Range]) -> Range:
+    ranges = list(ranges)
+    sheet = ranges[0].sheet
     union = sheet.book.app.api.Union
 
-    apis = [get_range(i).api for i in index]
-    api = apis[0]
+    api = ranges[0].api
 
-    for r in apis[1:]:
-        api = union(api, r)
+    for r in ranges[1:]:
+        api = union(api, r.api)
 
     return sheet.range(api.Address)
 

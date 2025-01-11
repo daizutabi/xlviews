@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 class GroupedRange:
     sf: SheetFrame
     by: list[str]
-    grouped: dict[Hashable, list[list[int]]]
+    grouped: dict[Hashable, list[tuple[int, int]]]
 
     def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
         self.sf = sf
@@ -120,7 +120,7 @@ class GroupedRange:
 
 def get_column_ranges(
     sheet: Sheet,
-    row: list[list[int]],
+    row: list[tuple[int, int]],
     column: int,
     offset: int = 0,
 ) -> list[Range]:

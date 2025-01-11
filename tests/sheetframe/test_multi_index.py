@@ -190,8 +190,8 @@ def test_getitem_list(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("by", "v1", "v2"),
     [
-        ("x", [[11, 14]], [[15, 18]]),
-        ("y", [[11, 12], [15, 16]], [[13, 14], [17, 18]]),
+        ("x", [(11, 14)], [(15, 18)]),
+        ("y", [(11, 12), (15, 16)], [(13, 14), (17, 18)]),
     ],
 )
 def test_groupby(sf: SheetFrame, by, v1, v2):
@@ -204,7 +204,7 @@ def test_groupby(sf: SheetFrame, by, v1, v2):
 def test_groupby_list(sf: SheetFrame):
     g = sf.groupby(["x", "y"])
     assert len(g) == 4
-    assert g[(1, 1)] == [[11, 12]]
-    assert g[(1, 2)] == [[13, 14]]
-    assert g[(2, 1)] == [[15, 16]]
-    assert g[(2, 2)] == [[17, 18]]
+    assert g[(1, 1)] == [(11, 12)]
+    assert g[(1, 2)] == [(13, 14)]
+    assert g[(2, 1)] == [(15, 16)]
+    assert g[(2, 2)] == [(17, 18)]

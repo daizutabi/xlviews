@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import pywintypes
 import seaborn as sns
-import xlwings as xw
 from xlwings import Range, Sheet
 from xlwings.constants import (
     BordersIndex,

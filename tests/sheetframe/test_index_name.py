@@ -192,7 +192,7 @@ def test_select(sf: SheetFrame, name, a, sel):
 def test_groupby(sf: SheetFrame):
     g = sf.groupby("name")
     assert len(g) == 2
-    assert g["x"] == [[3, 4]]
-    assert g["y"] == [[5, 6]]
+    assert g["x"] == [(3, 4)]
+    assert g["y"] == [(5, 6)]
 
     assert len(sf.groupby(["name", "a"])) == 4

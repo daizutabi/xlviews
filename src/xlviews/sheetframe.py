@@ -16,6 +16,7 @@ from xlviews.axes import set_first_position
 from xlviews.common import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
+from xlviews.range import union
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
 from xlviews.table import Table
 from xlviews.utils import array_index, iter_columns
@@ -456,7 +457,7 @@ class SheetFrame:
     def range(
         self,
         column: str | tuple | dict | None = None,
-        start: int | Literal[False] | None = None,
+        start: int | Literal[False] | list[tuple[int, int]] | None = None,
         end: int | None = None,
     ) -> Range:
         """Return the range of the column.
@@ -480,6 +481,9 @@ class SheetFrame:
         """
         if column is None:
             return self.range_all()
+
+        if isinstance(start, list):
+            return union(self.range(column, s, e) for s, e in start)
 
         if column == "index":
             return self.range_index(start, end)
@@ -822,12 +826,12 @@ class SheetFrame:
         self,
         by: str | list[str] | None,
         sel: NDArray[np.bool_] | None = None,
-    ) -> dict[Hashable, list[list[int]]]:
+    ) -> dict[Hashable, list[tuple[int, int]]]:
         """Group by the specified column and return the group key and row number."""
         if not by:
             start = self.row + self.columns_level
             end = start + len(self) - 1
-            return {None: [[start, end]]}
+            return {None: [(start, end)]}
 
         if self.columns_names is None:
             if isinstance(by, list) or ":" in by:
@@ -845,10 +849,7 @@ class SheetFrame:
         else:
             offset = self.column + self.index_level  # horizontal
 
-        for key, value in index.items():
-            index[key] = [[x + offset for x in v] for v in value]
-
-        return index
+        return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
 
     def get_number_format(self, column: str | tuple) -> str:
         return self.range(column).number_format

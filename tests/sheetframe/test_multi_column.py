@@ -235,8 +235,8 @@ def test_select(sf: SheetFrame, a, b, sel):
 @pytest.mark.parametrize(
     ("by", "one", "two"),
     [
-        ("a", [[5, 6]], [[7, 8]]),
-        ("b", [[5, 5], [7, 7]], [[6, 6], [8, 8]]),
+        ("a", [(5, 6)], [(7, 8)]),
+        ("b", [(5, 5), (7, 7)], [(6, 6), (8, 8)]),
     ],
 )
 def test_groupby(sf: SheetFrame, by, one, two):
@@ -249,13 +249,13 @@ def test_groupby(sf: SheetFrame, by, one, two):
 def test_groupby_list(sf: SheetFrame):
     g = sf.groupby(["a", "b"])
     assert len(g) == 4
-    assert g[("a1", "b1")] == [[5, 5]]
-    assert g[("a1", "b2")] == [[6, 6]]
-    assert g[("a2", "b1")] == [[7, 7]]
-    assert g[("a2", "b2")] == [[8, 8]]
+    assert g[("a1", "b1")] == [(5, 5)]
+    assert g[("a1", "b2")] == [(6, 6)]
+    assert g[("a2", "b1")] == [(7, 7)]
+    assert g[("a2", "b2")] == [(8, 8)]
 
 
 def test_groupby_none(sf: SheetFrame):
     g = sf.groupby(None)
     assert len(g) == 1
-    assert g[None] == [[22, 26]]
+    assert g[None] == [(22, 26)]
