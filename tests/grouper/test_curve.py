@@ -3,7 +3,7 @@ import pytest
 from pandas import DataFrame, MultiIndex
 from xlwings import Sheet
 
-from xlviews.group import GroupedRange
+from xlviews.grouper import Grouper
 from xlviews.sheetframe import SheetFrame
 
 
@@ -32,21 +32,21 @@ def sf(sheet_module: Sheet):
     ],
 )
 def test_len(sf: SheetFrame, by, n: int):
-    gr = GroupedRange(sf, by)
+    gr = Grouper(sf, by)
     assert len(gr) == n
 
 
 @pytest.fixture(scope="module")
 def gr(sf: SheetFrame):
-    return GroupedRange(sf, ["s", "t"])
+    return Grouper(sf, ["s", "t"])
 
 
-def test_keys(gr: GroupedRange):
+def test_keys(gr: Grouper):
     keys = [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
     assert list(gr.keys()) == keys
 
 
-def test_values(gr: GroupedRange):
+def test_values(gr: Grouper):
     values = [[(3, 6)], [(7, 10)], [(11, 14)], [(15, 18)]]
     assert list(gr.values()) == values
 

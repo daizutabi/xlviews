@@ -10,7 +10,7 @@ from xlwings.constants import Direction
 from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
 from xlviews.formula import AGG_FUNCS, aggregate
-from xlviews.group import GroupedRange as Base
+from xlviews.grouper import Grouper
 from xlviews.range import RangeCollection, multirange
 from xlviews.sheetframe import SheetFrame
 from xlviews.style import set_font
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-class GroupedRange(Base):
+class StatsGrouper(Grouper):
     def ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
         if column in self.by:
             yield from super().first_ranges(column)
@@ -161,7 +161,7 @@ class StatsFrame(SheetFrame):
 
         move_down(parent, offset)
 
-        gr = GroupedRange(parent, by)
+        gr = StatsGrouper(parent, by)
         wrap = get_wrap(wrap, na=na, null=null)
         df = gr.get_frame(funcs, wrap, default, func_column_name)
 

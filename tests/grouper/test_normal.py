@@ -2,7 +2,7 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.group import GroupedRange
+from xlviews.grouper import Grouper
 from xlviews.sheetframe import SheetFrame
 
 
@@ -31,30 +31,30 @@ def sf(sheet_module: Sheet):
     ],
 )
 def test_len(sf: SheetFrame, by, n: int):
-    gr = GroupedRange(sf, by)
+    gr = Grouper(sf, by)
     assert len(gr) == n
 
 
 @pytest.fixture(scope="module")
 def gr(sf: SheetFrame):
-    return GroupedRange(sf, ["a", "c"])
+    return Grouper(sf, ["a", "c"])
 
 
-def test_keys(gr: GroupedRange):
+def test_keys(gr: Grouper):
     keys = [("c", 100), ("c", 200)]
     assert list(gr.keys()) == keys
 
 
-def test_values(gr: GroupedRange):
+def test_values(gr: Grouper):
     values = [[(3, 4), (8, 9)], [(5, 7), (10, 12)]]
     assert list(gr.values()) == values
 
 
-def test_items(gr: GroupedRange):
+def test_items(gr: Grouper):
     assert next(gr.items()) == (("c", 100), [(3, 4), (8, 9)])
 
 
-def test_iter(gr: GroupedRange):
+def test_iter(gr: Grouper):
     assert next(iter(gr)) == ("c", 100)
 
 
@@ -65,7 +65,7 @@ def test_iter(gr: GroupedRange):
         (("c", 200), [(5, 7), (10, 12)]),
     ],
 )
-def test_getitem(gr: GroupedRange, key, value):
+def test_getitem(gr: Grouper, key, value):
     assert gr[key] == value
 
 
@@ -76,7 +76,7 @@ def test_getitem(gr: GroupedRange, key, value):
         (("c", 200), "$E$5:$E$7,$E$10:$E$12"),
     ],
 )
-def test_range(gr: GroupedRange, key, value):
+def test_range(gr: Grouper, key, value):
     assert gr.range("x", key).get_address() == value
 
 
@@ -87,7 +87,7 @@ def test_range(gr: GroupedRange, key, value):
         (("c", 200), "$B$5"),
     ],
 )
-def test_first_range(gr: GroupedRange, key, value):
+def test_first_range(gr: Grouper, key, value):
     assert gr.first_range("a", key).get_address() == value
 
 
@@ -103,7 +103,7 @@ def test_first_range(gr: GroupedRange, key, value):
     ],
 )
 def test_iter_ranges(sf: SheetFrame, by, key, value):
-    gr = GroupedRange(sf, by)
+    gr = Grouper(sf, by)
     it = gr.iter_ranges(key)
     for rng, i in zip(it, value, strict=True):
         assert rng.get_address() == f"$E${i}:$F${i}"
@@ -118,7 +118,7 @@ def test_iter_ranges(sf: SheetFrame, by, key, value):
     ],
 )
 def test_iter_ranges_kwargs(sf: SheetFrame, by, key, value):
-    gr = GroupedRange(sf, by)
+    gr = Grouper(sf, by)
     it = gr.iter_ranges(key, c=100)
     for rng, i in zip(it, value, strict=True):
         assert rng.get_address() == f"$E${i}:$F${i}"

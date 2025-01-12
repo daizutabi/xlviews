@@ -58,7 +58,7 @@ def to_array(
     return sel
 
 
-class GroupedRange:
+class Grouper:
     sf: SheetFrame
     by: list[str]
     grouped: dict[tuple, list[tuple[int, int]]]
