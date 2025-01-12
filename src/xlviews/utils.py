@@ -3,12 +3,10 @@ from __future__ import annotations
 import re
 import warnings
 from collections import OrderedDict
-from collections.abc import Hashable
 from typing import TYPE_CHECKING
 
 import matplotlib as mpl
 import xlwings as xw
-from pandas import DataFrame, Series
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
@@ -17,8 +15,7 @@ from xlviews.config import rcParams
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    import numpy as np
-    from numpy.typing import NDArray
+    from pandas import DataFrame
 
     from xlviews.sheetframe import SheetFrame
 
@@ -118,6 +115,7 @@ def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterat
     """Yield the columns in the order of appearance with colon notation.
 
     Examples:
+        >>> from pandas import DataFrame
         >>> df = DataFrame([[1, 2, 3]], columns=["A", "B", "C"])
         >>> list(iter_columns(df, "B"))
         ['B']
@@ -138,69 +136,6 @@ def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterat
             yield from cs[: cs.index(c[1:]) + 1]
         else:
             yield c
-
-
-def array_index(
-    values: list | NDArray | DataFrame | Series,
-    sel: list[bool] | NDArray[np.bool_] | None = None,
-) -> dict[Hashable, list[tuple[int, int]]]:
-    """Return a dictionary indicating the positions where values exist.
-
-    The keys of the dictionary are the values in `values`. The values of the
-    dictionary are lists of positions where the keys exist, in the format:
-
-        [(start1, end1), (start2, end2), ...]
-
-    The `end` is the inclusive position of the element, different from slice
-    notation.
-
-    Args:
-        values (listable): Array to scan for value positions.
-        sel (list of bool, optional): Specifies whether to detect values or not.
-            Indices where this value is False are excluded.
-
-    Returns:
-        dict: Dictionary storing the positions where values exist.
-
-    Examples:
-        >>> values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
-        >>> index = array_index(values)
-        >>> index[(1, 2)]
-        [(0, 1), (4, 4)]
-        >>> index[(3, 4)]
-        [(2, 3), (5, 6)]
-
-        >>> sel = [True, False, True, False, True, False, False]
-        >>> index = array_index(values, sel=sel)
-        >>> index[(1, 2)]
-        [(0, 0), (4, 4)]
-        >>> index[(3, 4)]
-        [(2, 2)]
-    """
-    if len(values) == 0:
-        return {}
-
-    if isinstance(values, DataFrame | Series):
-        values = values.to_numpy()
-
-    if not isinstance(values[0], Hashable):
-        values = [tuple(x) for x in values]
-
-    index: dict[Hashable, list[list[int]]] = {}
-    for k, x in enumerate(values):
-        if sel is not None and not sel[k]:
-            continue
-
-        if x not in index:
-            index[x] = [[k, k]]
-        else:
-            current = index[x]
-            if k == current[-1][-1] + 1:
-                current[-1][-1] = k
-            else:
-                current.append([k, k])
-
-    return {k: [(x[0], x[1]) for x in v] for k, v in index.items()}
 
 
 def add_validate_list(

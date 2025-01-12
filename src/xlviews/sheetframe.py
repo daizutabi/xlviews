@@ -16,13 +16,14 @@ from xlviews.axes import set_first_position
 from xlviews.common import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
+from xlviews.groupby import create_group_index
 from xlviews.range import union
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
 from xlviews.table import Table
-from xlviews.utils import array_index, iter_columns
+from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterable, Iterator, Sequence
+    from collections.abc import Iterable, Iterator, Sequence
     from typing import Any, Literal
 
     from numpy.typing import ArrayLike, NDArray
@@ -820,13 +821,12 @@ class SheetFrame:
     def groupby(
         self,
         by: str | list[str] | None,
-        sel: NDArray[np.bool_] | None = None,
-    ) -> dict[Hashable, list[tuple[int, int]]]:
+    ) -> dict[tuple, list[tuple[int, int]]]:
         """Group by the specified column and return the group key and row number."""
         if not by:
             start = self.row + self.columns_level
             end = start + len(self) - 1
-            return {None: [(start, end)]}
+            return {(): [(start, end)]}
 
         if self.columns_names is None:
             if isinstance(by, list) or ":" in by:
@@ -837,7 +837,7 @@ class SheetFrame:
             df = DataFrame(self.value_columns, columns=self.columns_names)
             values = df[by]
 
-        index = array_index(values, sel)
+        index = create_group_index(values)
 
         if self.columns_names is None:
             offset = self.row + self.columns_level  # vertical

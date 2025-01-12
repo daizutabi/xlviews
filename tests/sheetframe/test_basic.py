@@ -251,8 +251,8 @@ def test_groupby(sheet: Sheet):
 
     g = sf.groupby("a")
     assert len(g) == 2
-    assert g[1] == [(3, 5), (8, 9)]
-    assert g[2] == [(6, 7)]
+    assert g[(1,)] == [(3, 5), (8, 9)]
+    assert g[(2,)] == [(6, 7)]
 
     assert len(sf.groupby(["a", "b"])) == 7
 
@@ -269,12 +269,12 @@ def test_groupby_range(sheet: Sheet):
     sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
 
     g = sf.groupby("a")
-    assert sf.range("a", g[1]).get_address() == "$B$3:$B$5,$B$8:$B$9"
-    assert sf.range("a", g[2]).get_address() == "$B$6:$B$7"
+    assert sf.range("a", g[(1,)]).get_address() == "$B$3:$B$5,$B$8:$B$9"
+    assert sf.range("a", g[(2,)]).get_address() == "$B$6:$B$7"
 
     g = sf.groupby("b")
-    assert sf.range("b", g[3]).get_address() == "$C$3:$C$4,$C$7:$C$8"
-    assert sf.range("b", g[4]).get_address() == "$C$5:$C$6,$C$9"
+    assert sf.range("b", g[(3,)]).get_address() == "$C$3:$C$4,$C$7:$C$8"
+    assert sf.range("b", g[(4,)]).get_address() == "$C$5:$C$6,$C$9"
 
     g = sf.groupby(["a", "b"])
     assert sf.range("a", g[(1, 3)]).get_address() == "$B$3:$B$4,$B$8"

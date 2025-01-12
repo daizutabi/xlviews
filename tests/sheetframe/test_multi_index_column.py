@@ -225,8 +225,8 @@ def test_getitem_list(sf: SheetFrame):
 def test_groupby(sf: SheetFrame, by, one, two):
     g = sf.groupby(by)
     assert len(g) == 2
-    assert g[1] == one
-    assert g[2] == two
+    assert g[(1,)] == one
+    assert g[(2,)] == two
 
 
 @pytest.mark.parametrize(

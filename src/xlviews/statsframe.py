@@ -15,7 +15,7 @@ from xlviews.style import set_font
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterator
+    from collections.abc import Iterator
 
     from numpy.typing import NDArray
     from xlwings import Range, Sheet
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 class GroupedRange:
     sf: SheetFrame
     by: list[str]
-    grouped: dict[Hashable, list[tuple[int, int]]]
+    grouped: dict[tuple, list[tuple[int, int]]]
 
     def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
         self.sf = sf
@@ -255,7 +255,8 @@ class StatsFrame(SheetFrame):
         formats = [get_fmt(column) for column in self.value_columns]
         formats = [None, *formats]
 
-        for func, rows in grouped.items():
+        for key, rows in grouped.items():
+            func = key[0]
             for column, fmt in zip(columns, formats, strict=False):
                 cell = multirange(self.sheet, rows, column)  # type: ignore
                 if func in value_columns:
