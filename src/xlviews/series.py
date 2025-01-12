@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from xlwings import Range
 from xlwings.constants import LineStyle
 
-from xlviews.range import reference
+from xlviews.range import RangeCollection, reference
 from xlviews.style import get_line_style, get_marker_style
 from xlviews.utils import rgb
 
@@ -64,7 +64,7 @@ class Series:
 
     @x.setter
     def x(self, x: Any) -> None:
-        if isinstance(x, Range):
+        if isinstance(x, Range | RangeCollection):
             self.api.XValues = x.api
         else:
             self.api.XValues = x
@@ -75,7 +75,7 @@ class Series:
 
     @y.setter
     def y(self, y: Any) -> None:
-        if isinstance(y, Range):
+        if isinstance(y, Range | RangeCollection):
             self.api.Values = y.api
         else:
             self.api.Values = y

@@ -6,12 +6,13 @@ from xlwings import Range
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
+    from typing import Self
 
     from xlwings import Sheet
 
 
 def reference(cell: str | tuple[int, int] | Range, sheet: Sheet | None = None) -> str:
-    """Return a reference to a cell."""
+    """Return a reference to a cell with sheet name."""
     if isinstance(cell, str):
         return cell
 
@@ -124,8 +125,8 @@ class RangeCollection:
         sheet: Sheet,
         row: int | Sequence[int | tuple[int, int]],
         column: int | Sequence[int | tuple[int, int]],
-    ) -> RangeCollection:
-        return RangeCollection(iter_ranges(sheet, row, column))
+    ) -> Self:
+        return cls(iter_ranges(sheet, row, column))
 
     def __len__(self) -> int:
         return sum(len(rng) for rng in self.ranges)

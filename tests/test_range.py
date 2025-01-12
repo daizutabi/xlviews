@@ -129,6 +129,7 @@ def test_range_collection_from_index_row(sheet_module: Sheet, row, n, address):
 @pytest.mark.parametrize(
     ("column", "n", "address"),
     [
+        ([(2, 2)], 1, "$B$5"),
         ([(4, 5), (10, 14)], 7, "$D$5:$E$5,$J$5:$N$5"),
         ([(5, 5), (7, 8), (10, 11)], 5, "$E$5,$G$5:$H$5,$J$5:$K$5"),
     ],
