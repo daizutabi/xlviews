@@ -196,3 +196,32 @@ def test_groupby(sf: SheetFrame):
     assert g[("y",)] == [(5, 6)]
 
     assert len(sf.groupby(["name", "a"])) == 4
+
+
+@pytest.fixture(scope="module")
+def sf2(sheet_module: Sheet):
+    a = ["c"] * 10
+    b = ["s"] * 5 + ["t"] * 5
+    c = ([100] * 2 + [200] * 3) * 2
+    x = list(range(10))
+    y = list(range(10, 20))
+    df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
+    df = df.set_index(["a", "b", "c"])
+    return SheetFrame(sheet_module, 102, 2, data=df, index=True, style=False)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "r"),
+    [({}, range(103, 113)), ({"c": 100}, [103, 104, 108, 109])],
+)
+def test_iter_ranges(sf2: SheetFrame, kwargs, r):
+    for rng, i in zip(sf2.iter_ranges(**kwargs), r, strict=True):
+        assert rng.get_address() == f"$E${i}:$F${i}"
+
+
+def test_iter_ranges_sel(sf2: SheetFrame):
+    sel = sf2.select(c=200)
+    it = sf2.iter_ranges(sel, b="t")
+
+    for rng, i in zip(it, [110, 111, 112], strict=True):
+        assert rng.get_address() == f"$E${i}:$F${i}"

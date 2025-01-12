@@ -836,6 +836,68 @@ class SheetFrame:
 
         return sel
 
+    @property
+    def length(self) -> int:
+        if self.columns_names is None:
+            return len(self)
+
+        return len(self.value_columns)
+
+    @property
+    def width(self) -> int:
+        if self.columns_names is None:
+            return len(self.value_columns)
+
+        return len(self)
+
+    @property
+    def offset(self) -> int:
+        if self.columns_names is None:
+            return self.row + self.columns_level
+
+        return self.column + self.index_level
+
+    def iter_ranges(
+        self,
+        sel: Sequence[bool] | NDArray[np.bool_] | None = None,
+        **kwargs,
+    ) -> Iterator[Range]:
+        if sel is None:
+            n = len(self) if self.columns_names is None else len(self.value_columns)
+            sel = np.ones(n, dtype=bool)
+        elif not isinstance(sel, np.ndarray):
+            sel = np.array(sel, dtype=bool)
+
+        if kwargs:
+            sel &= self.select(**kwargs)
+
+        if self.columns_names is None:
+            yield from self.iter_ranges_row(sel)
+        else:
+            yield from self.iter_ranges_column(sel)
+
+    def iter_ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
+        offset = self.offset
+        start = self.column + self.index_level
+        end = start + self.width - 1
+
+        for index in range(self.length):
+            if not sel[index]:
+                continue
+
+            yield self.sheet.range((index + offset, start), (index + offset, end))
+
+    def iter_ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
+        offset = self.offset
+        start = self.row + self.columns_level
+        end = start + self.width - 1
+
+        for index in range(self.length):
+            if not sel[index]:
+                continue
+
+            yield self.sheet.range((start, index + offset), (end, index + offset))
+
     def groupby(
         self,
         by: str | list[str] | None,

@@ -15,7 +15,7 @@ def sf(sheet_module: Sheet):
     d = ["x", "y"] * 8
     df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
-    return SheetFrame(sheet_module, 2, 2, data=df, index=True)
+    return SheetFrame(sheet_module, 2, 2, data=df, index=True, style=False)
 
 
 @pytest.mark.parametrize(
@@ -36,38 +36,19 @@ def test_len(sf: SheetFrame, by, n: int):
     assert len(gr) == n
 
 
-# @pytest.fixture(scope="module")
-# def gr(sf: SheetFrame):
-#     return GroupedRange(sf, ["a", "c"])
+@pytest.fixture(scope="module")
+def gr(sf: SheetFrame):
+    return GroupedRange(sf, ["s", "t"])
 
 
-# def test_keys(gr: GroupedRange):
-#     keys = [("c", 100), ("c", 200)]
-#     assert list(gr.keys()) == keys
+def test_keys(gr: GroupedRange):
+    keys = [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
+    assert list(gr.keys()) == keys
 
 
-# def test_values(gr: GroupedRange):
-#     values = [[(3, 4), (8, 9)], [(5, 7), (10, 12)]]
-#     assert list(gr.values()) == values
-
-
-# def test_items(gr: GroupedRange):
-#     assert next(gr.items()) == (("c", 100), [(3, 4), (8, 9)])
-
-
-# def test_iter(gr: GroupedRange):
-#     assert next(iter(gr)) == ("c", 100)
-
-
-# @pytest.mark.parametrize(
-#     ("key", "value"),
-#     [
-#         (("c", 100), [(3, 4), (8, 9)]),
-#         (("c", 200), [(5, 7), (10, 12)]),
-#     ],
-# )
-# def test_getitem(gr: GroupedRange, key, value):
-#     assert gr[key] == value
+def test_values(gr: GroupedRange):
+    values = [[(3, 6)], [(7, 10)], [(11, 14)], [(15, 18)]]
+    assert list(gr.values()) == values
 
 
 # @pytest.mark.parametrize(

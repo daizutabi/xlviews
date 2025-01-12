@@ -10,6 +10,7 @@ from xlviews.utils import iter_columns
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
+    from numpy.typing import NDArray
     from xlwings import Range
 
     from xlviews.range import RangeCollection
@@ -42,6 +43,19 @@ def create_group_index(
     values = [(int(s), int(e)) for s, e in zip(start, end, strict=True)]
 
     return _to_dict(keys, values)
+
+
+def to_array(
+    index: list[tuple[int, int]],
+    n: int,
+    offset: int = 0,
+) -> NDArray[np.bool_]:
+    sel = np.zeros(n, dtype=bool)
+
+    for s, e in index:
+        sel[s - offset : e - offset + 1] = True
+
+    return sel
 
 
 class GroupedRange:
@@ -85,3 +99,7 @@ class GroupedRange:
     def first_ranges(self, column: str) -> Iterator[Range]:
         for key in self:
             yield self.first_range(column, key)
+
+    def iter_ranges(self, key: tuple, **kwargs) -> Iterator[Range]:
+        sel = to_array(self[key], self.sf.length, self.sf.offset)
+        yield from self.sf.iter_ranges(sel, **kwargs)

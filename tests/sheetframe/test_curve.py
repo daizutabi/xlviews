@@ -164,6 +164,21 @@ def test_getitem_list(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(
+    ("kwargs", "sel"),
+    [
+        ({"s": "a"}, [True] * 8 + [False] * 8),
+        ({"i": "x"}, [True, False] * 8),
+        ({"s": "a", "i": "x"}, [True, False] * 4 + [False] * 8),
+        ({"r": (3, 6)}, [False] * 4 + [True] * 8 + [False] * 4),
+        ({"r": [1, 8]}, [True] * 2 + [False] * 12 + [True] * 2),
+    ],
+)
+def test_select(sf: SheetFrame, kwargs, sel):
+    x = sf.select(**kwargs)
+    np.testing.assert_array_equal(x, sel)
+
+
+@pytest.mark.parametrize(
     ("by", "result"),
     [
         ("s", {("a",): [(3, 10)], ("b",): [(11, 18)]}),
