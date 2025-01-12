@@ -58,6 +58,16 @@ def test_func_else(func):
     assert get_func(func) == func
 
 
+@pytest.mark.parametrize(
+    ("funcs", "n"),
+    [(["mean"], 4), (["min", "max", "median"], 12), ({"a": "count"}, 4)],
+)
+def test_length(sf_parent: SheetFrame, funcs, n):
+    from xlviews.statsframe import get_length
+
+    assert get_length(sf_parent, ["x", "y"], funcs) == n
+
+
 def test_has_header(sf_parent: SheetFrame):
     from xlviews.statsframe import has_header
 

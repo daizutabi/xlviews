@@ -9,6 +9,8 @@ from xlwings.constants import Direction
 from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
 from xlviews.formula import AGG_FUNCS, aggregate
+from xlviews.group import GroupedRange as Base
+from xlviews.group import get_column_ranges
 from xlviews.range import multirange
 from xlviews.sheetframe import SheetFrame
 from xlviews.style import set_font
@@ -18,19 +20,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from numpy.typing import NDArray
-    from xlwings import Range, Sheet
+    from xlwings import Range
 
 
-class GroupedRange:
-    sf: SheetFrame
-    by: list[str]
-    grouped: dict[tuple, list[tuple[int, int]]]
-
-    def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
-        self.sf = sf
-        self.by = list(iter_columns(sf, by)) if by else []
-        self.grouped = sf.groupby(self.by)
-
+class GroupedRange(Base):
     def iter_row_ranges(self, column: str) -> Iterator[str | list[Range]]:
         column_index = self.sf.index(column)
         if not isinstance(column_index, int):
@@ -105,20 +98,6 @@ class GroupedRange:
         columns = self.get_columns(funcs, func_column_name)
         df = DataFrame(values, columns=columns)
         return df.set_index(columns[: -len(self.sf.value_columns)])
-
-
-def get_column_ranges(
-    sheet: Sheet,
-    row: list[tuple[int, int]],
-    column: int,
-) -> list[Range]:
-    rngs = []
-
-    for start, end in row:
-        ref = sheet.range((start, column), (end, column))
-        rngs.append(ref)
-
-    return rngs
 
 
 def get_formula(
