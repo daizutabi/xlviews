@@ -198,7 +198,7 @@ def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf.range(column, start, end).get_address() == address
 
 
-def test_getitem_str(sf: SheetFrame):
+def test_getitem_tuple(sf: SheetFrame):
     s = sf[("a1", "b1")]
     assert isinstance(s, Series)
     assert s.name == ("a1", "b1")
@@ -258,4 +258,4 @@ def test_groupby_list(sf: SheetFrame):
 def test_groupby_none(sf: SheetFrame):
     g = sf.groupby(None)
     assert len(g) == 1
-    assert g[()] == [(22, 26)]
+    assert g[()] == [(5, 8)]

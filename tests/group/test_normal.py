@@ -69,7 +69,23 @@ def test_getitem(gr: GroupedRange, key, value):
     assert gr[key] == value
 
 
-# def test_sf_range(gr: GroupedRange):
-#     print(gr["c", 100])
-#     gr.range("A", ("c", 100))
-#     assert 0
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        (("c", 100), "$E$3:$E$4,$E$8:$E$9"),
+        (("c", 200), "$E$5:$E$7,$E$10:$E$12"),
+    ],
+)
+def test_range(gr: GroupedRange, key, value):
+    assert gr.range("x", key).get_address() == value
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        (("c", 100), "$B$3"),
+        (("c", 200), "$B$5"),
+    ],
+)
+def test_first_range(gr: GroupedRange, key, value):
+    assert gr.first_range("a", key).get_address() == value

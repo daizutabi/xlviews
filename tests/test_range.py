@@ -152,3 +152,8 @@ def test_range_collection_first(sheet_module: Sheet):
     cell = rc.first()
     assert cell.row == 2
     assert cell.column == 1
+
+
+def test_range_collection_repr(sheet_module: Sheet):
+    rc = RangeCollection.from_index(sheet_module, [(2, 5), (8, 10)], 5)
+    assert repr(rc) == "<RangeCollection $E$2:$E$5,$E$8:$E$10>"

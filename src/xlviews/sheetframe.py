@@ -157,6 +157,10 @@ class SheetFrame:
 
         self.cell.options(DataFrame, index=index).value = data
 
+        if index and data.columns.nlevels > 1 and data.index.nlevels == 1:
+            self.columns_names = list(data.columns.names)
+            self.cell.options(transpose=True).value = self.columns_names
+
         if number_format:
             self.set_number_format(number_format)
 
@@ -170,11 +174,6 @@ class SheetFrame:
             book = self.sheet.book
             refers_to = "=" + self.cell.get_address(include_sheetname=True)
             book.names.add(self.name, refers_to)
-
-        if index and data.columns.nlevels > 1 and data.index.nlevels == 1:
-            self.columns_names = list(data.columns.names)
-            self.cell.options(transpose=True).value = self.columns_names
-            self.expand("down").columns.autofit()
 
     def set_data_from_sheet(
         self,
@@ -264,7 +263,7 @@ class SheetFrame:
         cs = self.sheet.range(start, end).value or []
         return [c for c in cs if c]
 
-    def __contains__(self, item: str) -> bool:
+    def __contains__(self, item: str | tuple) -> bool:
         return item in self.columns
 
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
@@ -316,9 +315,9 @@ class SheetFrame:
             return self.index_row(column, relative=relative)
 
         columns = self.columns
-        offset = 1 if relative else self.column
 
         if column in columns:
+            offset = 1 if relative else self.column
             return columns.index(column) + offset
 
         return self.index_wide(column, relative=relative)
@@ -547,12 +546,15 @@ class SheetFrame:
 
         return self.sheet.range(cell_start, cell_end)
 
-    def range_column(
+    def range_column(  # noqa: C901
         self,
         column: str | tuple | dict,
         start: int | Literal[False] | None = None,
         end: int | None = None,
     ) -> Range:
+        if self.columns_names and isinstance(column, str):
+            raise NotImplementedError
+
         if start is False:
             header = self.range_column(column, 0)
             values = self.range_column(column, -1)
@@ -840,8 +842,13 @@ class SheetFrame:
     ) -> dict[tuple, list[tuple[int, int]]]:
         """Group by the specified column and return the group key and row number."""
         if not by:
-            start = self.row + self.columns_level
-            end = start + len(self) - 1
+            if self.columns_names is None:
+                start = self.row + self.columns_level
+                end = start + len(self) - 1
+                return {(): [(start, end)]}
+
+            start = self.column + 1
+            end = start + len(self.value_columns) - 1
             return {(): [(start, end)]}
 
         if self.columns_names is None:

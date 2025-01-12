@@ -119,6 +119,11 @@ class RangeCollection:
         for rng in ranges:
             self.ranges.append(rng if isinstance(rng, Range) else Range(rng))
 
+    def __repr__(self) -> str:
+        cls = self.__class__.__name__
+        addr = self.get_address(row_absolute=True, column_absolute=True)
+        return f"<{cls} {addr}>"
+
     @classmethod
     def from_index(
         cls,
