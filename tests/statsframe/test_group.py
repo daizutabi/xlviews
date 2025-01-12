@@ -28,20 +28,20 @@ def test_group_key(gr: GroupedRange):
     ("funcs", "n"),
     [(["mean"], 4), (["min", "max", "median"], 12), ({"a": "count"}, 4)],
 )
-def test_length(gr: GroupedRange, funcs, n):
-    assert gr.get_length(funcs) == n
+def test_length(sf_parent: SheetFrame, funcs, n):
+    from xlviews.statsframe import get_length
+
+    assert get_length(sf_parent, ["x", "y"], funcs) == n
 
 
 @pytest.mark.parametrize(("column", "c"), [("x", "C"), ("y", "D")])
-@pytest.mark.parametrize("o", [0, 10])
-def test_iter_row_ranges_str(gr: GroupedRange, column, c, o):
-    rs = list(gr.iter_row_ranges(column, o))
-    assert rs == [f"${c}${4+o}", f"${c}${8+o}", f"${c}${12+o}", f"${c}${16+o}"]
+def test_iter_row_ranges_str(gr: GroupedRange, column, c):
+    rs = list(gr.iter_row_ranges(column))
+    assert rs == [f"${c}$4", f"${c}$8", f"${c}$12", f"${c}$16"]
 
 
-@pytest.mark.parametrize("o", [0, 10])
-def test_iter_row_ranges_none(gr: GroupedRange, o):
-    rs = list(gr.iter_row_ranges("z", o))
+def test_iter_row_ranges_none(gr: GroupedRange):
+    rs = list(gr.iter_row_ranges("z"))
     assert rs == ["", "", "", ""]
 
 
@@ -55,61 +55,55 @@ def test_iter_row_ranges_len(gr: GroupedRange):
     ("k", "r"),
     [(0, [4, 7]), (1, [8, 11]), (2, [12, 15]), (3, [16, 19])],
 )
-@pytest.mark.parametrize("o", [0, 5])
-def test_iter_row_ranges_range(gr: GroupedRange, column, c, k, r, o):
-    rs = list(gr.iter_row_ranges(column, o))
+def test_iter_row_ranges_range(gr: GroupedRange, column, c, k, r):
+    rs = list(gr.iter_row_ranges(column))
     x = rs[k][0]
     assert isinstance(x, Range)
-    assert x.get_address() == f"${c}${r[0]+o}:${c}${r[1]+o}"
+    assert x.get_address() == f"${c}${r[0]}:${c}${r[1]}"
     if k == 0:
         assert len(rs[k]) == 2
         x = rs[k][1]
         assert isinstance(x, Range)
-        assert x.get_address() == f"${c}${20+o}:${c}${23+o}"
+        assert x.get_address() == f"${c}$20:${c}$23"
     else:
         assert len(rs[k]) == 1
 
 
 @pytest.mark.parametrize(("column", "c"), [("x", "C"), ("y", "D")])
-@pytest.mark.parametrize("o", [0, 20])
-def test_iter_formulas_list_index(gr: GroupedRange, column, c, o):
-    fs = list(gr.iter_formulas(column, ["min", "max"], offset=o))
-    a = [f"=${c}${x+o}" for x in [4, 4, 8, 8, 12, 12, 16, 16]]
+def test_iter_formulas_list_index(gr: GroupedRange, column, c):
+    fs = list(gr.iter_formulas(column, ["min", "max"]))
+    a = [f"=${c}${x}" for x in [4, 4, 8, 8, 12, 12, 16, 16]]
     assert fs == a
 
 
-@pytest.mark.parametrize("o", [0, 20])
-def test_iter_formulas_list_index_none(gr: GroupedRange, o):
-    fs = list(gr.iter_formulas("z", ["min", "max"], offset=o))
+def test_iter_formulas_list_index_none(gr: GroupedRange):
+    fs = list(gr.iter_formulas("z", ["min", "max"]))
     assert fs == [""] * 8
 
 
 @pytest.mark.parametrize(("column", "c"), [("a", "F"), ("b", "G"), ("c", "H")])
-@pytest.mark.parametrize("o", [0, 6])
-def test_iter_formulas_list_columns(gr: GroupedRange, column, c, o):
-    fs = list(gr.iter_formulas(column, ["min", "max"], wrap="__{}__", offset=o))
+def test_iter_formulas_list_columns(gr: GroupedRange, column, c):
+    fs = list(gr.iter_formulas(column, ["min", "max"], wrap="__{}__"))
     assert len(fs) == 8
-    assert fs[0] == f"=__AGGREGATE(5,7,${c}${4+o}:${c}${7+o},${c}${20+o}:${c}${23+o})__"
-    assert fs[1] == f"=__AGGREGATE(4,7,${c}${4+o}:${c}${7+o},${c}${20+o}:${c}${23+o})__"
-    assert fs[2] == f"=__AGGREGATE(5,7,${c}${8+o}:${c}${11+o})__"
-    assert fs[3] == f"=__AGGREGATE(4,7,${c}${8+o}:${c}${11+o})__"
-    assert fs[4] == f"=__AGGREGATE(5,7,${c}${12+o}:${c}${15+o})__"
-    assert fs[5] == f"=__AGGREGATE(4,7,${c}${12+o}:${c}${15+o})__"
-    assert fs[6] == f"=__AGGREGATE(5,7,${c}${16+o}:${c}${19+o})__"
-    assert fs[7] == f"=__AGGREGATE(4,7,${c}${16+o}:${c}${19+o})__"
+    assert fs[0] == f"=__AGGREGATE(5,7,${c}$4:${c}$7,${c}$20:${c}$23)__"
+    assert fs[1] == f"=__AGGREGATE(4,7,${c}$4:${c}$7,${c}$20:${c}$23)__"
+    assert fs[2] == f"=__AGGREGATE(5,7,${c}$8:${c}$11)__"
+    assert fs[3] == f"=__AGGREGATE(4,7,${c}$8:${c}$11)__"
+    assert fs[4] == f"=__AGGREGATE(5,7,${c}$12:${c}$15)__"
+    assert fs[5] == f"=__AGGREGATE(4,7,${c}$12:${c}$15)__"
+    assert fs[6] == f"=__AGGREGATE(5,7,${c}$16:${c}$19)__"
+    assert fs[7] == f"=__AGGREGATE(4,7,${c}$16:${c}$19)__"
 
 
 @pytest.mark.parametrize(("column", "c"), [("x", "C"), ("y", "D")])
-@pytest.mark.parametrize("o", [0, 16])
-def test_iter_formulas_dict_index(gr: GroupedRange, column, c, o):
-    fs = list(gr.iter_formulas(column, {}, offset=o))
-    a = [f"=${c}${x+o}" for x in [4, 8, 12, 16]]
+def test_iter_formulas_dict_index(gr: GroupedRange, column, c):
+    fs = list(gr.iter_formulas(column, {}))
+    a = [f"=${c}${x}" for x in [4, 8, 12, 16]]
     assert fs == a
 
 
-@pytest.mark.parametrize("o", [0, 16])
-def test_iter_formulas_dict_index_none(gr: GroupedRange, o):
-    fs = list(gr.iter_formulas("z", {}, offset=o))
+def test_iter_formulas_dict_index_none(gr: GroupedRange):
+    fs = list(gr.iter_formulas("z", {}))
     assert fs == [""] * 4
 
 
@@ -117,16 +111,15 @@ def test_iter_formulas_dict_index_none(gr: GroupedRange, o):
     ("column", "c", "k"),
     [("a", "F", 1), ("b", "G", 12), ("c", "H", 9)],
 )
-@pytest.mark.parametrize("o", [0, 16])
-def test_iter_formulas_dict_columns(gr: GroupedRange, column, c, k, o):
+def test_iter_formulas_dict_columns(gr: GroupedRange, column, c, k):
     funcs = {"a": "mean", "b": "median", "c": "sum"}
-    fs = list(gr.iter_formulas(column, funcs, wrap="__{}__", offset=o))
+    fs = list(gr.iter_formulas(column, funcs, wrap="__{}__"))
     assert len(fs) == 4
-    x = f"=__AGGREGATE({k},7,${c}${4+o}:${c}${7+o},${c}${20+o}:${c}${23+o})__"
+    x = f"=__AGGREGATE({k},7,${c}$4:${c}$7,${c}$20:${c}$23)__"
     assert fs[0] == x
-    assert fs[1] == f"=__AGGREGATE({k},7,${c}${8+o}:${c}${11+o})__"
-    assert fs[2] == f"=__AGGREGATE({k},7,${c}${12+o}:${c}${15+o})__"
-    assert fs[3] == f"=__AGGREGATE({k},7,${c}${16+o}:${c}${19+o})__"
+    assert fs[1] == f"=__AGGREGATE({k},7,${c}$8:${c}$11)__"
+    assert fs[2] == f"=__AGGREGATE({k},7,${c}$12:${c}$15)__"
+    assert fs[3] == f"=__AGGREGATE({k},7,${c}$16:${c}$19)__"
 
 
 def test_get_index(gr: GroupedRange):
@@ -193,10 +186,9 @@ def test_get_frame_wrap_dict(gr: GroupedRange):
     assert all(x.endswith(")") for x in df["c"])
 
 
-@pytest.mark.parametrize("o", [0, 16])
-def test_get_frame_offset(gr: GroupedRange, o):
-    df = gr.get_frame(["mean"], offset=o).reset_index()
-    assert df["x"].iloc[0] == f"=$C${4+o}"
-    assert df["y"].iloc[-1] == f"=$D${16+o}"
-    assert df["a"].iloc[0] == f"=AGGREGATE(1,7,$F${4+o}:$F${7+o},$F${20+o}:$F${23+o})"
-    assert df["c"].iloc[-1] == f"=AGGREGATE(1,7,$H${16+o}:$H${19+o})"
+def test_get_frame_offset(gr: GroupedRange):
+    df = gr.get_frame(["mean"]).reset_index()
+    assert df["x"].iloc[0] == "=$C$4"
+    assert df["y"].iloc[-1] == "=$D$16"
+    assert df["a"].iloc[0] == "=AGGREGATE(1,7,$F$4:$F$7,$F$20:$F$23)"
+    assert df["c"].iloc[-1] == "=AGGREGATE(1,7,$H$16:$H$19)"

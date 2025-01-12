@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from pandas import DataFrame, Series
 
-from xlviews.groupby import _to_dict
+from xlviews.group import _to_dict
 
 
 @pytest.mark.parametrize(
@@ -21,7 +21,7 @@ def test_to_dict(keys, values, expected):
 
 @pytest.mark.parametrize("func", [lambda x: x, np.array, Series])
 def test_create_group_index_series(func):
-    from xlviews.groupby import create_group_index
+    from xlviews.group import create_group_index
 
     values = [1, 1, 2, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3]
     index = create_group_index(func(values))
@@ -32,7 +32,7 @@ def test_create_group_index_series(func):
 
 @pytest.mark.parametrize("func", [lambda x: x, DataFrame])
 def test_create_group_index_dataframe(func):
-    from xlviews.groupby import create_group_index
+    from xlviews.group import create_group_index
 
     values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
     index = create_group_index(func(values))
