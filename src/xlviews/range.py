@@ -57,6 +57,23 @@ def iter_ranges(
     yield from (get_range(i) for i in index)
 
 
+def union_api(ranges: Iterable[Range]):  # noqa: ANN201
+    ranges = list(ranges)
+
+    api = ranges[0].api
+
+    if len(ranges) == 1:
+        return api
+
+    sheet = ranges[0].sheet
+    union = sheet.book.app.api.Union
+
+    for r in ranges[1:]:
+        api = union(api, r.api)
+
+    return api
+
+
 def union(ranges: Iterable[Range]) -> Range:
     ranges = list(ranges)
 
@@ -64,14 +81,8 @@ def union(ranges: Iterable[Range]) -> Range:
         return ranges[0]
 
     sheet = ranges[0].sheet
-    union = sheet.book.app.api.Union
 
-    api = ranges[0].api
-
-    for r in ranges[1:]:
-        api = union(api, r.api)
-
-    return sheet.range(api.Address)
+    return sheet.range(union_api(ranges).Address)
 
 
 def multirange(
@@ -143,3 +154,7 @@ class RangeCollection:
             )
             for rng in self.ranges
         )
+
+    @property
+    def api(self):  # noqa: ANN201
+        return union_api(self.ranges)

@@ -129,7 +129,7 @@ class StatsFrame(SheetFrame):
         auto_filter: bool = True,
         **kwargs,
     ) -> None:
-        """Create a statsframe.
+        """Create a StatsFrame.
 
         Args:
             parent (SheetFrame): The sheetframe to be aggregated.
@@ -150,7 +150,7 @@ class StatsFrame(SheetFrame):
         """
         funcs = get_func(funcs)
 
-        # Set the position of the parent SheetFrame.
+        # Store the position of the parent SheetFrame before moving down.
         row = parent.row
         column = parent.column
         if isinstance(funcs, list):

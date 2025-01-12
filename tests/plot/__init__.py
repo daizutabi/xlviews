@@ -16,12 +16,11 @@ if __name__ == "__main__":
     data = SheetFrame(sheet_module, 2, 2, data=df, index=False)
 
     ax = Axes(left=200, chart_type=ChartType.xlXYScatter)
-    g = data.groupby(None)
-    by = None
-    g = data.groupby(by)
-    k = None
-    x = data.range("x", g[k])
-    y = data.range("y", g[k])
+    g = data.groupby("a")
+    key = ("u",)
+    x = data.range("x", g[key])
+    y = data.range("y", g[key])
+    x
     s = ax.add_series(
         x,
         y,

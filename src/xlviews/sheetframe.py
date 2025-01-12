@@ -16,7 +16,7 @@ from xlviews.axes import set_first_position
 from xlviews.common import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
-from xlviews.group import create_group_index
+from xlviews.group import RangeCollection, create_group_index
 from xlviews.range import union
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
 from xlviews.table import Table
@@ -450,12 +450,28 @@ class SheetFrame:
             self.table.unlist()
             self.table = None
 
+    @overload
+    def range(
+        self,
+        column: str | tuple | dict | None = None,
+        start: int | Literal[False] | None = None,
+        end: int | None = None,
+    ) -> Range: ...
+
+    @overload
+    def range(
+        self,
+        column: str | tuple | dict,
+        start: list[tuple[int, int]],
+        end: int | None = None,
+    ) -> RangeCollection: ...
+
     def range(
         self,
         column: str | tuple | dict | None = None,
         start: int | Literal[False] | list[tuple[int, int]] | None = None,
         end: int | None = None,
-    ) -> Range:
+    ) -> Range | RangeCollection:
         """Return the range of the column.
 
         If the column is a hierarchical index and the column name is specified,
@@ -479,7 +495,7 @@ class SheetFrame:
             return self.range_all()
 
         if isinstance(start, list):
-            return union(self.range(column, s, e) for s, e in start)
+            return RangeCollection(self.range(column, s, e) for s, e in start)
 
         if column == "index":
             return self.range_index(start, end)

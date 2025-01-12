@@ -129,15 +129,15 @@ def test_range_collection_from_index_row(sheet_module: Sheet, row, n, address):
 @pytest.mark.parametrize(
     ("column", "n", "address"),
     [
-        ([(4, 5), (10, 14)], 7, "D5:E5,J5:N5"),
-        ([(5, 5), (7, 8), (10, 11)], 5, "E5,G5:H5,J5:K5"),
+        ([(4, 5), (10, 14)], 7, "$D$5:$E$5,$J$5:$N$5"),
+        ([(5, 5), (7, 8), (10, 11)], 5, "$E$5,$G$5:$H$5,$J$5:$K$5"),
     ],
 )
 def test_range_collection_from_index_column(sheet_module: Sheet, column, n, address):
     rc = RangeCollection.from_index(sheet_module, 5, column)
     assert len(rc) == n
-    a = rc.get_address(row_absolute=False, column_absolute=False)
-    assert a == address
+    assert rc.get_address() == address
+    assert rc.api.Address == address
 
 
 def test_range_collection_iter(sheet_module: Sheet):
