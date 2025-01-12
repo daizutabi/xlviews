@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, TypeVar
 import numpy as np
 from pandas import DataFrame, Series
 
-from xlviews.range import RangeCollection
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
@@ -13,6 +12,7 @@ if TYPE_CHECKING:
 
     from xlwings import Range
 
+    from xlviews.range import RangeCollection
     from xlviews.sheetframe import SheetFrame
 
 H = TypeVar("H")
@@ -54,23 +54,34 @@ class GroupedRange:
         self.by = list(iter_columns(sf, by)) if by else []
         self.grouped = sf.groupby(self.by)
 
-    def iter_ranges(self, column: str) -> Iterator[RangeCollection]:
-        col = self.sf.index(column)
-        if not isinstance(col, int):
-            raise NotImplementedError
+    def __len__(self) -> int:
+        return len(self.grouped)
 
-        sheet = self.sf.sheet
+    def keys(self) -> Iterator[tuple]:
+        yield from self.grouped.keys()
 
-        for row in self.grouped.values():
-            yield RangeCollection.from_index(sheet, row, col)
+    def values(self) -> Iterator[list[tuple[int, int]]]:
+        yield from self.grouped.values()
 
-    def iter_first_ranges(self, column: str) -> Iterator[Range]:
-        col = self.sf.index(column)
-        if not isinstance(col, int):
-            raise NotImplementedError
+    def items(self) -> Iterator[tuple[tuple, list[tuple[int, int]]]]:
+        yield from self.grouped.items()
 
-        sheet = self.sf.sheet
+    def __iter__(self) -> Iterator[tuple]:
+        yield from self.keys()
 
-        for row in self.grouped.values():
-            start = row[0][0]
-            yield sheet.range(start, col)
+    def __getitem__(self, key: tuple) -> list[tuple[int, int]]:
+        return self.grouped[key]
+
+    def range(self, column: str, key: tuple) -> RangeCollection:
+        return self.sf.range(column, self[key])
+
+    def first_range(self, column: str, key: tuple) -> Range:
+        return self.sf.range(column, self[key][0][0])
+
+    def ranges(self, column: str) -> Iterator[RangeCollection]:
+        for key in self:
+            yield self.range(column, key)
+
+    def first_ranges(self, column: str) -> Iterator[Range]:
+        for key in self:
+            yield self.first_range(column, key)

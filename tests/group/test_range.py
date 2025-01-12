@@ -24,13 +24,13 @@ def test_group_key(gr: GroupedRange):
     assert keys == [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
 
 
-def test_iter_ranges_len(gr: GroupedRange):
-    assert len(list(gr.iter_ranges("a"))) == 4
+def test_ranges_len(gr: GroupedRange):
+    assert len(list(gr.ranges("a"))) == 4
 
 
 @pytest.mark.parametrize(("column", "c"), [("x", "C"), ("y", "D")])
-def test_iter_first_ranges(gr: GroupedRange, column, c):
-    rs = [r.get_address() for r in gr.iter_first_ranges(column)]
+def test_first_ranges(gr: GroupedRange, column, c):
+    rs = [r.get_address() for r in gr.first_ranges(column)]
     assert rs == [f"${c}$4", f"${c}$8", f"${c}$12", f"${c}$16"]
 
 
@@ -44,7 +44,7 @@ def test_iter_first_ranges(gr: GroupedRange, column, c):
         (3, "${c}$16:${c}$19"),
     ],
 )
-def test_iter_row_ranges_range(gr: GroupedRange, column, c, k: int, a):
-    rc = list(gr.iter_ranges(column))[k]
+def test_ranges(gr: GroupedRange, column, c, k: int, a):
+    rc = list(gr.ranges(column))[k]
     assert isinstance(rc, RangeCollection)
     assert rc.get_address() == a.format(c=c)

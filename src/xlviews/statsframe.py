@@ -23,15 +23,15 @@ if TYPE_CHECKING:
 
 
 class GroupedRange(Base):
-    def iter_ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
+    def ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
         if column in self.by:
-            yield from super().iter_first_ranges(column)
+            yield from super().first_ranges(column)
 
         elif column in self.sf.index_columns:
             yield from [None] * len(self.grouped)
 
         else:
-            yield from super().iter_ranges(column)
+            yield from super().ranges(column)
 
     def iter_formulas(
         self,
@@ -40,7 +40,7 @@ class GroupedRange(Base):
         wrap: str | None = None,
         default: str = "median",
     ) -> Iterator[str]:
-        for ranges in self.iter_ranges(column):
+        for ranges in self.ranges(column):
             if isinstance(funcs, dict):
                 funcs = [funcs.get(column, default)]
 
