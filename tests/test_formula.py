@@ -4,6 +4,7 @@ from pandas import DataFrame
 from xlwings import Range, Sheet
 
 from xlviews.formula import NONCONST_VALUE
+from xlviews.range import RangeCollection
 
 
 @pytest.fixture(scope="module")
@@ -79,10 +80,12 @@ def test_ranges(ranges: list[Range]):
     assert ranges[1].get_address() == "$C$100:$C$110"
 
 
-def test_aggregate_value(ranges: list[Range]):
+@pytest.mark.parametrize("apply", [list, RangeCollection])
+def test_aggregate_value(ranges: list[Range], apply):
     from xlviews.formula import aggregate
 
-    assert aggregate("count", *ranges) == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
+    x = aggregate("count", apply(ranges))
+    assert x == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
 
 
 FUNC_VALUES = [
@@ -98,22 +101,24 @@ FUNC_VALUES = [
 
 
 @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
-def test_aggregate_str(ranges: list[Range], func, value):
+@pytest.mark.parametrize("apply", [list, RangeCollection])
+def test_aggregate_str(ranges: list[Range], apply, func, value):
     from xlviews.formula import aggregate
 
-    formula = aggregate(func, *ranges)
+    formula = aggregate(func, apply(ranges))
     cell = ranges[0].sheet.range("D100")
     cell.value = "=" + formula
     assert cell.value == value
 
 
 @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
-def test_aggregate_range(ranges: list[Range], func, value):
+@pytest.mark.parametrize("apply", [list, RangeCollection])
+def test_aggregate_range(ranges: list[Range], apply, func, value):
     from xlviews.formula import aggregate
 
     ref = ranges[0].sheet.range("E100")
     ref.value = func
-    formula = aggregate(ref, *ranges)
+    formula = aggregate(ref, apply(ranges))
     cell = ranges[0].sheet.range("D100")
     cell.value = "=" + formula
     assert cell.value == value

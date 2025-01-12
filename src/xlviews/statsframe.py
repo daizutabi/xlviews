@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from pandas import DataFrame
+from xlwings import Range
 from xlwings.constants import Direction
 
 from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.group import GroupedRange as Base
-from xlviews.group import get_column_ranges
-from xlviews.range import multirange
+from xlviews.range import RangeCollection, multirange
 from xlviews.sheetframe import SheetFrame
 from xlviews.style import set_font
 from xlviews.utils import iter_columns
@@ -20,28 +20,18 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from numpy.typing import NDArray
-    from xlwings import Range
 
 
 class GroupedRange(Base):
-    def iter_row_ranges(self, column: str) -> Iterator[str | list[Range]]:
-        column_index = self.sf.index(column)
-        if not isinstance(column_index, int):
-            raise NotImplementedError
+    def iter_ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
+        if column in self.by:
+            yield from super().iter_first_ranges(column)
 
-        index_columns = self.sf.index_columns
-        sheet = self.sf.sheet
+        elif column in self.sf.index_columns:
+            yield from [None] * len(self.grouped)
 
-        for row in self.grouped.values():
-            if column in self.by:
-                start = row[0][0]
-                yield sheet.range(start, column_index).get_address()
-
-            elif column in index_columns:
-                yield ""
-
-            else:
-                yield get_column_ranges(sheet, row, column_index)
+        else:
+            yield from super().iter_ranges(column)
 
     def iter_formulas(
         self,
@@ -50,7 +40,7 @@ class GroupedRange(Base):
         wrap: str | None = None,
         default: str = "median",
     ) -> Iterator[str]:
-        for ranges in self.iter_row_ranges(column):
+        for ranges in self.iter_ranges(column):
             if isinstance(funcs, dict):
                 funcs = [funcs.get(column, default)]
 
@@ -102,16 +92,16 @@ class GroupedRange(Base):
 
 def get_formula(
     func: str | Range,
-    ranges: str | list[Range],
+    ranges: Range | RangeCollection | None,
     wrap: str | None = None,
 ) -> str:
     if not ranges:
         return ""
 
-    if isinstance(ranges, str):
-        return f"={ranges}"
+    if isinstance(ranges, Range):
+        return "=" + ranges.get_address()
 
-    formula = aggregate(func, *ranges)
+    formula = aggregate(func, ranges)
 
     if wrap:
         formula = wrap.format(formula)
@@ -218,7 +208,8 @@ class StatsFrame(SheetFrame):
         for key, rows in grouped.items():
             func = key[0]
             for column, fmt in zip(columns, formats, strict=False):
-                cell = multirange(self.sheet, rows, column)  # type: ignore
+                cell = multirange(self.sheet, rows, column)
+
                 if func in value_columns:
                     cell.number_format = fmt
 

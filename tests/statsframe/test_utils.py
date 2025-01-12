@@ -99,19 +99,3 @@ def test_move_down_header(sheet: Sheet):
     assert sheet["D7:F7"].value == ["a", "b", "c"]
     assert sheet["D6:F6"].value == ["x", None, None]
     assert sf.row == 7
-
-
-def test_column_ranges(sheet_module: Sheet):
-    from xlviews.statsframe import get_column_ranges
-
-    rngs = get_column_ranges(sheet_module, [(1, 5), (9, 12)], 2)
-    assert rngs[0].get_address() == "$B$1:$B$5"
-    assert rngs[1].get_address() == "$B$9:$B$12"
-
-
-def test_column_ranges_offset(sheet_module: Sheet):
-    from xlviews.statsframe import get_column_ranges
-
-    rngs = get_column_ranges(sheet_module, [(1, 5), (9, 12)], 2)
-    assert rngs[0].get_address() == "$B$1:$B$5"
-    assert rngs[1].get_address() == "$B$9:$B$12"

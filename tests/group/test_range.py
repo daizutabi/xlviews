@@ -1,7 +1,7 @@
 import pytest
-from xlwings import Range
 
 from xlviews.group import GroupedRange
+from xlviews.range import RangeCollection
 from xlviews.sheetframe import SheetFrame
 
 
@@ -24,36 +24,27 @@ def test_group_key(gr: GroupedRange):
     assert keys == [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
 
 
+def test_iter_ranges_len(gr: GroupedRange):
+    assert len(list(gr.iter_ranges("a"))) == 4
+
+
 @pytest.mark.parametrize(("column", "c"), [("x", "C"), ("y", "D")])
-def test_iter_row_ranges_str(gr: GroupedRange, column, c):
-    rs = list(gr.iter_row_ranges(column))
+def test_iter_first_ranges(gr: GroupedRange, column, c):
+    rs = [r.get_address() for r in gr.iter_first_ranges(column)]
     assert rs == [f"${c}$4", f"${c}$8", f"${c}$12", f"${c}$16"]
-
-
-def test_iter_row_ranges_none(gr: GroupedRange):
-    rs = list(gr.iter_row_ranges("z"))
-    assert rs == ["", "", "", ""]
-
-
-def test_iter_row_ranges_len(gr: GroupedRange):
-    rs = list(gr.iter_row_ranges("a"))
-    assert len(rs) == 4
 
 
 @pytest.mark.parametrize(("column", "c"), [("a", "F"), ("b", "G"), ("c", "H")])
 @pytest.mark.parametrize(
-    ("k", "r"),
-    [(0, [4, 7]), (1, [8, 11]), (2, [12, 15]), (3, [16, 19])],
+    ("k", "a"),
+    [
+        (0, "${c}$4:${c}$7,${c}$20:${c}$23"),
+        (1, "${c}$8:${c}$11"),
+        (2, "${c}$12:${c}$15"),
+        (3, "${c}$16:${c}$19"),
+    ],
 )
-def test_iter_row_ranges_range(gr: GroupedRange, column, c, k, r):
-    rs = list(gr.iter_row_ranges(column))
-    x = rs[k][0]
-    assert isinstance(x, Range)
-    assert x.get_address() == f"${c}${r[0]}:${c}${r[1]}"
-    if k == 0:
-        assert len(rs[k]) == 2
-        x = rs[k][1]
-        assert isinstance(x, Range)
-        assert x.get_address() == f"${c}$20:${c}$23"
-    else:
-        assert len(rs[k]) == 1
+def test_iter_row_ranges_range(gr: GroupedRange, column, c, k: int, a):
+    rc = list(gr.iter_ranges(column))[k]
+    assert isinstance(rc, RangeCollection)
+    assert rc.get_address() == a.format(c=c)
