@@ -41,14 +41,14 @@ class SheetFrame:
     has_index: bool
     index_level: int
     columns_level: int
-    columns_names: list[str] | None
-    table: Table | None
+    columns_names: list[str] | None = None
+    table: Table | None = None
     parent: SheetFrame | None
     children: list[SheetFrame]
     head: SheetFrame | None
-    tail: SheetFrame | None
-    stats: StatsFrame | None
-    dist: DistFrame | None
+    tail: SheetFrame | None = None
+    stats: StatsFrame | None = None
+    dist: DistFrame | None = None
 
     @turn_off_screen_updating
     def __init__(
@@ -96,14 +96,9 @@ class SheetFrame:
             font_size (int): The font size of the SheetFrame.
         """
         self.name = name
-        self.columns_names = None
-        self.table = None
         self.parent = parent
         self.children = []
         self.head = head
-        self.tail = None
-        self.stats = None
-        self.dist = None
 
         if self.parent:  # Locate the child frame to the right of the parent frame.
             self.cell = self.parent.get_child_cell()
