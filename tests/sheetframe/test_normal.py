@@ -157,6 +157,14 @@ def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf.range(column, start, end).get_address() == address
 
 
+@pytest.mark.parametrize(
+    ("column", "address"),
+    [("a", "$D$3"), ("b", "$E$3"), ("name", "$C$3")],
+)
+def test_first_range(sf: SheetFrame, column, address):
+    assert sf.first_range(column).get_address() == address
+
+
 def test_getitem_str(sf: SheetFrame):
     s = sf["a"]
     assert isinstance(s, Series)

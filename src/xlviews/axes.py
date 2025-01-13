@@ -411,7 +411,7 @@ class Axes:
             pa.InsideTop + pa.InsideHeight / 2 - yaxis.AxisTitle.Height / 2
         )
 
-    def set_plot_area_style(self) -> None:
+    def set_style(self) -> None:
         # msoElementPrimaryCategoryGridLinesMajor = 334
         api = self.chart.api[1]
         api.SetElement(334)

@@ -495,7 +495,7 @@ class Element:
                 name = format_label(data, name, sel, default=self.const_dict)
                 self.axes.chart.name = name
             self.axes.tight_layout()
-            self.axes.set_plot_area_style()
+            self.axes.set_style()
         return self.axes
 
     def add_axes(self):

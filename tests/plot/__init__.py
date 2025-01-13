@@ -5,7 +5,6 @@ if __name__ == "__main__":
     from xlwings.constants import ChartType
 
     from xlviews.axes import Axes
-    from xlviews.grouper import Grouper
     from xlviews.sheetframe import SheetFrame
 
     for app in xw.apps:
@@ -21,7 +20,6 @@ if __name__ == "__main__":
     df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
     sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
-    gr = Grouper(sf, ["s", "t"])
 
     a = ["c"] * 10
     b = ["s"] * 5 + ["t"] * 5
@@ -31,39 +29,47 @@ if __name__ == "__main__":
     df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
     df = df.set_index(["a", "b", "c"])
     sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
-    gr = Grouper(sf, ["b", "c"])
 
     ax = Axes(left=200, chart_type=ChartType.xlXYScatter)
-    x = sf.range("x", -1)
-    y = sf.range("y", -1)
-    label = sf.range("a")
+    x = sf.range("x")
+    y = sf.range("y")
+    label = sf.first_range("a")
     ax.add_series(x, y, label=label)
 
-    gr = sf.grouper(["a", "b"])
+    ax.xlabel = sf.range("x", -1)
+    ax.ylabel = sf.range("y", -1)
 
-    gr.range("x", ("c", "s"))
-    gr.first_range("a", ("c", "s"))
+    gr = sf.grouper(None)
 
-    g = data.groupby("a")
-    key = ("u",)
-    x = data.range("x", g[key])
-    y = data.range("y", g[key])
-    x
-    s = ax.add_series(
-        x,
-        y,
-        # label=data.range("a", g["v"])[0],
-        chart_type=ChartType.xlXYScatterLines,
-    )
-    ax.xlabel = data.range("x", 0)
-    ax.ylabel = data.range("y", 0)
-    ax.title = "=" + data.range("a", 0).get_address(include_sheetname=True)
+    gr = sf.grouper(["a", "b", "c"])
+    key = ("c", "t")
+    x = gr.range("x", key)
+    y = gr.range("y", key)
+    label = gr.first_range("b", key)
+    ax.add_series(x, y, label=label)
+
+    for x, y in zip(gr.ranges("x"), gr.ranges("y"), strict=True):
+        ax.add_series(x, y)
+
+    list(gr.keys())
+
+    list(gr.first_ranges("a"))
+
     ax.tight_layout()
-    ax.set_plot_area_style()
+    ax.set_style()
     ax.set_legend(loc=(0, 0))
-    s.set(marker="s", size=5, line="--", color="blue", line_weight=2, alpha=0.3)
-    s.x = [1, 2, 3, 2]
-    s.y = [1, 2, 3, 5]
-    s.x
 
-    df.groupby("a")
+    # g = data.groupby("a")
+    # key = ("u",)
+    # x = data.range("x", g[key])
+    # y = data.range("y", g[key])
+    # x
+    # s = ax.add_series(
+    #     x,
+    #     y,
+    #     # label=data.range("a", g["v"])[0],
+    #     chart_type=ChartType.xlXYScatterLines,
+    # )
+    # ax.xlabel = data.range("x", 0)
+    # ax.ylabel = data.range("y", 0)
+    # ax.title = "=" + data.range("a", 0).get_address(include_sheetname=True)

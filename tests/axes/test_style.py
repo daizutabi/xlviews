@@ -195,8 +195,8 @@ def test_tight_layout(ax: Axes):
     ax.tight_layout()
 
 
-def test_plot_area_style(ax: Axes):
-    ax.set_plot_area_style()
+def test_style(ax: Axes):
+    ax.set_style()
     assert ax.chart.api[1].PlotArea.Format.Line.Visible
 
 

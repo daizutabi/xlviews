@@ -596,6 +596,9 @@ class SheetFrame:
         cell_end = self.sheet.range(end, column_end)
         return self.sheet.range(cell_start, cell_end)
 
+    def first_range(self, column: str | tuple | dict) -> Range:
+        return self.range(column, 0)
+
     def __repr__(self) -> str:
         return repr(self.range()).replace("<Range ", "<SheetFrame ")
 
