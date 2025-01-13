@@ -1,21 +1,49 @@
 if __name__ == "__main__":
+    import numpy as np
     import xlwings as xw
-    from pandas import DataFrame
+    from pandas import DataFrame, MultiIndex
     from xlwings.constants import ChartType
 
     from xlviews.axes import Axes
-    from xlviews.decorators import quit_apps
-    from xlviews.plot import _plot
+    from xlviews.grouper import Grouper
     from xlviews.sheetframe import SheetFrame
 
-    quit_apps()
+    for app in xw.apps:
+        app.quit()
+
     book = xw.Book()
     sheet_module = book.sheets.add()
-    x = (["u"] * 2 + ["v"] * 3) * 2
-    df = DataFrame({"a": x, "x": list(range(10)), "y": list(range(10, 20))})
-    data = SheetFrame(2, 2, data=df, index=False, sheet=sheet_module)
+
+    a = ["a"] * 8 + ["b"] * 8
+    b = (["c"] * 4 + ["d"] * 4) * 2
+    c = np.repeat(range(1, 9), 2)
+    d = ["x", "y"] * 8
+    df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
+    df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
+    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
+    gr = Grouper(sf, ["s", "t"])
+
+    a = ["c"] * 10
+    b = ["s"] * 5 + ["t"] * 5
+    c = ([100] * 2 + [200] * 3) * 2
+    x = list(range(10))
+    y = list(range(10, 20))
+    df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
+    df = df.set_index(["a", "b", "c"])
+    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
+    gr = Grouper(sf, ["b", "c"])
 
     ax = Axes(left=200, chart_type=ChartType.xlXYScatter)
+    x = sf.range("x", -1)
+    y = sf.range("y", -1)
+    label = sf.range("a")
+    ax.add_series(x, y, label=label)
+
+    gr = sf.grouper(["a", "b"])
+
+    gr.range("x", ("c", "s"))
+    gr.first_range("a", ("c", "s"))
+
     g = data.groupby("a")
     key = ("u",)
     x = data.range("x", g[key])

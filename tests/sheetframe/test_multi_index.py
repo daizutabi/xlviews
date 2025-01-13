@@ -137,10 +137,10 @@ def test_range_all(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("start", "end", "address"),
     [
-        (0, None, "$F$10:$G$10"),
-        (None, None, "$F$11:$G$11"),
-        (-1, None, "$F$11:$G$18"),
         (False, None, "$F$10:$G$18"),
+        (-1, None, "$F$10:$G$10"),
+        (0, None, "$F$11:$G$11"),
+        (None, None, "$F$11:$G$18"),
         (20, None, "$F$20:$G$20"),
         (20, 100, "$F$20:$G$100"),
     ],
@@ -153,14 +153,14 @@ def test_range_index(sf: SheetFrame, start, end, address):
 @pytest.mark.parametrize(
     ("column", "start", "end", "address"),
     [
-        ("x", 0, None, "$F$10"),
-        ("y", 0, None, "$G$10"),
-        ("a", 0, None, "$H$10"),
-        ("b", 0, None, "$I$10"),
+        ("x", -1, None, "$F$10"),
+        ("y", -1, None, "$G$10"),
+        ("a", -1, None, "$H$10"),
+        ("b", -1, None, "$I$10"),
         ("x", 1, None, "$F$1"),
         ("a", 2, None, "$H$2"),
         ("b", 100, None, "$I$100"),
-        ("y", -1, None, "$G$11:$G$18"),
+        ("y", None, None, "$G$11:$G$18"),
         ("a", False, None, "$H$10:$H$18"),
         ("b", False, None, "$I$10:$I$18"),
         ("x", 2, 100, "$F$2:$F$100"),

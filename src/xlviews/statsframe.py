@@ -220,7 +220,7 @@ class StatsFrame(SheetFrame):
                 if func == "soa" and column != func_index:
                     cell.number_format = "0.0%"
 
-        set_font(self.range(func_column_name, -1), italic=True)
+        set_font(self.range(func_column_name), italic=True)
 
 
 def get_wrap(

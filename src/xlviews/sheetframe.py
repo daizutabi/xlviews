@@ -481,10 +481,10 @@ class SheetFrame:
                 If omitted, return the range of the entire SheetFrame.
                 If a dict is specified, filter by the hierarchical column.
             start (int, optional):
-                - None: first row
+                - None: entire row data without column row
+                - 0: first row
+                - -1: column row
                 - False: entire row with column row
-                - 0: column row
-                - -1: entire row data without column row
                 - other: specified row
             end (int, optional):
                 - None : same as start.
@@ -517,25 +517,24 @@ class SheetFrame:
         if not self.index_level:
             raise NotImplementedError
 
-        if self.columns_names and start in [-1, 0, False]:
+        if self.columns_names and (start in [-1, None] or start is False):
             raise ValueError("index start must be a specific row")
 
         c = self.index_level - 1
-
         match start:
-            case None:
-                cell_start = self.cell.offset(self.columns_level)
-                cell_end = cell_start.offset(0, c)
-
-            case False:
+            case False:  # entire row with column row
                 cell_start = self.cell
                 cell_end = cell_start.offset(self.columns_level + len(self) - 1, c)
 
-            case 0:
+            case 0:  # first row
+                cell_start = self.cell.offset(self.columns_level)
+                cell_end = cell_start.offset(0, c)
+
+            case -1:  # column row
                 cell_start = self.cell
                 cell_end = cell_start.offset(self.columns_level - 1, c)
 
-            case -1:
+            case None:  # entire row data without column row
                 cell_start = self.cell.offset(self.columns_level)
                 cell_end = cell_start.offset(len(self) - 1, c)
 
@@ -555,15 +554,18 @@ class SheetFrame:
         if self.columns_names and isinstance(column, str):
             raise NotImplementedError
 
-        if start is False:
-            header = self.range_column(column, 0)
-            values = self.range_column(column, -1)
+        if start is False:  # entire row with column row
+            header = self.range_column(column, -1)
+            values = self.range_column(column)
             return self.sheet.range(header[0], values[-1])
 
         index = self.index(column)
 
         match start:
-            case 0:
+            case 0:  # first row
+                start = self.row + self.columns_level
+
+            case -1:  # column row
                 start = end = self.row
                 if isinstance(column, tuple) and self.columns_level == 1:
                     start -= 1  # wide column
@@ -572,12 +574,9 @@ class SheetFrame:
                     if isinstance(index, tuple):
                         start -= 1
 
-            case -1:
+            case None:  # entire row data without column row
                 start = self.row + self.columns_level
                 end = start + len(self) - 1
-
-            case None:
-                start = self.row + self.columns_level
 
         if isinstance(index, tuple):  # wide column
             column_start, column_end = index
@@ -606,13 +605,13 @@ class SheetFrame:
     def rename(self, columns: dict[str, str]) -> None:
         """Rename the columns of the SheetFrame."""
         for old, new in columns.items():
-            self.range(old, 0).value = new
+            self.range(old, -1).value = new
 
     def drop_duplicates(self, column: str | tuple | Iterable[str | tuple]) -> None:
         columns = [column] if isinstance(column, str | tuple) else list(column)
 
         for column in columns:
-            for cell in reversed(self.range(column, -1)[1:]):
+            for cell in reversed(self.range(column)[1:]):
                 if cell.value == cell.offset(-1).value:
                     cell.value = None
 
@@ -635,7 +634,7 @@ class SheetFrame:
             list[str]: The address list of the column.
         """
         addresses = []
-        for cell in self.range(column, -1):
+        for cell in self.range(column):
             addresses.append(cell.get_address(**kwargs))
 
         if formula:
@@ -648,7 +647,7 @@ class SheetFrame:
         cell = self.sheet.range(self.row, column_int)
         cell.value = column
 
-        rng = self.range(column, -1)
+        rng = self.range(column)
 
         if value is not None:
             rng.options(transpose=True).value = value
@@ -678,22 +677,22 @@ class SheetFrame:
             if rng not in columns + wide_columns:
                 rng = self.add_column(rng)
             else:
-                rng = self.range(rng, -1)
+                rng = self.range(rng)
 
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
             column = m.group(1)
 
             if column in columns:
-                ref = self.range(column)
+                ref = self.range(column, 0)
                 ref = ref.get_address(row_absolute=False)
 
             elif column in wide_columns:
-                ref = self.range(column, 0)[0].offset(1)
+                ref = self.range(column, -1)[0].offset(1)
                 ref = ref.get_address(column_absolute=False)
 
             else:
-                ref = self.range(column)[0]
+                ref = self.range(column, 0)[0]
                 ref = ref.get_address(column_absolute=False, row_absolute=False)
 
             refs[column] = ref
@@ -742,7 +741,7 @@ class SheetFrame:
             rng.number_format = number_format
 
         if autofit:
-            self.range(column, 0).autofit()
+            self.range(column, -1).autofit()
 
         if style:
             self.set_style()
@@ -785,7 +784,7 @@ class SheetFrame:
 
     def __setitem__(self, column: str | tuple, value: ArrayLike) -> None:
         if column in self:
-            rng = self.range(column, -1)
+            rng = self.range(column)
         elif isinstance(column, str):
             rng = self.add_column(column)
         else:
@@ -916,7 +915,7 @@ class SheetFrame:
         return Grouper(self, by)
 
     def get_number_format(self, column: str | tuple) -> str:
-        return self.range(column).number_format
+        return self.range(column, 0).number_format
 
     def set_number_format(
         self,
@@ -944,7 +943,7 @@ class SheetFrame:
                 column_name = column if isinstance(column, str) else column[0]
 
                 if re.match(pattern, column_name):
-                    rng = self.range(column, -1)
+                    rng = self.range(column)
                     rng.number_format = number_format
                     if autofit:
                         rng.autofit()

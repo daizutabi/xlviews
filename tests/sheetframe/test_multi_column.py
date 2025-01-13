@@ -163,7 +163,7 @@ def test_range_all(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("start", "end", "address"),
     [
-        (None, None, "$D$22"),
+        (0, None, "$D$22"),
         (50, None, "$D$50"),
         (50, 100, "$D$50:$D$100"),
     ],
@@ -173,7 +173,7 @@ def test_range_index(sf: SheetFrame, start, end, address):
     assert sf.range("index", start, end).get_address() == address
 
 
-@pytest.mark.parametrize("start", [0, -1, False])
+@pytest.mark.parametrize("start", [None, -1, False])
 def test_range_index_error(sf: SheetFrame, start):
     with pytest.raises(ValueError, match="index start must be a specific row"):
         sf.range_index(start)
@@ -185,10 +185,10 @@ def test_range_index_error(sf: SheetFrame, start):
 @pytest.mark.parametrize(
     ("column", "start", "end", "address"),
     [
-        (("a1", "b1"), 0, None, "$E$20:$E$21"),
-        (("a1", "b2"), None, None, "$F$22"),
-        (("a2", "b1"), -1, None, "$G$22:$G$26"),
         (("a2", "b2"), False, None, "$H$20:$H$26"),
+        (("a1", "b1"), -1, None, "$E$20:$E$21"),
+        (("a1", "b2"), 0, None, "$F$22"),
+        (("a2", "b1"), None, None, "$G$22:$G$26"),
         (("a1", "b1"), 30, None, "$E$30"),
         (("a1", "b2"), 30, 40, "$F$30:$F$40"),
     ],
