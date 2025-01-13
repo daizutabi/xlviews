@@ -3,22 +3,22 @@ import xlwings
 from xlwings import App, Book
 
 
-@pytest.fixture(scope="session", autouse=True)
-def teardown():
-    from xlviews.common import quit_apps
-
-    yield
-    quit_apps()
-
-
 @pytest.fixture(scope="session")
 def app():
-    return xlwings.apps.add()
+    app = xlwings.apps.add()
+
+    yield app
+
+    app.quit()
 
 
 @pytest.fixture(scope="session")
 def book(app: App):
-    return app.books.add()
+    book = app.books.add()
+
+    yield book
+
+    book.close()
 
 
 @pytest.fixture(scope="module")

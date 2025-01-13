@@ -111,7 +111,7 @@ def test_table_error():
 def test_sheetframe(table: Table):
     from xlviews.sheetframe import SheetFrame
 
-    sf = SheetFrame(table.sheet, table.cell.row, table.cell.column)
+    sf = SheetFrame(table.cell.row, table.cell.column, sheet=table.sheet, style=False)
     assert sf.table
     assert sf.table.cell.row == table.cell.row
     assert sf.table.cell.column == table.cell.column

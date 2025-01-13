@@ -7,8 +7,8 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
-from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.sheetframe import SheetFrame
 from xlviews.style import set_alignment, set_font
 from xlviews.utils import iter_columns

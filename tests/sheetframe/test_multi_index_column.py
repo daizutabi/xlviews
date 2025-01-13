@@ -43,7 +43,7 @@ def test_df(df: DataFrame):
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(sheet_module, 5, 3, data=df, style=False)
+    return SheetFrame(5, 3, data=df, style=False, sheet=sheet_module)
 
 
 def test_value_column(sf: SheetFrame):
@@ -108,7 +108,7 @@ def test_index_columns(sf: SheetFrame):
 
 
 def test_init_index_false(df: DataFrame, sheet: Sheet):
-    sf = SheetFrame(sheet, 2, 3, data=df, index=False, style=False)
+    sf = SheetFrame(2, 3, data=df, index=False, style=False, sheet=sheet)
 
     assert sf.index_level == 0
     c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]

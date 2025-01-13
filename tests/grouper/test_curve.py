@@ -17,7 +17,7 @@ def sf(sheet_module: Sheet):
     d = ["x", "y"] * 8
     df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
-    return SheetFrame(sheet_module, 2, 2, data=df, index=True, style=False)
+    return SheetFrame(2, 2, data=df, index=True, style=False, sheet=sheet_module)
 
 
 @pytest.mark.parametrize(

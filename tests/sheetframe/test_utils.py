@@ -8,7 +8,7 @@ from xlviews.sheetframe import SheetFrame
 @pytest.fixture
 def sf(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    return SheetFrame(sheet, 3, 3, data=df, style=False)
+    return SheetFrame(3, 3, data=df, style=False, sheet=sheet)
 
 
 @pytest.mark.parametrize("number_format", ["0", "0.00", "0.00%"])

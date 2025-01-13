@@ -20,4 +20,4 @@ def df():
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(sheet_module, 3, 2, data=df, style=False)
+    return SheetFrame(3, 2, data=df, style=False, sheet=sheet_module)

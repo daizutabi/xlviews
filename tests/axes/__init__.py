@@ -3,7 +3,7 @@ if __name__ == "__main__":
     from xlwings.constants import ChartType
 
     from xlviews.axes import Axes
-    from xlviews.common import quit_apps
+    from xlviews.decorators import quit_apps
 
     quit_apps()
     book = xw.Book()

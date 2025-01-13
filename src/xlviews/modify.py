@@ -4,15 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlwings import Sheet
 from xlwings.constants import Direction
 
-from xlviews import common
-from xlviews.common import turn_off_screen_updating
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.utils import int_to_column_name, iter_columns
 
 if TYPE_CHECKING:
-    from xlwings import Range
+    from xlwings import Range, Sheet
 
     from xlviews.sheetframe import SheetFrame
 
@@ -103,15 +101,15 @@ def delete(sf: SheetFrame, direction: str = "up", *, entire: bool = False) -> No
             raise ValueError("direction must be 'up' or 'left'")
 
 
-def get_sheet_cell(sf: SheetFrame, *args) -> tuple[Sheet, Range]:
-    if len(args) == 0:
-        cell = sf.get_adjacent_cell()
-    elif isinstance(args[0], Sheet):
-        cell = common.get_range(*args[1:], sheet=args[0])
-    else:
-        cell = common.get_range(*args)
+# def get_sheet_cell(sf: SheetFrame, *args) -> tuple[Sheet, Range]:
+#     if len(args) == 0:
+#         cell = sf.get_adjacent_cell()
+#     elif isinstance(args[0], Sheet):
+#         cell = common.get_range(*args[1:], sheet=args[0])
+#     else:
+#         cell = common.get_range(*args)
 
-    return cell.sheet, cell
+#     return cell.sheet, cell
 
 
 # def get_index_level(sf: SheetFrame, columns: list[str]) -> int:
@@ -138,6 +136,7 @@ def copy(
     rows=None,
     drop_duplicates=False,
     autofit=True,
+    sheet: Sheet | None = None,
     **kwargs,
 ) -> SheetFrame:
     """
@@ -168,8 +167,9 @@ def copy(
     -------
     SheetFrame
     """
-    sheet, cell = get_sheet_cell(sf, *args)
-    include_sheetname = sf.sheet != sheet
+    sheet = sheet or sf.sheet
+    cell = sheet.range(*args)
+    include_sheetname = sf.sheet != cell.sheet
     columns = sf.columns if columns is None else list(iter_columns(sf, columns))
     index_columns = sf.index_columns
 

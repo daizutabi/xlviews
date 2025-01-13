@@ -13,7 +13,7 @@ def df():
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(sheet_module, 2, 3, data=df, style=False)
+    return SheetFrame(2, 3, data=df, style=False, sheet=sheet_module)
 
 
 def test_value(sf: SheetFrame):
@@ -52,21 +52,21 @@ def test_index_columns(sf: SheetFrame):
 
 
 def test_init_index_false(df: DataFrame, sheet: Sheet):
-    sf = SheetFrame(sheet, 2, 3, data=df, index=False, style=False)
+    sf = SheetFrame(2, 3, data=df, index=False, style=False, sheet=sheet)
     assert sf.columns == ["a", "b"]
     assert sf.index_level == 0
 
 
 def test_row_one(sheet: Sheet):
     df = DataFrame({"a": [1], "b": [2]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     assert len(sf) == 1
     np.testing.assert_array_equal(sf["a"], [1])
 
 
 def test_column_one(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
+    sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
     assert len(sf) == 3
     assert sf.columns == ["a"]
     np.testing.assert_array_equal(sf["a"], [1, 2, 3])
@@ -153,14 +153,14 @@ def test_str(sf: SheetFrame):
 
 def test_rename(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     sf.rename({"a": "A", "b": "B"})
     assert sf.columns == [None, "A", "B"]
 
 
 def test_drop_duplicates(sheet: Sheet):
     df = DataFrame({"a": [1, 1, 2, 2, 3, 3], "b": [4, 4, 4, 5, 5, 5]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     sf.drop_duplicates(["a", "b"])
     x = sf["a"]
     assert x[::2].to_list() == [1, 2, 3]
@@ -181,7 +181,7 @@ def test_address_formula(sf: SheetFrame):
 
 def test_add_column(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     rng = sf.add_column("c")
     assert rng.get_address() == "$E$3:$E$5"
     assert sf.columns == [None, "a", "b", "c"]
@@ -189,7 +189,7 @@ def test_add_column(sheet: Sheet):
 
 def test_add_column_value(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     sf.add_column("c", [7, 8, 9])
     np.testing.assert_array_equal(sf["c"], [7, 8, 9])
 
@@ -211,7 +211,7 @@ def test_getitem_list(sf: SheetFrame):
 
 def test_setitem(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     x = [10, 20, 30]
     sf["a"] = x
     np.testing.assert_array_equal(sf["a"], x)
@@ -219,7 +219,7 @@ def test_setitem(sheet: Sheet):
 
 def test_setitem_new_column(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False)
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     x = [10, 20, 30]
     sf["c"] = x
     assert sf.columns == [None, "a", "b", "c"]
@@ -247,7 +247,7 @@ def test_select(sf: SheetFrame, a, b, sel):
 
 def test_groupby(sheet: Sheet):
     df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [1, 2, 3, 4, 5, 6, 7]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
+    sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
 
     g = sf.groupby("a")
     assert len(g) == 2
@@ -266,7 +266,7 @@ def test_groupby(sheet: Sheet):
 
 def test_groupby_range(sheet: Sheet):
     df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [3, 3, 4, 4, 3, 3, 4]})
-    sf = SheetFrame(sheet, 2, 2, data=df, style=False, index=False)
+    sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
 
     g = sf.groupby("a")
     assert sf.range("a", g[(1,)]).get_address() == "$B$3:$B$5,$B$8:$B$9"

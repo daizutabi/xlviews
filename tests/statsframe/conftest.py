@@ -26,4 +26,4 @@ def df():
 
 @pytest.fixture(scope="module")
 def sf_parent(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(sheet_module, 3, 3, data=df, table=True)
+    return SheetFrame(3, 3, data=df, table=True, sheet=sheet_module)

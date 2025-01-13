@@ -4,7 +4,7 @@ if __name__ == "__main__":
     from xlwings.constants import ChartType
 
     from xlviews.axes import Axes
-    from xlviews.common import quit_apps
+    from xlviews.decorators import quit_apps
     from xlviews.plot import _plot
     from xlviews.sheetframe import SheetFrame
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sheet_module = book.sheets.add()
     x = (["u"] * 2 + ["v"] * 3) * 2
     df = DataFrame({"a": x, "x": list(range(10)), "y": list(range(10, 20))})
-    data = SheetFrame(sheet_module, 2, 2, data=df, index=False)
+    data = SheetFrame(2, 2, data=df, index=False, sheet=sheet_module)
 
     ax = Axes(left=200, chart_type=ChartType.xlXYScatter)
     g = data.groupby("a")

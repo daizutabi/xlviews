@@ -16,7 +16,7 @@ def df():
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(sheet_module, 2, 3, data=df, style=False)
+    return SheetFrame(2, 3, data=df, style=False, sheet=sheet_module)
 
 
 def test_value(sf: SheetFrame):
@@ -207,7 +207,7 @@ def sf2(sheet_module: Sheet):
     y = list(range(10, 20))
     df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
     df = df.set_index(["a", "b", "c"])
-    return SheetFrame(sheet_module, 102, 2, data=df, index=True, style=False)
+    return SheetFrame(102, 2, data=df, index=True, style=False, sheet=sheet_module)
 
 
 @pytest.mark.parametrize(

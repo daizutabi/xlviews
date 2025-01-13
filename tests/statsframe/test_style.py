@@ -8,7 +8,7 @@ from xlviews.utils import rgb
 
 @pytest.fixture
 def sf(df: DataFrame, sheet: Sheet):
-    return SheetFrame(sheet, 3, 3, data=df, table=True)
+    return SheetFrame(3, 3, data=df, table=True, sheet=sheet)
 
 
 @pytest.mark.parametrize(

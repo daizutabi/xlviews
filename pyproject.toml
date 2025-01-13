@@ -34,7 +34,7 @@ dev-dependencies = [
     "pytest-clarity>=1",
     "pytest-cov>=6.0",
     "pytest-randomly>=3.16",
-    "scipy>=1.5",
+    "scipy>=1.15",
 ]
 
 [tool.hatch.build.targets.sdist]

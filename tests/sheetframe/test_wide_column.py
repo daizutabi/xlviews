@@ -22,7 +22,7 @@ def test_df(df: DataFrame):
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    sf = SheetFrame(sheet_module, 4, 2, data=df, style=False)
+    sf = SheetFrame(4, 2, data=df, style=False, sheet=sheet_module)
     sf.add_wide_column("u", range(3), autofit=False)
     sf.add_wide_column("v", range(4), autofit=False)
     return sf

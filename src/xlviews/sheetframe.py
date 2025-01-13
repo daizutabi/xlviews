@@ -11,9 +11,9 @@ import xlwings as xw
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Sheet
 
-from xlviews import common, modify
+from xlviews import modify
 from xlviews.axes import set_first_position
-from xlviews.common import turn_off_screen_updating
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.grouper import create_group_index
@@ -57,6 +57,7 @@ class SheetFrame:
         self,
         *args,
         name: str | None = None,
+        sheet: Sheet | None = None,
         parent: SheetFrame | None = None,
         head: SheetFrame | None = None,
         data: DataFrame | None = None,
@@ -112,10 +113,8 @@ class SheetFrame:
             self.head.tail = self
 
         else:
-            if args and isinstance(args[0], Sheet):
-                self.cell = common.get_range(*args[1:], sheet=args[0])
-            else:
-                self.cell = common.get_range(*args)
+            sheet = sheet or xw.sheets.active
+            self.cell = sheet.range(*args)
 
         self.sheet = self.cell.sheet
 

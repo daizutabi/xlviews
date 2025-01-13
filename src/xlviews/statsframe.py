@@ -7,8 +7,8 @@ from pandas import DataFrame
 from xlwings import Range
 from xlwings.constants import Direction
 
-from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.grouper import Grouper
 from xlviews.range import RangeCollection, multirange
@@ -166,13 +166,13 @@ class StatsFrame(SheetFrame):
         df = gr.get_frame(funcs, wrap, default, func_column_name)
 
         super().__init__(
-            parent.sheet,
             row,
             column,
             data=df,
             index=parent.has_index,
             autofit=False,
             style=False,
+            sheet=parent.sheet,
             **kwargs,
         )
         self.parent = parent

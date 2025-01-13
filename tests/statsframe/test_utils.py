@@ -90,7 +90,7 @@ def test_move_down(sheet: Sheet):
     from xlviews.statsframe import move_down
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
-    sf = SheetFrame(sheet, 3, 3, data=df, style=False)
+    sf = SheetFrame(3, 3, data=df, style=False, sheet=sheet)
     assert sheet["D3:F3"].value == ["a", "b", "c"]
     assert sheet["D2:F2"].value == [None, None, None]
     assert move_down(sf, 3) == 3
@@ -103,7 +103,7 @@ def test_move_down_header(sheet: Sheet):
     from xlviews.statsframe import move_down
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
-    sf = SheetFrame(sheet, 3, 3, data=df, style=False)
+    sf = SheetFrame(3, 3, data=df, style=False, sheet=sheet)
     sheet["D2"].value = "x"
     assert sheet["D3:F3"].value == ["a", "b", "c"]
     assert sheet["D2:F2"].value == ["x", None, None]

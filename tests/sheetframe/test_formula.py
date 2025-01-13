@@ -9,7 +9,7 @@ from xlviews.sheetframe import SheetFrame
 @pytest.fixture(scope="module")
 def sf1(sheet_module: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    return SheetFrame(sheet_module, 2, 3, data=df, style=False)
+    return SheetFrame(2, 3, data=df, style=False, sheet=sheet_module)
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ def test_formula(sf1: SheetFrame, formula, value, use_setitem):
 @pytest.fixture(scope="module")
 def sf2(sheet_module: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    sf = SheetFrame(sheet_module, 10, 3, data=df, style=False)
+    sf = SheetFrame(10, 3, data=df, style=False, sheet=sheet_module)
     sf.add_wide_column("c", [1, 2, 3, 4])
     return sf
 

@@ -3,7 +3,7 @@ if __name__ == "__main__":
     import xlwings as xw
     from pandas import DataFrame, MultiIndex
 
-    from xlviews.common import quit_apps
+    from xlviews.decorators import quit_apps
     from xlviews.grouper import Grouper
     from xlviews.sheetframe import SheetFrame
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     d = ["x", "y"] * 8
     df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
-    sf = SheetFrame(sheet_module, 2, 2, data=df, index=True)
+    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
     gr = Grouper(sf, ["s", "t"])
 
     a = ["c"] * 10
@@ -27,5 +27,5 @@ if __name__ == "__main__":
     y = list(range(10, 20))
     df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
     df = df.set_index(["a", "b", "c"])
-    sf = SheetFrame(sheet_module, 2, 2, data=df, index=True)
+    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
     gr = Grouper(sf, ["b", "c"])

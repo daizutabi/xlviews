@@ -18,8 +18,8 @@ from xlwings.constants import (
     TableStyleElementType,
 )
 
-from xlviews.common import turn_off_screen_updating
 from xlviews.config import rcParams
+from xlviews.decorators import turn_off_screen_updating
 from xlviews.range import reference
 from xlviews.utils import constant, rgb
 
