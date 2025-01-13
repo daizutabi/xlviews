@@ -180,21 +180,21 @@ def test_select(sf: SheetFrame, kwargs, sel):
     np.testing.assert_array_equal(x, sel)
 
 
-def test_iter_ranges(sf: SheetFrame):
-    for rng, i in zip(sf.iter_ranges(), range(2, 18), strict=True):
+def test_ranges(sf: SheetFrame):
+    for rng, i in zip(sf.ranges(), range(2, 18), strict=True):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 
 
-def test_iter_ranges_sel(sf: SheetFrame):
+def test_ranges_sel(sf: SheetFrame):
     sel = [False] * 8 + [True] * 8
-    for rng, i in zip(sf.iter_ranges(sel), range(10, 18), strict=True):
+    for rng, i in zip(sf.ranges(sel), range(10, 18), strict=True):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 
 
-def test_iter_ranges_kwargs(sf: SheetFrame):
-    for rng, i in zip(sf.iter_ranges(i="y"), range(3, 18, 2), strict=True):
+def test_ranges_kwargs(sf: SheetFrame):
+    for rng, i in zip(sf.ranges(i="y"), range(3, 18, 2), strict=True):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 

@@ -113,7 +113,7 @@ class Grouper:
                 yield self.ranges(column, **kwargs)
         else:
             kwargs.update(dict(zip(self.by, column, strict=True)))
-            yield from self.sf.iter_ranges(**kwargs)
+            yield from self.sf.ranges(**kwargs)
 
     def first_ranges(self, column: str) -> Iterator[Range]:
         for key in self:

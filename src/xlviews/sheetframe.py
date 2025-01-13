@@ -858,7 +858,7 @@ class SheetFrame:
 
     #     return self.column + self.index_level
 
-    def iter_ranges(
+    def ranges(
         self,
         sel: Sequence[bool] | NDArray[np.bool_] | None = None,
         **kwargs,
@@ -873,11 +873,11 @@ class SheetFrame:
             sel &= self.select(**kwargs)
 
         if self.columns_names is None:
-            yield from self.iter_ranges_row(sel)
+            yield from self.ranges_row(sel)
         else:
-            yield from self.iter_ranges_column(sel)
+            yield from self.ranges_column(sel)
 
-    def iter_ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
+    def ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
         offset = self.row + self.columns_level
         start = self.column + self.index_level
         end = start + len(self.value_columns) - 1
@@ -888,7 +888,7 @@ class SheetFrame:
 
             yield self.sheet.range((index + offset, start), (index + offset, end))
 
-    def iter_ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
+    def ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
         offset = self.column + self.index_level
         start = self.row + self.columns_level
         end = start + len(self) - 1

@@ -214,14 +214,14 @@ def sf2(sheet_module: Sheet):
     ("kwargs", "r"),
     [({}, range(103, 113)), ({"c": 100}, [103, 104, 108, 109])],
 )
-def test_iter_ranges(sf2: SheetFrame, kwargs, r):
-    for rng, i in zip(sf2.iter_ranges(**kwargs), r, strict=True):
+def test_ranges(sf2: SheetFrame, kwargs, r):
+    for rng, i in zip(sf2.ranges(**kwargs), r, strict=True):
         assert rng.get_address() == f"$E${i}:$F${i}"
 
 
-def test_iter_ranges_sel(sf2: SheetFrame):
+def test_ranges_sel(sf2: SheetFrame):
     sel = sf2.select(c=200)
-    it = sf2.iter_ranges(sel, b="t")
+    it = sf2.ranges(sel, b="t")
 
     for rng, i in zip(it, [110, 111, 112], strict=True):
         assert rng.get_address() == f"$E${i}:$F${i}"
