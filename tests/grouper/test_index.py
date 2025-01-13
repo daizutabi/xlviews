@@ -40,18 +40,18 @@ def test_create_group_index_dataframe(func):
     assert index[(3, 4)] == [(2, 3), (5, 6)]
 
 
-@pytest.mark.parametrize(
-    ("values", "sel"),
-    [
-        ([1, 1], [True, True]),
-        ([2, 1, 1, 2], [False, True, True, False]),
-        ([2, 1], [False, True]),
-        ([1, 2, 3, 1, 1, 2, 3], [True, False, False, True, True, False, False]),
-        ([1, 2, 3, 1, 1, 2, 1], [True, False, False, True, True, False, True]),
-    ],
-)
-def test_to_array(values, sel):
-    from xlviews.grouper import create_group_index, to_array
+# @pytest.mark.parametrize(
+#     ("values", "sel"),
+#     [
+#         ([1, 1], [True, True]),
+#         ([2, 1, 1, 2], [False, True, True, False]),
+#         ([2, 1], [False, True]),
+#         ([1, 2, 3, 1, 1, 2, 3], [True, False, False, True, True, False, False]),
+#         ([1, 2, 3, 1, 1, 2, 1], [True, False, False, True, True, False, True]),
+#     ],
+# )
+# def test_to_array(values, sel):
+#     from xlviews.grouper import create_group_index, to_array
 
-    index = create_group_index(values)
-    np.testing.assert_array_equal(to_array(index[(1,)], len(values)), sel)
+#     index = create_group_index(values)
+#     np.testing.assert_array_equal(to_array(index[(1,)], len(values)), sel)

@@ -1,3 +1,5 @@
+import string
+
 import numpy as np
 import pytest
 from pandas import DataFrame, MultiIndex
@@ -51,23 +53,32 @@ def test_values(gr: Grouper):
     assert list(gr.values()) == values
 
 
-# @pytest.mark.parametrize(
-#     ("key", "value"),
-#     [
-#         (("c", 100), "$E$3:$E$4,$E$8:$E$9"),
-#         (("c", 200), "$E$5:$E$7,$E$10:$E$12"),
-#     ],
-# )
-# def test_range(gr: GroupedRange, key, value):
-#     assert gr.range("x", key).get_address() == value
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [
+        (("a", "c"), [2, 3, 4, 5]),
+        (("a", "d"), [6, 7, 8, 9]),
+        (("b", "c"), [10, 11, 12, 13]),
+        (("b", "d"), [14, 15, 16, 17]),
+    ],
+)
+def test_ranges(gr: Grouper, column: tuple, value):
+    for rng, i in zip(gr.ranges(column), value, strict=True):
+        c = string.ascii_uppercase[i]
+        assert rng.get_address() == f"${c}$6:${c}$11"
 
 
-# @pytest.mark.parametrize(
-#     ("key", "value"),
-#     [
-#         (("c", 100), "$B$3"),
-#         (("c", 200), "$B$5"),
-#     ],
-# )
-# def test_first_range(gr: GroupedRange, key, value):
-#     assert gr.first_range("a", key).get_address() == value
+def test_ranges_none(gr: Grouper):
+    values = [[2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13], [14, 15, 16, 17]]
+    for it, value in zip(gr.ranges(), values, strict=True):
+        for rng, i in zip(it, value, strict=True):
+            c = string.ascii_uppercase[i]
+            assert rng.get_address() == f"${c}$6:${c}$11"
+
+
+def test_ranges_kwargs(gr: Grouper):
+    values = [[2, 4], [6, 8], [10, 12], [14, 16]]
+    for it, value in zip(gr.ranges(i="x"), values, strict=True):
+        for rng, i in zip(it, value, strict=True):
+            c = string.ascii_uppercase[i]
+            assert rng.get_address() == f"${c}$6:${c}$11"

@@ -837,26 +837,26 @@ class SheetFrame:
 
         return sel
 
-    @property
-    def length(self) -> int:
-        if self.columns_names is None:
-            return len(self)
+    # @property
+    # def length(self) -> int:
+    #     if self.columns_names is None:
+    #         return len(self)
 
-        return len(self.value_columns)
+    #     return len(self.value_columns)
 
-    @property
-    def width(self) -> int:
-        if self.columns_names is None:
-            return len(self.value_columns)
+    # @property
+    # def width(self) -> int:
+    #     if self.columns_names is None:
+    #         return len(self.value_columns)
 
-        return len(self)
+    #     return len(self)
 
-    @property
-    def offset(self) -> int:
-        if self.columns_names is None:
-            return self.row + self.columns_level
+    # @property
+    # def offset(self) -> int:
+    #     if self.columns_names is None:
+    #         return self.row + self.columns_level
 
-        return self.column + self.index_level
+    #     return self.column + self.index_level
 
     def iter_ranges(
         self,
@@ -878,22 +878,22 @@ class SheetFrame:
             yield from self.iter_ranges_column(sel)
 
     def iter_ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
-        offset = self.offset
+        offset = self.row + self.columns_level
         start = self.column + self.index_level
-        end = start + self.width - 1
+        end = start + len(self.value_columns) - 1
 
-        for index in range(self.length):
+        for index in range(len(self)):
             if not sel[index]:
                 continue
 
             yield self.sheet.range((index + offset, start), (index + offset, end))
 
     def iter_ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
-        offset = self.offset
+        offset = self.column + self.index_level
         start = self.row + self.columns_level
-        end = start + self.width - 1
+        end = start + len(self) - 1
 
-        for index in range(self.length):
+        for index in range(len(self.value_columns)):
             if not sel[index]:
                 continue
 

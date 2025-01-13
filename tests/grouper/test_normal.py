@@ -91,33 +91,33 @@ def test_first_range(gr: Grouper, key, value):
     assert gr.first_range("a", key).get_address() == value
 
 
-@pytest.mark.parametrize(
-    ("by", "key", "value"),
-    [
-        (["a", "c"], ("c", 100), [3, 4, 8, 9]),
-        (["a", "c"], ("c", 200), [5, 6, 7, 10, 11, 12]),
-        (["b", "c"], ("s", 100), [3, 4]),
-        (["b", "c"], ("s", 200), [5, 6, 7]),
-        (["b", "c"], ("t", 100), [8, 9]),
-        (["b", "c"], ("t", 200), [10, 11, 12]),
-    ],
-)
-def test_iter_ranges(sf: SheetFrame, by, key, value):
-    gr = Grouper(sf, by)
-    it = gr.iter_ranges(key)
-    for rng, i in zip(it, value, strict=True):
-        assert rng.get_address() == f"$E${i}:$F${i}"
+# @pytest.mark.parametrize(
+#     ("by", "key", "value"),
+#     [
+#         (["a", "c"], ("c", 100), [3, 4, 8, 9]),
+#         (["a", "c"], ("c", 200), [5, 6, 7, 10, 11, 12]),
+#         (["b", "c"], ("s", 100), [3, 4]),
+#         (["b", "c"], ("s", 200), [5, 6, 7]),
+#         (["b", "c"], ("t", 100), [8, 9]),
+#         (["b", "c"], ("t", 200), [10, 11, 12]),
+#     ],
+# )
+# def test_iter_ranges(sf: SheetFrame, by, key, value):
+#     gr = Grouper(sf, by)
+#     it = gr.iter_ranges(key)
+#     for rng, i in zip(it, value, strict=True):
+#         assert rng.get_address() == f"$E${i}:$F${i}"
 
 
-@pytest.mark.parametrize(
-    ("by", "key", "value"),
-    [
-        ("a", ("c",), [3, 4, 8, 9]),
-        ("b", ("t",), [8, 9]),
-        (["a", "b"], ("c", "s"), [3, 4]),
-    ],
-)
-def test_iter_ranges_kwargs(sf: SheetFrame, by, key, value):
-    it = sf.grouper(by).iter_ranges(key, c=100)
-    for rng, i in zip(it, value, strict=True):
-        assert rng.get_address() == f"$E${i}:$F${i}"
+# @pytest.mark.parametrize(
+#     ("by", "key", "value"),
+#     [
+#         ("a", ("c",), [3, 4, 8, 9]),
+#         ("b", ("t",), [8, 9]),
+#         (["a", "b"], ("c", "s"), [3, 4]),
+#     ],
+# )
+# def test_iter_ranges_kwargs(sf: SheetFrame, by, key, value):
+#     it = sf.grouper(by).iter_ranges(key, c=100)
+#     for rng, i in zip(it, value, strict=True):
+#         assert rng.get_address() == f"$E${i}:$F${i}"

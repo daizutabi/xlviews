@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, overload
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -10,7 +10,6 @@ from xlviews.utils import iter_columns
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-    from numpy.typing import NDArray
     from xlwings import Range
 
     from xlviews.range import RangeCollection
@@ -45,17 +44,17 @@ def create_group_index(
     return _to_dict(keys, values)
 
 
-def to_array(
-    index: list[tuple[int, int]],
-    n: int,
-    offset: int = 0,
-) -> NDArray[np.bool_]:
-    sel = np.zeros(n, dtype=bool)
+# def to_array(
+#     index: list[tuple[int, int]],
+#     n: int,
+#     offset: int = 0,
+# ) -> NDArray[np.bool_]:
+#     sel = np.zeros(n, dtype=bool)
 
-    for s, e in index:
-        sel[s - offset : e - offset + 1] = True
+#     for s, e in index:
+#         sel[s - offset : e - offset + 1] = True
 
-    return sel
+#     return sel
 
 
 class Grouper:
@@ -92,14 +91,34 @@ class Grouper:
     def first_range(self, column: str, key: tuple) -> Range:
         return self.sf.range(column, self[key][0][0])
 
-    def ranges(self, column: str) -> Iterator[RangeCollection]:
-        for key in self:
-            yield self.range(column, key)
+    @overload
+    def ranges(self, column: str) -> Iterator[RangeCollection]: ...
+
+    @overload
+    def ranges(self, column: tuple) -> Iterator[Range]: ...
+
+    @overload
+    def ranges(self, column: None = None, **kwargs) -> Iterator[Iterator[Range]]: ...
+
+    def ranges(
+        self,
+        column: str | tuple | None = None,
+        **kwargs,
+    ) -> Iterator[RangeCollection | Range | Iterator[Range]]:
+        if isinstance(column, str):
+            for key in self:
+                yield self.range(column, key)
+        elif column is None:
+            for column in self:
+                yield self.ranges(column, **kwargs)
+        else:
+            kwargs.update(dict(zip(self.by, column, strict=True)))
+            yield from self.sf.iter_ranges(**kwargs)
 
     def first_ranges(self, column: str) -> Iterator[Range]:
         for key in self:
             yield self.first_range(column, key)
 
-    def iter_ranges(self, key: tuple, **kwargs) -> Iterator[Range]:
-        sel = to_array(self[key], self.sf.length, self.sf.offset)
-        yield from self.sf.iter_ranges(sel, **kwargs)
+    # def iter_ranges(self, key: tuple, **kwargs) -> Iterator[Range]:
+    #     sel = to_array(self[key], self.sf.length, self.sf.offset)
+    #     yield from self.sf.iter_ranges(sel, **kwargs)
