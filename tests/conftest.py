@@ -15,8 +15,6 @@ def teardown():
 def app():
     return xlwings.apps.add()
 
-    # app.quit() # Avoids quitting the app to execute `quit_apps()` later
-
 
 @pytest.fixture(scope="session")
 def book(app: App):

@@ -837,27 +837,6 @@ class SheetFrame:
 
         return sel
 
-    # @property
-    # def length(self) -> int:
-    #     if self.columns_names is None:
-    #         return len(self)
-
-    #     return len(self.value_columns)
-
-    # @property
-    # def width(self) -> int:
-    #     if self.columns_names is None:
-    #         return len(self.value_columns)
-
-    #     return len(self)
-
-    # @property
-    # def offset(self) -> int:
-    #     if self.columns_names is None:
-    #         return self.row + self.columns_level
-
-    #     return self.column + self.index_level
-
     def ranges(
         self,
         sel: Sequence[bool] | NDArray[np.bool_] | None = None,
