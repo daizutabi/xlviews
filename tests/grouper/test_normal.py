@@ -118,7 +118,6 @@ def test_iter_ranges(sf: SheetFrame, by, key, value):
     ],
 )
 def test_iter_ranges_kwargs(sf: SheetFrame, by, key, value):
-    gr = Grouper(sf, by)
-    it = gr.iter_ranges(key, c=100)
+    it = sf.grouper(by).iter_ranges(key, c=100)
     for rng, i in zip(it, value, strict=True):
         assert rng.get_address() == f"$E${i}:$F${i}"

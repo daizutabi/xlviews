@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from xlwings import Range
 
     from xlviews.distframe import DistFrame
+    from xlviews.grouper import Grouper
     from xlviews.statsframe import StatsFrame
 
 
@@ -930,6 +931,11 @@ class SheetFrame:
             offset = self.column + self.index_level  # horizontal
 
         return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
+
+    def grouper(self, by: str | list[str] | None) -> Grouper:
+        from xlviews.grouper import Grouper
+
+        return Grouper(self, by)
 
     def get_number_format(self, column: str | tuple) -> str:
         return self.range(column).number_format
