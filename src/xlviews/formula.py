@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-NONCONST_VALUE = "XXX"
+NONCONST_VALUE = "*"
 
 
 def const(rng: Range, prefix: str = "") -> str:
@@ -52,7 +52,7 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 def aggregate(
     func: str | Range,
-    ranges: Iterable[Range] | RangeCollection,
+    ranges: Iterable[Range | RangeCollection] | Range | RangeCollection,
     option: int = 7,  # ignore hidden rows and error values
     **kwargs,
 ) -> str:
@@ -61,7 +61,7 @@ def aggregate(
         median = aggregate("median", ranges, option=option, **kwargs)
         return f"{std}/{median}"
 
-    if isinstance(ranges, RangeCollection):
+    if isinstance(ranges, Range | RangeCollection):
         column = ranges.get_address(**kwargs)
     else:
         column = ",".join([rng.get_address(**kwargs) for rng in ranges])
