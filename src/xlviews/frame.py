@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from numpy.typing import ArrayLike, NDArray
     from xlwings import Range
 
-    from xlviews.distframe import DistFrame
+    from xlviews.dist import DistFrame
     from xlviews.grouper import Grouper
     from xlviews.stats import StatsFrame
 
@@ -996,7 +996,7 @@ class SheetFrame:
         return modify.copy(self, *args, **kwargs)
 
     def distframe(self, *args, **kwargs) -> DistFrame:
-        from xlviews.distframe import DistFrame
+        from xlviews.dist import DistFrame
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist
