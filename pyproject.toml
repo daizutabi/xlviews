@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "xlviews"
-version = "0.1.2"
+version = "0.1.3"
 authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 description = "A Python package for writing xlsx files."
 readme = "README.md"
