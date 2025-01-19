@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import xlwings as xw
 from xlwings import Range
-from xlwings.constants import AxisType, Placement, TickMark
+from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
 from xlviews.range import reference
@@ -105,7 +105,7 @@ class Axes:
         row: int | None = None,
         column: int | None = None,
         sheet: Sheet | None = None,
-        chart_type: int | None = None,
+        chart_type: int = ChartType.xlXYScatter,
         border_width: int = 0,
         visible_only: bool = True,
         has_legend: bool = True,
@@ -125,11 +125,8 @@ class Axes:
 
         self.chart = self.sheet.charts.add(left, top, width, height)  # type: ignore
 
-        if chart_type is None:
-            self.chart_type = self.chart.api[1].ChartType
-        else:
-            self.chart_type = chart_type
-            self.chart.api[1].ChartType = chart_type
+        self.chart_type = chart_type
+        self.chart.api[1].ChartType = chart_type
 
         # self.chart.api[0].Placement = xw.constants.Placement.xlMove
         self.chart.api[0].Placement = Placement.xlFreeFloating
@@ -159,15 +156,15 @@ class Axes:
         x: Any,
         y: Any | None = None,
         label: str | tuple[int, int] | Range = "",
-        sheet: Sheet | None = None,
         chart_type: int | None = None,
+        sheet: Sheet | None = None,
     ) -> Series:
         sheet = sheet or self.sheet
 
         if chart_type is None:
             chart_type = self.chart_type
 
-        series = Series(self.chart, x, y, label, chart_type, sheet)
+        series = Series(self, x, y, label, chart_type, sheet)
         self.series_collection.append(series)
 
         return series

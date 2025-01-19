@@ -26,12 +26,6 @@ def test_chart_type(ax: Axes):
     assert ax.chart.chart_type == "xy_scatter_lines"
 
 
-def test_chart_type_none(sheet_module: Sheet):
-    ax = Axes(sheet=sheet_module)
-    assert ax.chart.api[1].ChartType == ChartType.xlColumnClustered
-    assert ax.chart.chart_type == "column_clustered"
-
-
 def test_chart_row_column(sheet_module: Sheet):
     ax = Axes(row=2, column=3, sheet=sheet_module)
     assert ax.chart.left == 104

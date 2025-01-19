@@ -12,23 +12,27 @@ from xlviews.utils import rgb
 if TYPE_CHECKING:
     from typing import Any
 
-    from xlwings import Chart, Sheet
+    from xlwings import Sheet
+
+    from xlviews.axes import Axes
 
 
 class Series:
+    axes: Axes
     api: Any
     label: str
 
     def __init__(
         self,
-        chart: Chart,
+        axes: Axes,
         x: Any,
         y: Any | None = None,
         label: str | tuple[int, int] | Range = "",
         chart_type: int | None = None,
         sheet: Sheet | None = None,
     ) -> None:
-        self.api = chart.api[1].SeriesCollection().NewSeries()
+        self.axes = axes
+        self.api = axes.chart.api[1].SeriesCollection().NewSeries()
         self.label = label if isinstance(label, str) else reference(label, sheet)
         self.name = self.label
 
