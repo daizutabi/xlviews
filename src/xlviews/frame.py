@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
     from xlviews.distframe import DistFrame
     from xlviews.grouper import Grouper
-    from xlviews.statsframe import StatsFrame
+    from xlviews.stats import StatsFrame
 
 
 class SheetFrame:
@@ -1002,7 +1002,7 @@ class SheetFrame:
         return self.dist
 
     def statsframe(self, *args, **kwargs) -> StatsFrame:
-        from xlviews.statsframe import StatsFrame
+        from xlviews.stats import StatsFrame
 
         self.stats = StatsFrame(self, *args, **kwargs)
         return self.stats
