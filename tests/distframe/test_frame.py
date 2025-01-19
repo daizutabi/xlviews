@@ -4,6 +4,9 @@ from scipy.stats import norm
 
 from xlviews.distframe import DistFrame
 from xlviews.sheetframe import SheetFrame
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 def test_init_data(sf: SheetFrame):
@@ -16,6 +19,7 @@ def test_init_data(sf: SheetFrame):
     assert len(df) == 14
 
 
+@pytest.mark.skipif(False, reason="Excel not installed")
 def test_dist_func_str():
     from xlviews.distframe import get_dist_func
 
@@ -23,6 +27,7 @@ def test_dist_func_str():
     assert df == {"a": "norm", "b": "norm"}
 
 
+@pytest.mark.skipif(False, reason="Excel not installed")
 def test_dist_func_dict():
     from xlviews.distframe import get_dist_func
 
