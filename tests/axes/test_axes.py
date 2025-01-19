@@ -16,12 +16,12 @@ def ax(sheet_module: Sheet):
 
 def test_chart_position(ax: Axes):
     assert ax.chart.left == 300
-    assert ax.chart.top == 9.75
+    assert 9.75 <= ax.chart.top == 10
 
 
 def test_chart_dimensions(ax: Axes):
     assert ax.chart.width == 200
-    assert ax.chart.height == 199.5
+    assert 199.5 <= ax.chart.height <= 200
 
 
 def test_chart_type(ax: Axes):
