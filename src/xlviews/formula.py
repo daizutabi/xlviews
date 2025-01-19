@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from xlwings import Range
 
+from xlviews.address import iter_address
 from xlviews.range import RangeCollection
 
 if TYPE_CHECKING:
@@ -52,19 +53,19 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 def aggregate(
     func: str | Range,
-    ranges: Iterable[Range | RangeCollection] | Range | RangeCollection,
+    ranges: Iterable[str | Range | RangeCollection] | str | Range | RangeCollection,
     option: int = 7,  # ignore hidden rows and error values
     **kwargs,
 ) -> str:
     if func == "soa":
-        std = aggregate("std", ranges, option=option, **kwargs)
-        median = aggregate("median", ranges, option=option, **kwargs)
+        std = aggregate("std", ranges, option, **kwargs)
+        median = aggregate("median", ranges, option, **kwargs)
         return f"{std}/{median}"
 
-    if isinstance(ranges, Range | RangeCollection):
-        column = ranges.get_address(**kwargs)
-    else:
-        column = ",".join([rng.get_address(**kwargs) for rng in ranges])
+    if isinstance(ranges, str | Range | RangeCollection):
+        ranges = [ranges]
+
+    column = ",".join(iter_address(ranges, **kwargs))
 
     if func in AGG_FUNCS:
         return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"

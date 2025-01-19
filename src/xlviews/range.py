@@ -11,20 +11,6 @@ if TYPE_CHECKING:
     from xlwings import Sheet
 
 
-def reference(cell: str | tuple[int, int] | Range, sheet: Sheet | None = None) -> str:
-    """Return a reference to a cell with sheet name."""
-    if isinstance(cell, str):
-        return cell
-
-    if sheet is None:
-        if isinstance(cell, tuple):
-            raise ValueError("sheet is required when `cell` is a tuple")
-
-        sheet = cell.sheet
-
-    return "=" + sheet.range(*cell).get_address(include_sheetname=True)
-
-
 def iter_ranges(
     sheet: Sheet,
     row: int | Sequence[int | tuple[int, int]],
