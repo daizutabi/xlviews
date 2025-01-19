@@ -99,4 +99,4 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "ARG", "D", "FBT", "PLR", "RUF", "S"]
+"tests/*" = ["ANN", "ARG", "D", "FBT", "PLR", "RUF", "S", "SLF"]
