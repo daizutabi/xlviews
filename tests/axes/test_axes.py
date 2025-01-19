@@ -3,6 +3,9 @@ from xlwings import Sheet
 from xlwings.constants import ChartType, TickMark
 
 from xlviews.axes import Axes
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture
