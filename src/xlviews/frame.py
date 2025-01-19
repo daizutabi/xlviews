@@ -995,13 +995,13 @@ class SheetFrame:
     def copy(self, *args, **kwargs) -> SheetFrame:
         return modify.copy(self, *args, **kwargs)
 
-    def distframe(self, *args, **kwargs) -> DistFrame:
+    def dist_frame(self, *args, **kwargs) -> DistFrame:
         from xlviews.dist import DistFrame
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist
 
-    def statsframe(self, *args, **kwargs) -> StatsFrame:
+    def stats_frame(self, *args, **kwargs) -> StatsFrame:
         from xlviews.stats import StatsFrame
 
         self.stats = StatsFrame(self, *args, **kwargs)
