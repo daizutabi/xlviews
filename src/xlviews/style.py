@@ -26,7 +26,7 @@ from xlviews.utils import constant, rgb
 if TYPE_CHECKING:
     from xlwings._xlwindows import COMRetryObjectWrapper
 
-    from xlviews.sheetframe import SheetFrame
+    from xlviews.frame import SheetFrame
     from xlviews.table import Table
 
 

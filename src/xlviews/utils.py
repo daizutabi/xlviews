@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from pandas import DataFrame
 
-    from xlviews.sheetframe import SheetFrame
+    from xlviews.frame import SheetFrame
 
 
 @cache

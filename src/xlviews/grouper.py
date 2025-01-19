@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
     from xlwings import Range
 
+    from xlviews.frame import SheetFrame
     from xlviews.range import RangeCollection
-    from xlviews.sheetframe import SheetFrame
 
 H = TypeVar("H")
 T = TypeVar("T")
