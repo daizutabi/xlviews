@@ -2,6 +2,8 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
+from xlviews.utils import is_excel_installed
+
 
 @pytest.mark.parametrize(
     ("name", "value"),
@@ -23,6 +25,7 @@ def test_constant(name: str, value: int):
     assert constant(*name.split(".")) == value
 
 
+@pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 @pytest.mark.parametrize("n", [1, 10, 100, 1000, 10000])
 def test_column_name(sheet_module: Sheet, n):
     from xlviews.utils import int_to_column_name
@@ -80,6 +83,7 @@ def test_iter_columns(columns, lst):
     assert list(iter_columns(df, columns)) == lst
 
 
+@pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 def test_validate_list(sheet: Sheet):
     from xlviews.utils import add_validate_list
 

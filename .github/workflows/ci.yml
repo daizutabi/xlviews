@@ -36,7 +36,7 @@ jobs:
       - name: Install the project
         run: uv sync
       - name: Run test
-        run: uv run pytest tests\distframe -x --junitxml=junit.xml
+        run: uv run pytest --junitxml=junit.xml
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v4

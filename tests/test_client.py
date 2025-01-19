@@ -1,6 +1,10 @@
 import pytest
 from win32com.client import constants
 
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
+
 
 @pytest.fixture(scope="module")
 def tlbs():

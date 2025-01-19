@@ -4,6 +4,9 @@ from xlwings import Range, Sheet
 
 from xlviews.formula import NONCONST_VALUE
 from xlviews.table import Table
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")

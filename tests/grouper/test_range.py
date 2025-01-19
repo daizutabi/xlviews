@@ -3,6 +3,9 @@ import pytest
 from xlviews.grouper import Grouper
 from xlviews.range import RangeCollection
 from xlviews.sheetframe import SheetFrame
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.mark.parametrize(

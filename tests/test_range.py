@@ -2,6 +2,9 @@ import pytest
 from xlwings import Sheet
 
 from xlviews.range import RangeCollection
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 def test_reference_str(sheet_module: Sheet):

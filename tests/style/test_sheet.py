@@ -5,7 +5,9 @@ from xlwings.constants import BordersIndex
 
 from xlviews.config import rcParams
 from xlviews.sheetframe import SheetFrame
-from xlviews.utils import rgb
+from xlviews.utils import is_excel_installed, rgb
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.mark.parametrize(("index", "value"), [("Vertical", 11), ("Horizontal", 12)])

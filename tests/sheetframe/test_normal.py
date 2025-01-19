@@ -5,6 +5,9 @@ from xlwings import Sheet
 
 from xlviews.sheetframe import SheetFrame
 from xlviews.table import Table
+from xlviews.utils import is_excel_installed
+
+pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
