@@ -81,27 +81,8 @@ def test_index_row(sf: SheetFrame, column):
     assert sf.sheet.range(r, sf.column).value == column
 
 
-@pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ({"s": "a"}, (3, 10)),
-        ({"s": "b", "t": "c"}, (11, 14)),
-        ({"r": 5}, (11, 12)),
-        ({"r": 7, "i": "y"}, (16, 16)),
-    ],
-)
-def test_index_dict(sf: SheetFrame, column, index):
-    assert sf.index_dict(column) == index
-    assert sf.index(column) == index
-
-
-def test_index_dict_error(sf: SheetFrame):
-    with pytest.raises(NotImplementedError):
-        sf.index_dict({"t": "c"})
-
-
 def test_range_all(sf: SheetFrame):
-    assert sf.range_all().get_address() == "$B$2:$R$11"
+    assert sf._range_all().get_address() == "$B$2:$R$11"
     assert sf.range().get_address() == "$B$2:$R$11"
 
 
@@ -114,7 +95,7 @@ def test_range_all(sf: SheetFrame):
     ],
 )
 def test_range_index(sf: SheetFrame, start: int | None, end, address):
-    assert sf.range_index(start, end).get_address() == address
+    assert sf._range_index(start, end).get_address() == address
     assert sf.range("index", start, end).get_address() == address
 
 
@@ -129,7 +110,7 @@ def test_range_index(sf: SheetFrame, start: int | None, end, address):
     ],
 )
 def test_range_column(sf: SheetFrame, column, start, end, address):
-    assert sf.range_column(column, start, end).get_address() == address
+    assert sf._range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
 
 
@@ -145,7 +126,7 @@ def test_range_start_list(sf: SheetFrame, column, start, end, address):
 
 def test_range_column_error(sf: SheetFrame):
     with pytest.raises(NotImplementedError):
-        sf.range_column("s")
+        sf._range_column("s")
 
     with pytest.raises(NotImplementedError):
         sf.range("t")

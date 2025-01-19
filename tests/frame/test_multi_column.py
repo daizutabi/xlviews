@@ -133,20 +133,6 @@ def test_index_row(sf: SheetFrame, column):
     assert sf.sheet.range(r, sf.column).value == column
 
 
-@pytest.mark.parametrize(
-    ("column", "relative", "index"),
-    [
-        ({"a": "a1"}, True, (2, 3)),
-        ({"a": "a2"}, True, (4, 5)),
-        ({"a": "a1"}, False, (5, 6)),
-        ({"a": "a2"}, False, (7, 8)),
-    ],
-)
-def test_index_dict(sf: SheetFrame, column, relative, index):
-    assert sf.index_dict(column, relative=relative) == index
-    assert sf.index(column, relative=relative) == index
-
-
 def test_data(sf: SheetFrame, df: DataFrame):
     df_ = sf.data
     np.testing.assert_array_equal(df_.index, df.index)
@@ -159,7 +145,7 @@ def test_data(sf: SheetFrame, df: DataFrame):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf.range_all().get_address() == "$D$20:$H$26"
+    assert sf._range_all().get_address() == "$D$20:$H$26"
     assert sf.range().get_address() == "$D$20:$H$26"
 
 
@@ -172,14 +158,14 @@ def test_range_all(sf: SheetFrame):
     ],
 )
 def test_range_index(sf: SheetFrame, start, end, address):
-    assert sf.range_index(start, end).get_address() == address
+    assert sf._range_index(start, end).get_address() == address
     assert sf.range("index", start, end).get_address() == address
 
 
 @pytest.mark.parametrize("start", [None, -1, False])
 def test_range_index_error(sf: SheetFrame, start):
     with pytest.raises(ValueError, match="index start must be a specific row"):
-        sf.range_index(start)
+        sf._range_index(start)
 
     with pytest.raises(ValueError, match="index start must be a specific row"):
         sf.range("index", start)
@@ -197,7 +183,7 @@ def test_range_index_error(sf: SheetFrame, start):
     ],
 )
 def test_range_column(sf: SheetFrame, column, start, end, address):
-    assert sf.range_column(column, start, end).get_address() == address
+    assert sf._range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
 
 

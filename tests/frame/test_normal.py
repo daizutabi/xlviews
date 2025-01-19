@@ -119,7 +119,7 @@ def test_visible_data(sf: SheetFrame, table: Table, name, value):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf.range_all().get_address() == "$C$2:$E$6"
+    assert sf._range_all().get_address() == "$C$2:$E$6"
     assert sf.range().get_address() == "$C$2:$E$6"
 
 
@@ -135,7 +135,7 @@ def test_range_all(sf: SheetFrame):
     ],
 )
 def test_range_index(sf: SheetFrame, start, end, address):
-    assert sf.range_index(start, end).get_address() == address
+    assert sf._range_index(start, end).get_address() == address
     assert sf.range("index", start, end).get_address() == address
 
 
@@ -156,7 +156,7 @@ def test_range_index(sf: SheetFrame, start, end, address):
     ],
 )
 def test_range_column(sf: SheetFrame, column, start, end, address):
-    assert sf.range_column(column, start, end).get_address() == address
+    assert sf._range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
 
 

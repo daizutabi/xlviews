@@ -161,7 +161,7 @@ def test_data(sf: SheetFrame, df: DataFrame):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf.range_all().get_address() == "$C$5:$I$14"
+    assert sf._range_all().get_address() == "$C$5:$I$14"
     assert sf.range().get_address() == "$C$5:$I$14"
 
 
@@ -177,7 +177,7 @@ def test_range_all(sf: SheetFrame):
     ],
 )
 def test_range_index(sf: SheetFrame, start, end, address):
-    assert sf.range_index(start, end).get_address() == address
+    assert sf._range_index(start, end).get_address() == address
     assert sf.range("index", start, end).get_address() == address
 
 
@@ -196,7 +196,7 @@ def test_range_index(sf: SheetFrame, start, end, address):
     ],
 )
 def test_range_column(sf: SheetFrame, column, start, end, address):
-    assert sf.range_column(column, start, end).get_address() == address
+    assert sf._range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
 
 
