@@ -596,32 +596,51 @@ class SheetFrame:
                 if cell.value == cell.offset(-1).value:
                     cell.value = None
 
+    @overload
     def get_address(
         self,
         column: str | tuple,
         *,
         formula: bool = False,
         **kwargs,
-    ) -> list[str]:
+    ) -> Series: ...
+
+    @overload
+    def get_address(
+        self,
+        column: list[str | tuple],
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> DataFrame: ...
+
+    def get_address(
+        self,
+        column: str | tuple | list[str | tuple],
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> Series | DataFrame:
         """Return the address list of the column.
 
         Args:
-            column (str or tuple): The name of the column.
+            column (str or tuple or list): The name of the column.
             formula (bool, optional): Whether to add '=' to the beginning
                 of the address.
             kwargs Keyword arguments for the `Range.get_address` method.
 
         Returns:
-            list[str]: The address list of the column.
+            Series or DataFrame: The address list of the column.
         """
-        addresses = []
-        for cell in self.range(column):
-            addresses.append(cell.get_address(**kwargs))
+        if isinstance(column, list):
+            return DataFrame({c: self.get_address(c, **kwargs) for c in column})
+
+        addresses = [cell.get_address(**kwargs) for cell in self.range(column)]
 
         if formula:
             addresses = ["=" + address for address in addresses]
 
-        return addresses
+        return Series(addresses, name=column)
 
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)

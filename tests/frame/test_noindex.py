@@ -175,11 +175,20 @@ def test_drop_duplicates(sheet: Sheet):
 
 
 def test_address(sf: SheetFrame):
-    assert sf.get_address("a") == ["$D$3", "$D$4", "$D$5", "$D$6"]
+    s = sf.get_address("a")
+    assert s.to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
+    assert s.name == "a"
 
 
 def test_address_formula(sf: SheetFrame):
-    assert sf.get_address("a", formula=True) == ["=$D$3", "=$D$4", "=$D$5", "=$D$6"]
+    s = sf.get_address("a", formula=True)
+    assert s.to_list() == ["=$D$3", "=$D$4", "=$D$5", "=$D$6"]
+
+
+def test_address_list(sf: SheetFrame):
+    df = sf.get_address(["a", "b"])
+    assert df["a"].to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
+    assert df["b"].to_list() == ["$E$3", "$E$4", "$E$5", "$E$6"]
 
 
 def test_add_column(sheet: Sheet):
