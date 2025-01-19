@@ -3,10 +3,12 @@ from __future__ import annotations
 import re
 import warnings
 from collections import OrderedDict
+from functools import cache
 from typing import TYPE_CHECKING
 
 import matplotlib as mpl
 import xlwings as xw
+from pywintypes import com_error
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
@@ -18,6 +20,17 @@ if TYPE_CHECKING:
     from pandas import DataFrame
 
     from xlviews.sheetframe import SheetFrame
+
+
+@cache
+def is_excel_installed() -> bool:
+    try:
+        with xw.App(visible=False):
+            pass
+    except com_error:
+        return False
+
+    return True
 
 
 def constant(type_: str, name: str | None = None) -> int:
@@ -219,8 +232,7 @@ def format_label(data, fmt, sel=None, default=None):
     for key in keys:
         if key not in dict_:
             warnings.warn(
-                f"タイトル文字列に含まれる'{key}'が、"
-                "dfに含まれないか、単一ではない。",
+                f"タイトル文字列に含まれる'{key}'が、dfに含まれないか、単一ではない。",
             )
             dict_[key] = "XXX"
     return fmt.format(**dict_)

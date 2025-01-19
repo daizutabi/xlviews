@@ -5,11 +5,8 @@ from xlwings import App, Book
 
 @pytest.fixture(scope="session")
 def app():
-    app = xlwings.apps.add()
-
-    yield app
-
-    app.quit()
+    with xlwings.App(visible=False) as app:
+        yield app
 
 
 @pytest.fixture(scope="session")
