@@ -7,35 +7,6 @@ from xlviews.utils import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-def test_reference_str(sheet_module: Sheet):
-    from xlviews.range import reference
-
-    assert reference("x", sheet_module) == "x"
-
-
-def test_reference_range(sheet_module: Sheet):
-    from xlviews.range import reference
-
-    cell = sheet_module.range(4, 5)
-
-    ref = reference(cell)
-    assert ref == f"={sheet_module.name}!$E$4"
-
-
-def test_reference_tuple(sheet_module: Sheet):
-    from xlviews.range import reference
-
-    ref = reference((4, 5), sheet_module)
-    assert ref == f"={sheet_module.name}!$E$4"
-
-
-def test_reference_error(sheet_module: Sheet):
-    from xlviews.range import reference
-
-    with pytest.raises(ValueError, match="sheet is required when `cell` is a tuple"):
-        reference((4, 5))
-
-
 def test_range_value_int(sheet: Sheet):
     sheet.range(1, 1).value = 10
     x = sheet.range(1, 1).value

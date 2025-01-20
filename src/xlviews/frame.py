@@ -285,17 +285,9 @@ class SheetFrame:
         relative: bool = False,
     ) -> list[int | tuple[int, int]]: ...
 
-    @overload
     def index(
         self,
-        column: dict,
-        *,
-        relative: bool = False,
-    ) -> tuple[int, int]: ...
-
-    def index(
-        self,
-        column: str | tuple | list[str | tuple] | dict,
+        column: str | tuple | list[str | tuple],
         *,
         relative: bool = False,
     ) -> int | tuple[int, int] | list[int | tuple[int, int]]:
@@ -305,14 +297,11 @@ class SheetFrame:
         return the row index. If relative is True, return the relative position
         from `self.cell`.
         """
-        if isinstance(column, list):
+        if not isinstance(column, str | tuple):
             return [self.index(c, relative=relative) for c in column]
 
-        if isinstance(column, dict):
-            return self.index_dict(column, relative=relative)
-
         if self.columns_names and isinstance(column, str):
-            return self.index_row(column, relative=relative)
+            return self._index_row(column, relative=relative)
 
         columns = self.columns
 
@@ -320,9 +309,9 @@ class SheetFrame:
             offset = 1 if relative else self.column
             return columns.index(column) + offset
 
-        return self.index_wide(column, relative=relative)
+        return self._index_wide(column, relative=relative)
 
-    def index_row(self, column: str, *, relative: bool = False) -> int:
+    def _index_row(self, column: str, *, relative: bool = False) -> int:
         if not self.columns_names:
             raise NotImplementedError
 
@@ -330,17 +319,22 @@ class SheetFrame:
         return row + 1 if relative else row + self.row
 
     @overload
-    def index_wide(self, column: str, *, relative: bool = False) -> tuple[int, int]: ...
+    def _index_wide(
+        self,
+        column: str,
+        *,
+        relative: bool = False,
+    ) -> tuple[int, int]: ...
 
     @overload
-    def index_wide(
+    def _index_wide(
         self,
         column: tuple[str, str | float],
         *,
         relative: bool = False,
     ) -> int: ...
 
-    def index_wide(
+    def _index_wide(
         self,
         column: str | tuple[str, str | float],
         *,
@@ -364,22 +358,7 @@ class SheetFrame:
         values = value_columns[start : end + 1]
         return values.index(column[1]) + start + offset
 
-    def index_dict(self, column: dict, *, relative: bool = False) -> tuple[int, int]:
-        if not self.columns_names:
-            raise NotImplementedError
-
-        by = list(column.keys())
-        key = tuple(column.values())
-
-        index = self.groupby(by)[key]
-
-        if len(index) != 1 or len(index[0]) != 2:
-            raise NotImplementedError
-
-        offset = -self.column + 1 if relative else 0
-        return index[0][0] + offset, index[0][1] + offset
-
-    def update_cell(self) -> None:  # for bug fix in cell.row, cell.column, cell.expand
+    def update_cell(self) -> None:  # important
         self.cell = self.cell.offset(0, 0)
 
     def expand(self, mode: str = "table") -> Range:
@@ -452,7 +431,7 @@ class SheetFrame:
     @overload
     def range(
         self,
-        column: str | tuple | dict | None = None,
+        column: str | tuple | None = None,
         start: int | Literal[False] | None = None,
         end: int | None = None,
     ) -> Range: ...
@@ -460,14 +439,14 @@ class SheetFrame:
     @overload
     def range(
         self,
-        column: str | tuple | dict,
+        column: str | tuple,
         start: list[tuple[int, int]],
         end: int | None = None,
     ) -> RangeCollection: ...
 
     def range(
         self,
-        column: str | tuple | dict | None = None,
+        column: str | tuple | None = None,
         start: int | Literal[False] | list[tuple[int, int]] | None = None,
         end: int | None = None,
     ) -> Range | RangeCollection:
@@ -477,9 +456,8 @@ class SheetFrame:
         return the range of the column.
 
         Args:
-            column (str or tuple or dict, optional): The name of the column.
+            column (str or tuple, optional): The name of the column.
                 If omitted, return the range of the entire SheetFrame.
-                If a dict is specified, filter by the hierarchical column.
             start (int, optional):
                 - None: entire row data without column row
                 - 0: first row
@@ -491,24 +469,24 @@ class SheetFrame:
                 - other: specified row
         """
         if column is None:
-            return self.range_all()
+            return self._range_all()
 
         if isinstance(start, list):
             return RangeCollection(self.range(column, s, e) for s, e in start)
 
         if column == "index":
-            return self.range_index(start, end)
+            return self._range_index(start, end)
 
-        return self.range_column(column, start, end)
+        return self._range_column(column, start, end)
 
-    def range_all(self) -> Range:
+    def _range_all(self) -> Range:
         start = self.cell
         row_offset = self.columns_level + len(self) - 1
         column_offset = self.index_level + len(self.value_columns) - 1
         end = start.offset(row_offset, column_offset)
         return self.sheet.range(start, end)
 
-    def range_index(
+    def _range_index(
         self,
         start: int | Literal[False] | None = None,
         end: int | None = None,
@@ -545,9 +523,9 @@ class SheetFrame:
 
         return self.sheet.range(cell_start, cell_end)
 
-    def range_column(  # noqa: C901
+    def _range_column(  # noqa: C901
         self,
-        column: str | tuple | dict,
+        column: str | tuple,
         start: int | Literal[False] | None = None,
         end: int | None = None,
     ) -> Range:
@@ -555,8 +533,8 @@ class SheetFrame:
             raise NotImplementedError
 
         if start is False:  # entire row with column row
-            header = self.range_column(column, -1)
-            values = self.range_column(column)
+            header = self._range_column(column, -1)
+            values = self._range_column(column)
             return self.sheet.range(header[0], values[-1])
 
         index = self.index(column)
@@ -596,7 +574,7 @@ class SheetFrame:
         cell_end = self.sheet.range(end, column_end)
         return self.sheet.range(cell_start, cell_end)
 
-    def first_range(self, column: str | tuple | dict) -> Range:
+    def first_range(self, column: str | tuple) -> Range:
         return self.range(column, 0)
 
     def __repr__(self) -> str:
@@ -618,32 +596,51 @@ class SheetFrame:
                 if cell.value == cell.offset(-1).value:
                     cell.value = None
 
+    @overload
     def get_address(
         self,
-        column: str | tuple | dict,
+        column: str | tuple,
         *,
         formula: bool = False,
         **kwargs,
-    ) -> list[str]:
+    ) -> Series: ...
+
+    @overload
+    def get_address(
+        self,
+        column: list[str | tuple],
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> DataFrame: ...
+
+    def get_address(
+        self,
+        column: str | tuple | list[str | tuple],
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> Series | DataFrame:
         """Return the address list of the column.
 
         Args:
-            column (str or tuple or dict): The name of the column.
+            column (str or tuple or list): The name of the column.
             formula (bool, optional): Whether to add '=' to the beginning
                 of the address.
             kwargs Keyword arguments for the `Range.get_address` method.
 
         Returns:
-            list[str]: The address list of the column.
+            Series or DataFrame: The address list of the column.
         """
-        addresses = []
-        for cell in self.range(column):
-            addresses.append(cell.get_address(**kwargs))
+        if isinstance(column, list):
+            return DataFrame({c: self.get_address(c, **kwargs) for c in column})
+
+        addresses = [cell.get_address(**kwargs) for cell in self.range(column)]
 
         if formula:
             addresses = ["=" + address for address in addresses]
 
-        return addresses
+        return Series(addresses, name=column)
 
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)
@@ -995,13 +992,13 @@ class SheetFrame:
     def copy(self, *args, **kwargs) -> SheetFrame:
         return modify.copy(self, *args, **kwargs)
 
-    def distframe(self, *args, **kwargs) -> DistFrame:
+    def dist_frame(self, *args, **kwargs) -> DistFrame:
         from xlviews.dist import DistFrame
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist
 
-    def statsframe(self, *args, **kwargs) -> StatsFrame:
+    def stats_frame(self, *args, **kwargs) -> StatsFrame:
         from xlviews.stats import StatsFrame
 
         self.stats = StatsFrame(self, *args, **kwargs)

@@ -1,6 +1,6 @@
 .coverage
 .venv/
+/dist/
 __pycache__/
-dist/
 lcov.info
 uv.lock

@@ -35,6 +35,9 @@ if __name__ == "__main__":
     y = sf.range("y")
     label = sf.first_range("a")
     ax.add_series(x, y, label=label)
+    ax.add_series(x.get_address(include_sheetname=True), y)
+    ax.chart.api[1].ChartTitle.Text = sheet_module["A1"].api
+    ax.chart.api[1].ChartTitle.Text = "=a1"
 
     ax.xlabel = sf.range("x", -1)
     ax.ylabel = sf.range("y", -1)
