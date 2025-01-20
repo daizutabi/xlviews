@@ -224,7 +224,7 @@ def test_getitem_list(sf: SheetFrame):
     ],
 )
 def test_groupby(sf: SheetFrame, by, one, two):
-    g = sf.groupby(by)
+    g = sf._group_by(by)
     assert len(g) == 2
     assert g[(1,)] == one
     assert g[(2,)] == two
@@ -239,7 +239,7 @@ def test_groupby(sf: SheetFrame, by, one, two):
     ],
 )
 def test_groupby_list(sf: SheetFrame, by, v11, v12, v21, v22):
-    g = sf.groupby(by)
+    g = sf._group_by(by)
     assert len(g) == 4
     assert g[(1, 1)] == v11
     assert g[(1, 2)] == v12

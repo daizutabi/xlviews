@@ -199,7 +199,7 @@ class StatsFrame(SheetFrame):
 
         value_columns = ["median", "min", "mean", "max", "std", "sum"]
 
-        grouped = self.groupby(func_column_name)
+        grouped = self._group_by(func_column_name)
         columns = [func_index, *range(start, end)]
         get_fmt = self.parent.get_number_format
         formats = [get_fmt(column) for column in self.value_columns]

@@ -58,7 +58,7 @@ class DistFrame(SheetFrame):
         if by:
             self.link_to_index(by)
 
-        grouped = self.groupby(by)
+        grouped = self._group_by(by)
 
         for column in columns:
             dist = self.dist_func[column]

@@ -642,6 +642,8 @@ class SheetFrame:
 
         return Series(addresses, name=column)
 
+    # def aggregate(self,func:str|Range)
+
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)
         cell = self.sheet.range(self.row, column_int)
@@ -876,7 +878,7 @@ class SheetFrame:
 
             yield self.sheet.range((start, index + offset), (end, index + offset))
 
-    def groupby(
+    def _group_by(
         self,
         by: str | list[str] | None,
     ) -> dict[tuple, list[tuple[int, int]]]:
@@ -909,7 +911,7 @@ class SheetFrame:
 
         return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
 
-    def grouper(self, by: str | list[str] | None) -> Grouper:
+    def group_by(self, by: str | list[str] | None) -> Grouper:
         from xlviews.grouper import Grouper
 
         return Grouper(self, by)

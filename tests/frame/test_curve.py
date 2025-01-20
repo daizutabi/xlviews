@@ -209,7 +209,7 @@ def test_ranges_kwargs(sf: SheetFrame):
     ],
 )
 def test_groupby(sf: SheetFrame, by, result):
-    g = sf.groupby(by)
+    g = sf._group_by(by)
     assert len(g) == len(result)
     for k, v in g.items():
         assert result[k] == v

@@ -229,14 +229,14 @@ def test_select(sf: SheetFrame, a, b, sel):
     ],
 )
 def test_groupby(sf: SheetFrame, by, one, two):
-    g = sf.groupby(by)
+    g = sf._group_by(by)
     assert len(g) == 2
     assert g[(f"{by}1",)] == one
     assert g[(f"{by}2",)] == two
 
 
 def test_groupby_list(sf: SheetFrame):
-    g = sf.groupby(["a", "b"])
+    g = sf._group_by(["a", "b"])
     assert len(g) == 4
     assert g[("a1", "b1")] == [(5, 5)]
     assert g[("a1", "b2")] == [(6, 6)]
@@ -245,6 +245,6 @@ def test_groupby_list(sf: SheetFrame):
 
 
 def test_groupby_none(sf: SheetFrame):
-    g = sf.groupby(None)
+    g = sf._group_by(None)
     assert len(g) == 1
     assert g[()] == [(5, 8)]

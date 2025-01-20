@@ -52,7 +52,7 @@ class Grouper:
     def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
         self.sf = sf
         self.by = list(iter_columns(sf, by)) if by else []
-        self.grouped = sf.groupby(self.by)
+        self.grouped = sf._group_by(self.by)  # noqa: SLF001
 
     def __len__(self) -> int:
         return len(self.grouped)

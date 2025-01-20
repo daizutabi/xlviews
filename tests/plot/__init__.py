@@ -42,9 +42,9 @@ if __name__ == "__main__":
     ax.xlabel = sf.range("x", -1)
     ax.ylabel = sf.range("y", -1)
 
-    gr = sf.grouper(None)
+    gr = sf.group_by(None)
 
-    gr = sf.grouper(["a", "b", "c"])
+    gr = sf.group_by(["a", "b", "c"])
     key = ("c", "t")
     x = gr.range("x", key)
     y = gr.range("y", key)
