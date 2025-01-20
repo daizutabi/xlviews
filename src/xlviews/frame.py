@@ -16,11 +16,10 @@ from xlviews.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
-from xlviews.grouper import create_group_index
+from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
 from xlviews.table import Table
-from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -30,7 +29,6 @@ if TYPE_CHECKING:
     from xlwings import Range
 
     from xlviews.dist import DistFrame
-    from xlviews.grouper import Grouper
     from xlviews.stats import StatsFrame
 
 
@@ -878,43 +876,8 @@ class SheetFrame:
 
             yield self.sheet.range((start, index + offset), (end, index + offset))
 
-    def _group_by(
-        self,
-        by: str | list[str] | None,
-    ) -> dict[tuple, list[tuple[int, int]]]:
-        """Group by the specified column and return the group key and row number."""
-        if not by:
-            if self.columns_names is None:
-                start = self.row + self.columns_level
-                end = start + len(self) - 1
-                return {(): [(start, end)]}
-
-            start = self.column + 1
-            end = start + len(self.value_columns) - 1
-            return {(): [(start, end)]}
-
-        if self.columns_names is None:
-            if isinstance(by, list) or ":" in by:
-                by = list(iter_columns(self, by))
-            values = self[by]
-
-        else:
-            df = DataFrame(self.value_columns, columns=self.columns_names)
-            values = df[by]
-
-        index = create_group_index(values)
-
-        if self.columns_names is None:
-            offset = self.row + self.columns_level  # vertical
-        else:
-            offset = self.column + self.index_level  # horizontal
-
-        return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
-
-    def group_by(self, by: str | list[str] | None) -> Grouper:
-        from xlviews.grouper import Grouper
-
-        return Grouper(self, by)
+    def group_by(self, by: str | list[str] | None) -> GroupBy:
+        return GroupBy(self, by)
 
     def get_number_format(self, column: str | tuple) -> str:
         return self.range(column, 0).number_format
@@ -989,10 +952,6 @@ class SheetFrame:
 
     def delete(self, direction: str = "up", *, entire: bool = False) -> None:
         return modify.delete(self, direction, entire=entire)
-
-    @turn_off_screen_updating
-    def copy(self, *args, **kwargs) -> SheetFrame:
-        return modify.copy(self, *args, **kwargs)
 
     def dist_frame(self, *args, **kwargs) -> DistFrame:
         from xlviews.dist import DistFrame

@@ -11,7 +11,7 @@ from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
-from xlviews.grouper import Grouper
+from xlviews.group import GroupBy
 from xlviews.range import RangeCollection, multirange
 from xlviews.style import set_font
 from xlviews.utils import iter_columns
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-class StatsGrouper(Grouper):
+class StatsGroupBy(GroupBy):
     def ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
         if column in self.by:
             yield from super().first_ranges(column)
@@ -161,7 +161,7 @@ class StatsFrame(SheetFrame):
 
         move_down(parent, offset)
 
-        gr = StatsGrouper(parent, by)
+        gr = StatsGroupBy(parent, by)
         wrap = get_wrap(wrap, na=na, null=null)
         df = gr.get_frame(funcs, wrap, default, func_column_name)
 
@@ -199,7 +199,7 @@ class StatsFrame(SheetFrame):
 
         value_columns = ["median", "min", "mean", "max", "std", "sum"]
 
-        grouped = self._group_by(func_column_name)
+        grouped = self.group_by(func_column_name).grouped
         columns = [func_index, *range(start, end)]
         get_fmt = self.parent.get_number_format
         formats = [get_fmt(column) for column in self.value_columns]

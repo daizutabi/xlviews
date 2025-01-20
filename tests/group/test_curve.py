@@ -6,7 +6,7 @@ from pandas import DataFrame, MultiIndex
 from xlwings import Sheet
 
 from xlviews.frame import SheetFrame
-from xlviews.grouper import Grouper
+from xlviews.group import GroupBy
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -37,21 +37,21 @@ def sf(sheet_module: Sheet):
     ],
 )
 def test_len(sf: SheetFrame, by, n: int):
-    gr = Grouper(sf, by)
+    gr = GroupBy(sf, by)
     assert len(gr) == n
 
 
 @pytest.fixture(scope="module")
 def gr(sf: SheetFrame):
-    return Grouper(sf, ["s", "t"])
+    return GroupBy(sf, ["s", "t"])
 
 
-def test_keys(gr: Grouper):
+def test_keys(gr: GroupBy):
     keys = [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
     assert list(gr.keys()) == keys
 
 
-def test_values(gr: Grouper):
+def test_values(gr: GroupBy):
     values = [[(3, 6)], [(7, 10)], [(11, 14)], [(15, 18)]]
     assert list(gr.values()) == values
 
@@ -65,13 +65,13 @@ def test_values(gr: Grouper):
         (("b", "d"), [14, 15, 16, 17]),
     ],
 )
-def test_ranges(gr: Grouper, column: tuple, value):
+def test_ranges(gr: GroupBy, column: tuple, value):
     for rng, i in zip(gr.ranges(column), value, strict=True):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 
 
-def test_ranges_none(gr: Grouper):
+def test_ranges_none(gr: GroupBy):
     values = [[2, 3, 4, 5], [6, 7, 8, 9], [10, 11, 12, 13], [14, 15, 16, 17]]
     for it, value in zip(gr.ranges(), values, strict=True):
         for rng, i in zip(it, value, strict=True):
@@ -79,7 +79,7 @@ def test_ranges_none(gr: Grouper):
             assert rng.get_address() == f"${c}$6:${c}$11"
 
 
-def test_ranges_kwargs(gr: Grouper):
+def test_ranges_kwargs(gr: GroupBy):
     values = [[2, 4], [6, 8], [10, 12], [14, 16]]
     for it, value in zip(gr.ranges(i="x"), values, strict=True):
         for rng, i in zip(it, value, strict=True):

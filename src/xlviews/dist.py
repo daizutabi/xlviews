@@ -58,7 +58,7 @@ class DistFrame(SheetFrame):
         if by:
             self.link_to_index(by)
 
-        grouped = self._group_by(by)
+        grouped = self.group_by(by).grouped
 
         for column in columns:
             dist = self.dist_func[column]
@@ -265,7 +265,8 @@ def sigma_value(cell: Range, length: int, dist: str) -> str:
     if dist == "weibull":
         return f"=IF({small}>0,LN(-LN(1-{small}/({end}+1))),NA())"
 
-    raise ValueError("不明な分布", dist)
+    msg = f"unknown distribution: {dist}"
+    raise ValueError(msg)
 
 
 def set_formula(cell: Range, length: int, formula: str) -> None:

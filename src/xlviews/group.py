@@ -19,7 +19,7 @@ H = TypeVar("H")
 T = TypeVar("T")
 
 
-def _to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
+def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
     result = {}
 
     for key, value in zip(keys, values, strict=True):
@@ -41,10 +41,44 @@ def create_group_index(
     keys = [tuple(v) for v in dup.to_numpy()]
     values = [(int(s), int(e)) for s, e in zip(start, end, strict=True)]
 
-    return _to_dict(keys, values)
+    return to_dict(keys, values)
 
 
-class Grouper:
+def group_by(
+    sf: SheetFrame,
+    by: str | list[str] | None,
+) -> dict[tuple, list[tuple[int, int]]]:
+    """Group by the specified column and return the group key and row number."""
+    if not by:
+        if sf.columns_names is None:
+            start = sf.row + sf.columns_level
+            end = start + len(sf) - 1
+            return {(): [(start, end)]}
+
+        start = sf.column + 1
+        end = start + len(sf.value_columns) - 1
+        return {(): [(start, end)]}
+
+    if sf.columns_names is None:
+        if isinstance(by, list) or ":" in by:
+            by = list(iter_columns(sf, by))
+        values = sf[by]
+
+    else:
+        df = DataFrame(sf.value_columns, columns=sf.columns_names)
+        values = df[by]
+
+    index = create_group_index(values)
+
+    if sf.columns_names is None:
+        offset = sf.row + sf.columns_level  # vertical
+    else:
+        offset = sf.column + sf.index_level  # horizontal
+
+    return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
+
+
+class GroupBy:
     sf: SheetFrame
     by: list[str]
     grouped: dict[tuple, list[tuple[int, int]]]
@@ -52,7 +86,7 @@ class Grouper:
     def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
         self.sf = sf
         self.by = list(iter_columns(sf, by)) if by else []
-        self.grouped = sf._group_by(self.by)  # noqa: SLF001
+        self.grouped = group_by(sf, self.by)
 
     def __len__(self) -> int:
         return len(self.grouped)
