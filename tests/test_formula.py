@@ -91,6 +91,22 @@ def test_aggregate_value(ranges: list[Range], apply):
     assert x == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
 
 
+@pytest.mark.parametrize("apply", [list, RangeCollection])
+def test_aggregate_none(ranges: list[Range], apply):
+    from xlviews.formula import aggregate
+
+    x = aggregate(None, apply(ranges))
+    assert x == "$B$100:$B$110,$C$100:$C$110"
+
+
+@pytest.mark.parametrize("apply", [list, RangeCollection])
+def test_aggregate_formula(ranges: list[Range], apply):
+    from xlviews.formula import aggregate
+
+    x = aggregate("max", apply(ranges), formula=True)
+    assert x == "=AGGREGATE(4,7,$B$100:$B$110,$C$100:$C$110)"
+
+
 FUNC_VALUES = [
     ("count", 20),
     ("sum", 210),

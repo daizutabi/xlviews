@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 import re
+from functools import partial
 from itertools import chain, takewhile
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, TypeAlias, overload
 
 import numpy as np
 import xlwings as xw
 from pandas import DataFrame, MultiIndex, Series
-from xlwings import Sheet
+from xlwings import Range, Sheet
 
 from xlviews import modify
 from xlviews.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
+from xlviews.formula import aggregate
 from xlviews.grid import FacetGrid
 from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
@@ -26,10 +28,11 @@ if TYPE_CHECKING:
     from typing import Any, Literal
 
     from numpy.typing import ArrayLike, NDArray
-    from xlwings import Range
 
     from xlviews.dist import DistFrame
     from xlviews.stats import StatsFrame
+
+Func: TypeAlias = str | Range | None
 
 
 class SheetFrame:
@@ -875,6 +878,41 @@ class SheetFrame:
                 continue
 
             yield self.sheet.range((start, index + offset), (end, index + offset))
+
+    @overload
+    def agg(self, func: Func | dict[str | tuple, Func], **kwargs) -> Series: ...
+
+    @overload
+    def agg(self, func: Sequence[Func], **kwargs) -> DataFrame: ...
+
+    def agg(
+        self,
+        func: Func | dict[str | tuple, Func] | Sequence[Func],
+        **kwargs,
+    ) -> str | Series | DataFrame:
+        agg = partial(self.agg_column, **kwargs)
+
+        if func is None or isinstance(func, str | Range):
+            return Series({c: agg(func, c) for c in self.value_columns})
+
+        if isinstance(func, dict):
+            return Series({c: agg(f, c) for c, f in func.items()})
+
+        return DataFrame({f: self.agg(f) for f in func})
+
+    def agg_column(
+        self,
+        func: str | Range | None,
+        column: str | tuple,
+        **kwargs,
+    ) -> str:
+        if func == "first":
+            rng = self.first_range(column)
+            func = None
+        else:
+            rng = self.range(column)
+
+        return aggregate(func, rng, **kwargs)
 
     def group_by(self, by: str | list[str] | None) -> GroupBy:
         return GroupBy(self, by)

@@ -51,10 +51,10 @@ AGG_FUNC_NAMES = ",".join(f'"{name}"' for name in AGG_FUNCS_SORTED)
 AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 
-def aggregate(
-    func: str | Range,
+def _aggregate(
+    func: str | Range | None,
     ranges: Iterable[str | Range | RangeCollection] | str | Range | RangeCollection,
-    option: int = 7,  # ignore hidden rows and error values
+    option: int,
     **kwargs,
 ) -> str:
     if func == "soa":
@@ -67,6 +67,9 @@ def aggregate(
 
     column = ",".join(iter_address(ranges, **kwargs))
 
+    if func is None:
+        return column
+
     if func in AGG_FUNCS:
         return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"
 
@@ -77,6 +80,21 @@ def aggregate(
         return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
 
     raise NotImplementedError
+
+
+def aggregate(
+    func: str | Range | None,
+    ranges: Iterable[str | Range | RangeCollection] | str | Range | RangeCollection,
+    option: int = 7,  # ignore hidden rows and error values
+    formula: bool = False,
+    **kwargs,
+) -> str:
+    value = _aggregate(func, ranges, option, **kwargs)
+
+    if formula:
+        return f"={value}"
+
+    return value
 
 
 # def match_index(ref, sf, columns, column=None, na=False, null=False, error=False):
