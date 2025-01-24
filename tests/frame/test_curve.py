@@ -6,6 +6,7 @@ from pandas import DataFrame, MultiIndex, Series
 from xlwings import Sheet
 
 from xlviews.frame import SheetFrame
+from xlviews.group import groupby
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -209,7 +210,7 @@ def test_ranges_kwargs(sf: SheetFrame):
     ],
 )
 def test_groupby(sf: SheetFrame, by, result):
-    g = sf.groupby(by)
+    g = groupby(sf, by)
     assert len(g) == len(result)
     for k, v in g.items():
         assert result[k] == v

@@ -11,9 +11,9 @@ from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
 from xlviews.frame import SheetFrame
-from xlviews.grouper import Grouper
-from xlviews.range import RangeCollection, multirange
-from xlviews.style import set_font
+from xlviews.group import GroupBy
+from xlviews.range import RangeCollection
+from xlviews.style import set_font, set_number_format
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
@@ -22,13 +22,13 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-class StatsGrouper(Grouper):
+class StatsGroupBy(GroupBy):
     def ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
         if column in self.by:
             yield from super().first_ranges(column)
 
         elif column in self.sf.index_columns:
-            yield from [None] * len(self.grouped)
+            yield from [None] * len(self.group)
 
         else:
             yield from super().ranges(column)
@@ -48,7 +48,7 @@ class StatsGrouper(Grouper):
                 yield get_formula(func, ranges, wrap)
 
     def get_index(self, funcs: list[str]) -> list[str]:
-        return funcs * len(self.grouped)
+        return funcs * len(self.group)
 
     def get_columns(
         self,
@@ -161,7 +161,7 @@ class StatsFrame(SheetFrame):
 
         move_down(parent, offset)
 
-        gr = StatsGrouper(parent, by)
+        gr = StatsGroupBy(parent, by)
         wrap = get_wrap(wrap, na=na, null=null)
         df = gr.get_frame(funcs, wrap, default, func_column_name)
 
@@ -193,32 +193,32 @@ class StatsFrame(SheetFrame):
             self.table.auto_filter(func_column_name, func)
 
     def set_value_style(self, func_column_name: str) -> None:
-        start = self.column + self.index_level
-        end = self.column + len(self.columns)
         func_index = self.index(func_column_name)
 
-        value_columns = ["median", "min", "mean", "max", "std", "sum"]
-
-        grouped = self.groupby(func_column_name)
+        start = self.column + self.index_level
+        end = self.column + len(self.columns)
         columns = [func_index, *range(start, end)]
+
         get_fmt = self.parent.get_number_format
         formats = [get_fmt(column) for column in self.value_columns]
         formats = [None, *formats]
 
-        for key, rows in grouped.items():
-            func = key[0]
-            for column, fmt in zip(columns, formats, strict=False):
-                cell = multirange(self.sheet, rows, column)
+        group = self.groupby(func_column_name).group
 
-                if func in value_columns:
-                    cell.number_format = fmt
+        for key, rows in group.items():
+            func = key[0]
+            for column, fmt in zip(columns, formats, strict=True):
+                rc = RangeCollection.from_index(self.sheet, rows, column)
+
+                if func in ["median", "min", "mean", "max", "std", "sum"]:
+                    set_number_format(rc, fmt)
 
                 color = rcParams.get(f"stats.{func}.color")
                 italic = rcParams.get(f"stats.{func}.italic")
-                set_font(cell, color=color, italic=italic)
+                set_font(rc, color=color, italic=italic)
 
                 if func == "soa" and column != func_index:
-                    cell.number_format = "0.0%"
+                    set_number_format(rc, "0.0%")
 
         set_font(self.range(func_column_name), italic=True)
 

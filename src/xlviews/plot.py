@@ -10,13 +10,13 @@ from xlviews.frame import SheetFrame
 if TYPE_CHECKING:
     from xlwings import Range, Sheet
 
-    from xlviews.grouper import Grouper
+    from xlviews.group import GroupBy
     from xlviews.range import RangeCollection
     from xlviews.series import Series
 
 
 def get_range(
-    data: SheetFrame | Grouper,
+    data: SheetFrame | GroupBy,
     column: str,
     key: str | tuple | None = None,
 ) -> Range | RangeCollection:
@@ -30,7 +30,7 @@ def get_range(
 
 
 def get_label(
-    data: SheetFrame | Grouper,
+    data: SheetFrame | GroupBy,
     column: str,
     key: str | tuple | None = None,
 ) -> Range:
@@ -44,7 +44,7 @@ def get_label(
 
 
 def plot(
-    data: SheetFrame | Grouper,
+    data: SheetFrame | GroupBy,
     x: str,
     y: str | None = None,
     *,

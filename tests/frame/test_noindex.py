@@ -4,6 +4,7 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.frame import SheetFrame
+from xlviews.group import groupby
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -261,34 +262,34 @@ def test_groupby(sheet: Sheet):
     df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [1, 2, 3, 4, 5, 6, 7]})
     sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
 
-    g = sf.groupby("a")
+    g = groupby(sf, "a")
     assert len(g) == 2
     assert g[(1,)] == [(3, 5), (8, 9)]
     assert g[(2,)] == [(6, 7)]
 
-    assert len(sf.groupby(["a", "b"])) == 7
+    assert len(groupby(sf, ["a", "b"])) == 7
 
-    g = sf.groupby("::b")
+    g = groupby(sf, "::b")
     assert len(g) == 2
     assert g[(1,)] == [(3, 5), (8, 9)]
     assert g[(2,)] == [(6, 7)]
 
-    assert len(sf.groupby(":b")) == 7
+    assert len(groupby(sf, ":b")) == 7
 
 
 def test_groupby_range(sheet: Sheet):
     df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [3, 3, 4, 4, 3, 3, 4]})
     sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
 
-    g = sf.groupby("a")
+    g = groupby(sf, "a")
     assert sf.range("a", g[(1,)]).get_address() == "$B$3:$B$5,$B$8:$B$9"
     assert sf.range("a", g[(2,)]).get_address() == "$B$6:$B$7"
 
-    g = sf.groupby("b")
+    g = groupby(sf, "b")
     assert sf.range("b", g[(3,)]).get_address() == "$C$3:$C$4,$C$7:$C$8"
     assert sf.range("b", g[(4,)]).get_address() == "$C$5:$C$6,$C$9"
 
-    g = sf.groupby(["a", "b"])
+    g = groupby(sf, ["a", "b"])
     assert sf.range("a", g[(1, 3)]).get_address() == "$B$3:$B$4,$B$8"
     assert sf.range("a", g[(1, 4)]).get_address() == "$B$5,$B$9"
     assert sf.range("a", g[(2, 3)]).get_address() == "$B$7"

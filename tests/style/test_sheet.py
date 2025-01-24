@@ -79,6 +79,26 @@ def test_font(sheet: Sheet):
     assert rng.api.Font.Color == 32768
 
 
+def test_font_collection(sheet: Sheet):
+    from xlviews.range import RangeCollection
+    from xlviews.style import set_font
+
+    rc = RangeCollection.from_index(sheet, [(2, 3), (6, 7)], 2)
+    set_font(rc, "Times", size=24, bold=True, italic=True, color="green")
+
+    for row in [2, 3, 6, 7]:
+        rng = sheet.range(row, 2)
+        assert rng.api.Font.Name == "Times"
+        assert rng.api.Font.Size == 24
+        assert rng.api.Font.Bold == 1
+        assert rng.api.Font.Italic == 1
+        assert rng.api.Font.Color == 32768
+
+    for row in [4, 5]:
+        rng = sheet.range(row, 2)
+        assert rng.api.Font.Size != 24
+
+
 def test_font_with_name(sheet: Sheet):
     from xlviews.config import rcParams
     from xlviews.style import set_font
@@ -113,6 +133,30 @@ def test_alignment_vertical(sheet: Sheet, align, value):
     rng.value = "a"
     set_alignment(rng, vertical_alignment=align)
     assert rng.api.VerticalAlignment == value
+
+
+def test_number_format(sheet: Sheet):
+    from xlviews.style import set_number_format
+
+    rng = sheet["C3"]
+    set_number_format(rng, "0.0%")
+    assert rng.api.NumberFormat == "0.0%"
+
+
+def test_number_format_collection(sheet: Sheet):
+    from xlviews.range import RangeCollection
+    from xlviews.style import set_number_format
+
+    rc = RangeCollection.from_index(sheet, [(2, 3), (6, 7)], 3)
+    set_number_format(rc, "0.0%")
+
+    for row in [2, 3, 6, 7]:
+        rng = sheet.range(row, 3)
+        assert rng.api.NumberFormat == "0.0%"
+
+    for row in [4, 5]:
+        rng = sheet.range(row, 3)
+        assert rng.api.NumberFormat != "0.0%"
 
 
 @pytest.mark.parametrize(

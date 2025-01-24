@@ -3,35 +3,36 @@
 from __future__ import annotations
 
 import re
+from functools import partial
 from itertools import chain, takewhile
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, TypeAlias, overload
 
 import numpy as np
 import xlwings as xw
 from pandas import DataFrame, MultiIndex, Series
-from xlwings import Sheet
+from xlwings import Range, Sheet
 
 from xlviews import modify
 from xlviews.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
+from xlviews.formula import aggregate
 from xlviews.grid import FacetGrid
-from xlviews.grouper import create_group_index
+from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
 from xlviews.table import Table
-from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from typing import Any, Literal
 
     from numpy.typing import ArrayLike, NDArray
-    from xlwings import Range
 
     from xlviews.dist import DistFrame
-    from xlviews.grouper import Grouper
     from xlviews.stats import StatsFrame
+
+Func: TypeAlias = str | Range | None
 
 
 class SheetFrame:
@@ -60,7 +61,7 @@ class SheetFrame:
         sheet: Sheet | None = None,
         parent: SheetFrame | None = None,
         head: SheetFrame | None = None,
-        data: DataFrame | None = None,
+        data: DataFrame | Series | None = None,
         index: bool = True,
         index_level: int = 1,
         columns_level: int = 1,
@@ -141,7 +142,7 @@ class SheetFrame:
 
     def set_data(
         self,
-        data: DataFrame,
+        data: DataFrame | Series,
         *,
         index: bool = True,
         number_format: str | None = None,
@@ -151,6 +152,9 @@ class SheetFrame:
         font_size: int | None = None,
         **kwargs,
     ) -> None:
+        if isinstance(data, Series):
+            data = data.to_frame()
+
         self.has_index = index
         self.index_level = len(data.index.names) if index else 0
         self.columns_level = len(data.columns.names)
@@ -642,6 +646,8 @@ class SheetFrame:
 
         return Series(addresses, name=column)
 
+    # def aggregate(self,func:str|Range)
+
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)
         cell = self.sheet.range(self.row, column_int)
@@ -876,43 +882,50 @@ class SheetFrame:
 
             yield self.sheet.range((start, index + offset), (end, index + offset))
 
-    def groupby(
+    @overload
+    def agg(self, func: Func | dict, **kwargs) -> Series: ...
+
+    @overload
+    def agg(self, func: Sequence[Func], **kwargs) -> DataFrame: ...
+
+    def agg(
         self,
-        by: str | list[str] | None,
-    ) -> dict[tuple, list[tuple[int, int]]]:
-        """Group by the specified column and return the group key and row number."""
-        if not by:
-            if self.columns_names is None:
-                start = self.row + self.columns_level
-                end = start + len(self) - 1
-                return {(): [(start, end)]}
+        func: Func | dict | Sequence[Func],
+        columns: str | tuple | Sequence[str | tuple] | None = None,
+        **kwargs,
+    ) -> str | Series | DataFrame:
+        agg = partial(self.agg_column, **kwargs)
 
-            start = self.column + 1
-            end = start + len(self.value_columns) - 1
-            return {(): [(start, end)]}
+        if columns is None:
+            columns = self.value_columns
+        elif isinstance(columns, str | tuple):
+            columns = [columns]
 
-        if self.columns_names is None:
-            if isinstance(by, list) or ":" in by:
-                by = list(iter_columns(self, by))
-            values = self[by]
+        if func is None or isinstance(func, str | Range):
+            return Series({c: agg(func, c) for c in columns})
 
+        if isinstance(func, dict):
+            return Series({c: agg(f, c) for c, f in func.items()})
+
+        values = [self.agg(f, columns=columns, **kwargs) for f in func]
+        return DataFrame(values, index=list(func))
+
+    def agg_column(
+        self,
+        func: str | Range | None,
+        column: str | tuple,
+        **kwargs,
+    ) -> str:
+        if func == "first":
+            rng = self.first_range(column)
+            func = None
         else:
-            df = DataFrame(self.value_columns, columns=self.columns_names)
-            values = df[by]
+            rng = self.range(column)
 
-        index = create_group_index(values)
+        return aggregate(func, rng, **kwargs)
 
-        if self.columns_names is None:
-            offset = self.row + self.columns_level  # vertical
-        else:
-            offset = self.column + self.index_level  # horizontal
-
-        return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
-
-    def grouper(self, by: str | list[str] | None) -> Grouper:
-        from xlviews.grouper import Grouper
-
-        return Grouper(self, by)
+    def groupby(self, by: str | list[str] | None) -> GroupBy:
+        return GroupBy(self, by)
 
     def get_number_format(self, column: str | tuple) -> str:
         return self.range(column, 0).number_format
@@ -987,10 +1000,6 @@ class SheetFrame:
 
     def delete(self, direction: str = "up", *, entire: bool = False) -> None:
         return modify.delete(self, direction, entire=entire)
-
-    @turn_off_screen_updating
-    def copy(self, *args, **kwargs) -> SheetFrame:
-        return modify.copy(self, *args, **kwargs)
 
     def dist_frame(self, *args, **kwargs) -> DistFrame:
         from xlviews.dist import DistFrame

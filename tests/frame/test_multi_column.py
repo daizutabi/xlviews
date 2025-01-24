@@ -4,6 +4,7 @@ from pandas import DataFrame, MultiIndex, Series
 from xlwings import Sheet
 
 from xlviews.frame import SheetFrame
+from xlviews.group import groupby
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -229,14 +230,14 @@ def test_select(sf: SheetFrame, a, b, sel):
     ],
 )
 def test_groupby(sf: SheetFrame, by, one, two):
-    g = sf.groupby(by)
+    g = groupby(sf, by)
     assert len(g) == 2
     assert g[(f"{by}1",)] == one
     assert g[(f"{by}2",)] == two
 
 
 def test_groupby_list(sf: SheetFrame):
-    g = sf.groupby(["a", "b"])
+    g = groupby(sf, ["a", "b"])
     assert len(g) == 4
     assert g[("a1", "b1")] == [(5, 5)]
     assert g[("a1", "b2")] == [(6, 6)]
@@ -245,6 +246,6 @@ def test_groupby_list(sf: SheetFrame):
 
 
 def test_groupby_none(sf: SheetFrame):
-    g = sf.groupby(None)
+    g = groupby(sf, None)
     assert len(g) == 1
     assert g[()] == [(5, 8)]

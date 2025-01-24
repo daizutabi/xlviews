@@ -4,6 +4,7 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.frame import SheetFrame
+from xlviews.group import groupby
 from xlviews.table import Table
 from xlviews.utils import is_excel_installed
 
@@ -201,12 +202,12 @@ def test_select(sf: SheetFrame, name, a, sel):
 
 
 def test_groupby(sf: SheetFrame):
-    g = sf.groupby("name")
+    g = groupby(sf, "name")
     assert len(g) == 2
     assert g[("x",)] == [(3, 4)]
     assert g[("y",)] == [(5, 6)]
 
-    assert len(sf.groupby(["name", "a"])) == 4
+    assert len(groupby(sf, ["name", "a"])) == 4
 
 
 @pytest.fixture(scope="module")

@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.frame import SheetFrame
+    from xlviews.range import RangeCollection
     from xlviews.table import Table
 
 
@@ -91,7 +92,7 @@ def set_border(
         set_border_inside(rng, inside_weight, inside_color)
 
 
-def set_fill(rng: Range, color: int | str | None = None) -> None:
+def set_fill(rng: Range | RangeCollection, color: int | str | None = None) -> None:
     if color is not None:
         rng.api.Interior.Color = rgb(color)
 
@@ -119,12 +120,12 @@ def set_font_api(
         font.Color = rgb(color)  # type: ignore
 
 
-def set_font(rng: Range, *args, **kwargs) -> None:
+def set_font(rng: Range | RangeCollection, *args, **kwargs) -> None:
     set_font_api(rng.api, *args, **kwargs)
 
 
 def set_alignment(
-    rng: Range,
+    rng: Range | RangeCollection,
     horizontal_alignment: str | None = None,
     vertical_alignment: str | None = None,
 ) -> None:
@@ -133,6 +134,14 @@ def set_alignment(
 
     if vertical_alignment:
         rng.api.VerticalAlignment = constant(vertical_alignment)
+
+
+def set_number_format(rng: Range | RangeCollection, fmt: str) -> None:
+    if isinstance(rng, Range):
+        rng.number_format = fmt
+    else:
+        for r in rng:
+            r.number_format = fmt
 
 
 def set_banding(

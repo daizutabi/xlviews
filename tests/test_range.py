@@ -22,60 +22,13 @@ def test_range_value_str(sheet: Sheet):
     assert x == "abc"
 
 
-def test_multirange_int_int(sheet_module: Sheet):
-    from xlviews.range import multirange
-
-    assert multirange(sheet_module, 3, 5).get_address() == "$E$3"
-
-
-def test_multirange_error(sheet_module: Sheet):
-    from xlviews.range import multirange
-
-    with pytest.raises(TypeError):
-        multirange(sheet_module, [3, 3], [5, 5])
-
-
-@pytest.mark.parametrize(
-    ("index", "n", "rng"),
-    [
-        ([3], 1, "$E$3"),
-        ([(3, 5)], 3, "$E$3:$E$5"),
-        ([(3, 5), 7], 4, "$E$3:$E$5,$E$7"),
-        ([(3, 5), (7, 10)], 7, "$E$3:$E$5,$E$7:$E$10"),
-    ],
-)
-def test_multirange_row(sheet_module: Sheet, index, n, rng):
-    from xlviews.range import multirange
-
-    x = multirange(sheet_module, index, 5)
-    assert len(x) == n
-    assert x.get_address() == rng
-
-
-@pytest.mark.parametrize(
-    ("index", "n", "rng"),
-    [
-        ([3], 1, "$C$10"),
-        ([(3, 5)], 3, "$C$10:$E$10"),
-        ([(3, 5), 7], 4, "$C$10:$E$10,$G$10"),
-        ([(3, 5), (7, 10)], 7, "$C$10:$E$10,$G$10:$J$10"),
-    ],
-)
-def test_multirange_column(sheet_module: Sheet, index, n, rng):
-    from xlviews.range import multirange
-
-    x = multirange(sheet_module, 10, index)
-    assert len(x) == n
-    assert x.get_address() == rng
-
-
 @pytest.mark.parametrize(
     ("ranges", "n"),
     [
-        (["A1:B3"], 6),
-        (["A2:A4", "A5:A8"], 7),
-        (["A2:A4,A5:A8"], 7),
-        (["A2:A4,A5:A8", "C4:C7,D10:D12"], 14),
+        (["A1:B3"], 1),
+        (["A2:A4", "A5:A8"], 2),
+        (["A2:A4,A5:A8"], 1),
+        (["A2:A4,A5:A8", "C4:C7,D10:D12"], 2),
     ],
 )
 def test_range_collection_from_str(sheet_module: Sheet, ranges, n):
@@ -83,14 +36,13 @@ def test_range_collection_from_str(sheet_module: Sheet, ranges, n):
     assert len(rc) == n
     a = rc.get_address(row_absolute=False, column_absolute=False)
     assert a == ",".join(ranges)
-    assert rc.first().sheet.name == sheet_module.name
 
 
 @pytest.mark.parametrize(
     ("row", "n", "address"),
     [
-        ([(4, 5), (10, 14)], 7, "E4:E5,E10:E14"),
-        ([(5, 5), (7, 8), (10, 11)], 5, "E5,E7:E8,E10:E11"),
+        ([(4, 5), (10, 14)], 2, "E4:E5,E10:E14"),
+        ([(5, 5), (7, 8), (10, 11)], 3, "E5,E7:E8,E10:E11"),
     ],
 )
 def test_range_collection_from_index_row(sheet_module: Sheet, row, n, address):
@@ -104,8 +56,8 @@ def test_range_collection_from_index_row(sheet_module: Sheet, row, n, address):
     ("column", "n", "address"),
     [
         ([(2, 2)], 1, "$B$5"),
-        ([(4, 5), (10, 14)], 7, "$D$5:$E$5,$J$5:$N$5"),
-        ([(5, 5), (7, 8), (10, 11)], 5, "$E$5,$G$5:$H$5,$J$5:$K$5"),
+        ([(4, 5), (10, 14)], 2, "$D$5:$E$5,$J$5:$N$5"),
+        ([(5, 5), (7, 8), (10, 11)], 3, "$E$5,$G$5:$H$5,$J$5:$K$5"),
     ],
 )
 def test_range_collection_from_index_column(sheet_module: Sheet, column, n, address):
@@ -117,15 +69,8 @@ def test_range_collection_from_index_column(sheet_module: Sheet, column, n, addr
 
 def test_range_collection_iter(sheet_module: Sheet):
     rc = RangeCollection.from_index(sheet_module, [(2, 5), (10, 12)], 1)
-    for rng, row in zip(rc, [2, 3, 4, 5, 10, 11, 12], strict=True):
+    for rng, row in zip(rc, [2, 10], strict=True):
         assert rng.row == row
-
-
-def test_range_collection_first(sheet_module: Sheet):
-    rc = RangeCollection.from_index(sheet_module, [(2, 5)], 1)
-    cell = rc.first()
-    assert cell.row == 2
-    assert cell.column == 1
 
 
 def test_range_collection_repr(sheet_module: Sheet):
