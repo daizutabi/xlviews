@@ -44,58 +44,6 @@ def iter_ranges(
     yield from (get_range(i) for i in index)
 
 
-def union_api(ranges: Iterable[Range]):  # noqa: ANN201
-    ranges = list(ranges)
-
-    api = ranges[0].api
-
-    if len(ranges) == 1:
-        return api
-
-    sheet = ranges[0].sheet
-    union = sheet.book.app.api.Union
-
-    for r in ranges[1:]:
-        api = union(api, r.api)
-
-    return api
-
-
-def union(ranges: Iterable[Range]) -> Range:
-    ranges = list(ranges)
-
-    if len(ranges) == 1:
-        return ranges[0]
-
-    sheet = ranges[0].sheet
-
-    return sheet.range(union_api(ranges).Address)
-
-
-def multirange(
-    sheet: Sheet,
-    row: int | Sequence[int | tuple[int, int]],
-    column: int | Sequence[int | tuple[int, int]],
-) -> Range:
-    """Create a discontinuous range.
-
-    Either row or column must be an integer.
-    If the other is not an integer, it is treated as a list.
-    If index is (int, int), it is a simple range.
-    Otherwise, each element of index is an int or (int, int), and they are
-    concatenated to create a discontinuous range.
-
-    Args:
-        sheet (Sheet): The sheet object.
-        row (int, tuple, or list): The row number.
-        column (int, tuple, or list): The column number.
-
-    Returns:
-        Range: The discontinuous range.
-    """
-    return union(iter_ranges(sheet, row, column))
-
-
 class RangeCollection:
     ranges: list[Range]
 
@@ -145,4 +93,15 @@ class RangeCollection:
 
     @property
     def api(self):  # noqa: ANN201
-        return union_api(self)
+        api = self.ranges[0].api
+
+        if len(self.ranges) == 1:
+            return api
+
+        sheet = self.ranges[0].sheet
+        union = sheet.book.app.api.Union
+
+        for r in self.ranges[1:]:
+            api = union(api, r.api)
+
+        return api
