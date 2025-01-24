@@ -14,7 +14,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 )
 def test_by(sf: SheetFrame, by, n):
     gr = GroupBy(sf, by)
-    assert len(gr.grouped) == n
+    assert len(gr.group) == n
 
 
 @pytest.fixture(scope="module")
@@ -23,7 +23,7 @@ def gr(sf: SheetFrame):
 
 
 def test_group_key(gr: GroupBy):
-    keys = list(gr.grouped.keys())
+    keys = list(gr.group.keys())
     assert keys == [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
 
 

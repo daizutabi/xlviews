@@ -58,14 +58,14 @@ class DistFrame(SheetFrame):
         if by:
             self.link_to_index(by)
 
-        grouped = self.groupby(by).grouped
+        group = self.groupby(by).group
 
         for column in columns:
             dist = self.dist_func[column]
             parent_column = self.parent.range(column).column
             column_int = self.range(column + "_n").column
 
-            for row in grouped.values():
+            for row in group.values():
                 if len(row) != 1:
                     raise ValueError("group must be continuous")
 

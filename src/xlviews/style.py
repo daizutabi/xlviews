@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.frame import SheetFrame
+    from xlviews.range import RangeCollection
     from xlviews.table import Table
 
 
@@ -119,8 +120,12 @@ def set_font_api(
         font.Color = rgb(color)  # type: ignore
 
 
-def set_font(rng: Range, *args, **kwargs) -> None:
-    set_font_api(rng.api, *args, **kwargs)
+def set_font(rng: Range | RangeCollection, *args, **kwargs) -> None:
+    if isinstance(rng, Range):
+        set_font_api(rng.api, *args, **kwargs)
+    else:
+        for r in rng:
+            set_font_api(r.api, *args, **kwargs)
 
 
 def set_alignment(

@@ -28,7 +28,7 @@ class StatsGroupBy(GroupBy):
             yield from super().first_ranges(column)
 
         elif column in self.sf.index_columns:
-            yield from [None] * len(self.grouped)
+            yield from [None] * len(self.group)
 
         else:
             yield from super().ranges(column)
@@ -48,7 +48,7 @@ class StatsGroupBy(GroupBy):
                 yield get_formula(func, ranges, wrap)
 
     def get_index(self, funcs: list[str]) -> list[str]:
-        return funcs * len(self.grouped)
+        return funcs * len(self.group)
 
     def get_columns(
         self,
@@ -199,15 +199,15 @@ class StatsFrame(SheetFrame):
 
         value_columns = ["median", "min", "mean", "max", "std", "sum"]
 
-        grouped = self.groupby(func_column_name).grouped
+        group = self.groupby(func_column_name).group
         columns = [func_index, *range(start, end)]
         get_fmt = self.parent.get_number_format
         formats = [get_fmt(column) for column in self.value_columns]
         formats = [None, *formats]
 
-        for key, rows in grouped.items():
+        for key, rows in group.items():
             func = key[0]
-            for column, fmt in zip(columns, formats, strict=False):
+            for column, fmt in zip(columns, formats, strict=True):
                 cell = multirange(self.sheet, rows, column)
 
                 if func in value_columns:

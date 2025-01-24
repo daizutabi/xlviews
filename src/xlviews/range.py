@@ -120,14 +120,10 @@ class RangeCollection:
         return cls(iter_ranges(sheet, row, column))
 
     def __len__(self) -> int:
-        return sum(len(rng) for rng in self.ranges)
+        return len(self.ranges)
 
     def __iter__(self) -> Iterator[Range]:
-        for rng in self.ranges:
-            yield from rng
-
-    def first(self) -> Range:
-        return next(iter(self))
+        return iter(self.ranges)
 
     def get_address(
         self,
@@ -144,9 +140,9 @@ class RangeCollection:
                 include_sheetname=include_sheetname,
                 external=external,
             )
-            for rng in self.ranges
+            for rng in self
         )
 
     @property
     def api(self):  # noqa: ANN201
-        return union_api(self.ranges)
+        return union_api(self)

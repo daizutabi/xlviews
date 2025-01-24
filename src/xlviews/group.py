@@ -81,30 +81,30 @@ def groupby(
 class GroupBy:
     sf: SheetFrame
     by: list[str]
-    grouped: dict[tuple, list[tuple[int, int]]]
+    group: dict[tuple, list[tuple[int, int]]]
 
     def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
         self.sf = sf
         self.by = list(iter_columns(sf, by)) if by else []
-        self.grouped = groupby(sf, self.by)
+        self.group = groupby(sf, self.by)
 
     def __len__(self) -> int:
-        return len(self.grouped)
+        return len(self.group)
 
     def keys(self) -> Iterator[tuple]:
-        yield from self.grouped.keys()
+        yield from self.group.keys()
 
     def values(self) -> Iterator[list[tuple[int, int]]]:
-        yield from self.grouped.values()
+        yield from self.group.values()
 
     def items(self) -> Iterator[tuple[tuple, list[tuple[int, int]]]]:
-        yield from self.grouped.items()
+        yield from self.group.items()
 
     def __iter__(self) -> Iterator[tuple]:
         yield from self.keys()
 
     def __getitem__(self, key: tuple) -> list[tuple[int, int]]:
-        return self.grouped[key]
+        return self.group[key]
 
     def range(self, column: str, key: tuple) -> RangeCollection:
         return self.sf.range(column, self[key])
