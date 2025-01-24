@@ -61,7 +61,7 @@ class SheetFrame:
         sheet: Sheet | None = None,
         parent: SheetFrame | None = None,
         head: SheetFrame | None = None,
-        data: DataFrame | None = None,
+        data: DataFrame | Series | None = None,
         index: bool = True,
         index_level: int = 1,
         columns_level: int = 1,
@@ -142,7 +142,7 @@ class SheetFrame:
 
     def set_data(
         self,
-        data: DataFrame,
+        data: DataFrame | Series,
         *,
         index: bool = True,
         number_format: str | None = None,
@@ -152,6 +152,9 @@ class SheetFrame:
         font_size: int | None = None,
         **kwargs,
     ) -> None:
+        if isinstance(data, Series):
+            data = data.to_frame()
+
         self.has_index = index
         self.index_level = len(data.index.names) if index else 0
         self.columns_level = len(data.columns.names)
@@ -880,25 +883,32 @@ class SheetFrame:
             yield self.sheet.range((start, index + offset), (end, index + offset))
 
     @overload
-    def agg(self, func: Func | dict[str | tuple, Func], **kwargs) -> Series: ...
+    def agg(self, func: Func | dict, **kwargs) -> Series: ...
 
     @overload
     def agg(self, func: Sequence[Func], **kwargs) -> DataFrame: ...
 
     def agg(
         self,
-        func: Func | dict[str | tuple, Func] | Sequence[Func],
+        func: Func | dict | Sequence[Func],
+        columns: str | tuple | Sequence[str | tuple] | None = None,
         **kwargs,
     ) -> str | Series | DataFrame:
         agg = partial(self.agg_column, **kwargs)
 
+        if columns is None:
+            columns = self.value_columns
+        elif isinstance(columns, str | tuple):
+            columns = [columns]
+
         if func is None or isinstance(func, str | Range):
-            return Series({c: agg(func, c) for c in self.value_columns})
+            return Series({c: agg(func, c) for c in columns})
 
         if isinstance(func, dict):
             return Series({c: agg(f, c) for c, f in func.items()})
 
-        return DataFrame({f: self.agg(f) for f in func})
+        values = [self.agg(f, columns=columns, **kwargs) for f in func]
+        return DataFrame(values, index=list(func))
 
     def agg_column(
         self,
@@ -914,7 +924,7 @@ class SheetFrame:
 
         return aggregate(func, rng, **kwargs)
 
-    def group_by(self, by: str | list[str] | None) -> GroupBy:
+    def groupby(self, by: str | list[str] | None) -> GroupBy:
         return GroupBy(self, by)
 
     def get_number_format(self, column: str | tuple) -> str:

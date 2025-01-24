@@ -60,9 +60,72 @@ def test_df_list(df: DataFrame):
     np.testing.assert_array_equal(x, [[1, 11], [8, 18]])
 
 
-@pytest.mark.parametrize("func", ["sum"])
+@pytest.mark.parametrize("func", ["sum", "count", "min", "max", "mean"])
 def test_sf_str(sf: SheetFrame, df: DataFrame, func: str):
-    a = sf.agg(func)
+    a = sf.agg(func, formula=True)
     b = df.agg(func)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    np.testing.assert_array_equal(sf.data[0], b)
+
+
+def test_sf_str_columns(sf: SheetFrame):
+    a = sf.agg("mean", columns="a", formula=True)
+    assert len(a) == 1
+    sf = SheetFrame(20, 10, data=a, sheet=sf.sheet, style=False)
+    np.testing.assert_array_equal(sf.data, [[4.5]])
+
+
+def test_sf_dict(sf: SheetFrame, df: DataFrame):
+    func = {"a": "min", "b": "max"}
+    a = sf.agg(func, formula=True)
+    b = df.agg(func)
+    assert isinstance(a, Series)
+    assert a.index.to_list() == b.index.to_list()
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    np.testing.assert_array_equal(sf.data[0], b)
+
+
+def test_sf_list(sf: SheetFrame, df: DataFrame):
+    func = ["min", "max"]
+    a = sf.agg(func, formula=True)
+    b = df.agg(func)  # type: ignore
+    assert isinstance(a, DataFrame)
+    assert a.index.to_list() == b.index.to_list()
+    assert a.columns.to_list() == b.columns.to_list()
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    np.testing.assert_array_equal(sf.data, b)
+
+
+def test_sf_list_columns(sf: SheetFrame, df: DataFrame):
+    a = sf.agg(["sum", "count"], columns="b", formula=True)
+    assert isinstance(a, DataFrame)
+    sf = SheetFrame(20, 20, data=a, sheet=sf.sheet, style=False)
+    np.testing.assert_array_equal(sf.data, [[116], [8]])
+
+
+def test_sf_none(sf: SheetFrame):
+    s = sf.agg(None)
+    assert isinstance(s, Series)
+    assert s["a"] == "$D$3:$D$10"
+    assert s["b"] == "$E$3:$E$10"
+
+
+def test_sf_first(sf: SheetFrame):
+    s = sf.agg("first", formula=True)
+    assert isinstance(s, Series)
+    assert s["a"] == "=$D$3"
+    assert s["b"] == "=$E$3"
+
+
+def test_sf_first_none(sf: SheetFrame):
+    s = sf.agg({"x": "first", "b": None}, formula=True)
+    assert isinstance(s, Series)
+    assert len(s) == 2
+    assert s["x"] == "=$B$3"
+    assert s["b"] == "=$E$3:$E$10"
+
+
+def test_group(df: DataFrame):
+    print(df.groupby("x").agg("sum"))

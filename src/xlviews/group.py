@@ -44,7 +44,7 @@ def create_group_index(
     return to_dict(keys, values)
 
 
-def group_by(
+def groupby(
     sf: SheetFrame,
     by: str | list[str] | None,
 ) -> dict[tuple, list[tuple[int, int]]]:
@@ -86,7 +86,7 @@ class GroupBy:
     def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
         self.sf = sf
         self.by = list(iter_columns(sf, by)) if by else []
-        self.grouped = group_by(sf, self.by)
+        self.grouped = groupby(sf, self.by)
 
     def __len__(self) -> int:
         return len(self.grouped)
