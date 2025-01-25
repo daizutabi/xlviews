@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING, TypeVar, overload
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, MultiIndex, Series
+from xlwings import Range
 
+from xlviews.formula import aggregate
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-
-    from xlwings import Range
 
     from xlviews.frame import SheetFrame
     from xlviews.range import RangeCollection
@@ -30,6 +31,7 @@ def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
 
 def create_group_index(
     a: Sequence | Series | DataFrame,
+    sort: bool = True,
 ) -> dict[tuple, list[tuple[int, int]]]:
     df = a.reset_index(drop=True) if isinstance(a, DataFrame) else DataFrame(a)
 
@@ -41,12 +43,19 @@ def create_group_index(
     keys = [tuple(v) for v in dup.to_numpy()]
     values = [(int(s), int(e)) for s, e in zip(start, end, strict=True)]
 
-    return to_dict(keys, values)
+    index = to_dict(keys, values)
+
+    if not sort:
+        return index
+
+    return dict(sorted(index.items()))
 
 
 def groupby(
     sf: SheetFrame,
     by: str | list[str] | None,
+    *,
+    sort: bool = True,
 ) -> dict[tuple, list[tuple[int, int]]]:
     """Group by the specified column and return the group key and row number."""
     if not by:
@@ -68,7 +77,7 @@ def groupby(
         df = DataFrame(sf.value_columns, columns=sf.columns_names)
         values = df[by]
 
-    index = create_group_index(values)
+    index = create_group_index(values, sort=sort)
 
     if sf.columns_names is None:
         offset = sf.row + sf.columns_level  # vertical
@@ -83,10 +92,16 @@ class GroupBy:
     by: list[str]
     group: dict[tuple, list[tuple[int, int]]]
 
-    def __init__(self, sf: SheetFrame, by: str | list[str] | None = None) -> None:
+    def __init__(
+        self,
+        sf: SheetFrame,
+        by: str | list[str] | None = None,
+        *,
+        sort: bool = True,
+    ) -> None:
         self.sf = sf
         self.by = list(iter_columns(sf, by)) if by else []
-        self.group = groupby(sf, self.by)
+        self.group = groupby(sf, self.by, sort=sort)
 
     def __len__(self) -> int:
         return len(self.group)
@@ -139,3 +154,57 @@ class GroupBy:
     def first_ranges(self, column: str) -> Iterator[Range]:
         for key in self:
             yield self.first_range(column, key)
+
+    def index(
+        self,
+        *,
+        as_address: bool = False,
+        **kwargs,
+    ) -> DataFrame:
+        if as_address:
+            values = {c: self.agg_column("first", c, **kwargs) for c in self.by}
+            return DataFrame(values)
+
+        values = self.keys()
+        return DataFrame(values, columns=self.by)
+
+    def agg(
+        self,
+        func: str | Range | None | dict | Sequence[str | Range | None],
+        columns: str | Sequence[str] | None = None,
+        as_address: bool = False,
+        formula: bool = False,
+        **kwargs,
+    ) -> DataFrame:
+        agg = partial(self.agg_column, formula=formula, **kwargs)
+
+        index_df = self.index(as_address=as_address, formula=formula, **kwargs)
+        index = MultiIndex.from_frame(index_df)
+
+        if isinstance(func, dict):
+            return DataFrame({c: agg(f, c) for c, f in func.items()}, index=index)
+
+        if columns is None:
+            columns = self.sf.value_columns
+        elif isinstance(columns, str):
+            columns = [columns]
+
+        if func is None or isinstance(func, str | Range):
+            return DataFrame({c: agg(func, c) for c in columns}, index=index)
+
+        values = {(c, f): agg(f, c) for c in columns for f in func}
+        return DataFrame(values, index=index)
+
+    def agg_column(
+        self,
+        func: str | Range | None,
+        column: str,
+        **kwargs,
+    ) -> list[str]:
+        if func == "first":
+            ranges = self.first_ranges(column)
+            func = None
+        else:
+            ranges = self.ranges(column)
+
+        return [aggregate(func, rng, **kwargs) for rng in ranges]
