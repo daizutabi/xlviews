@@ -892,9 +892,13 @@ class SheetFrame:
         self,
         func: Func | dict | Sequence[Func],
         columns: str | tuple | Sequence[str | tuple] | None = None,
+        formula: bool = False,
         **kwargs,
     ) -> str | Series | DataFrame:
-        agg = partial(self.agg_column, **kwargs)
+        agg = partial(self.agg_column, formula=formula, **kwargs)
+
+        if isinstance(func, dict):
+            return Series({c: agg(f, c) for c, f in func.items()})
 
         if columns is None:
             columns = self.value_columns
@@ -904,16 +908,14 @@ class SheetFrame:
         if func is None or isinstance(func, str | Range):
             return Series({c: agg(func, c) for c in columns})
 
-        if isinstance(func, dict):
-            return Series({c: agg(f, c) for c, f in func.items()})
-
-        values = [self.agg(f, columns=columns, **kwargs) for f in func]
+        values = [{c: agg(f, c) for c in columns} for f in func]
         return DataFrame(values, index=list(func))
 
     def agg_column(
         self,
         func: str | Range | None,
         column: str | tuple,
+        formula: bool = False,
         **kwargs,
     ) -> str:
         if func == "first":
@@ -922,10 +924,10 @@ class SheetFrame:
         else:
             rng = self.range(column)
 
-        return aggregate(func, rng, **kwargs)
+        return aggregate(func, rng, formula=formula, **kwargs)
 
-    def groupby(self, by: str | list[str] | None) -> GroupBy:
-        return GroupBy(self, by)
+    def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
+        return GroupBy(self, by, sort=sort)
 
     def get_number_format(self, column: str | tuple) -> str:
         return self.range(column, 0).number_format
