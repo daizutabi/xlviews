@@ -26,9 +26,9 @@ from xlviews.utils import constant, rgb
 if TYPE_CHECKING:
     from xlwings._xlwindows import COMRetryObjectWrapper
 
-    from xlviews.frame import SheetFrame
+    from xlviews.frames.sheet import SheetFrame
+    from xlviews.frames.table import Table
     from xlviews.range import RangeCollection
-    from xlviews.table import Table
 
 
 def set_border_line(

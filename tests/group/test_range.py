@@ -1,6 +1,6 @@
 import pytest
 
-from xlviews.frame import SheetFrame
+from xlviews.frames.sheet import SheetFrame
 from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
 from xlviews.utils import is_excel_installed

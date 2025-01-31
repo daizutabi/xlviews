@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from xlviews.frame import SheetFrame
+from xlviews.frames.sheet import SheetFrame
 from xlviews.stats import StatsFrame
 from xlviews.utils import is_excel_installed
 

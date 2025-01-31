@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from xlwings.constants import ChartType
 
 from xlviews.axes import Axes
-from xlviews.frame import SheetFrame
+from xlviews.frames.sheet import SheetFrame
 
 if TYPE_CHECKING:
     from xlwings import Range, Sheet

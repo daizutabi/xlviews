@@ -10,7 +10,7 @@ from xlwings.constants import Direction
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
-from xlviews.frame import SheetFrame
+from xlviews.frames.sheet import SheetFrame
 from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
 from xlviews.style import set_font, set_number_format
