@@ -4,7 +4,7 @@ if __name__ == "__main__":
     from pandas import DataFrame, MultiIndex
     from xlwings.constants import ChartType
 
-    from xlviews.axes import Axes
+    from xlviews.chart.axes import Axes
     from xlviews.frames.sheet import SheetFrame
 
     for app in xw.apps:

@@ -4,7 +4,7 @@ from itertools import cycle
 import pandas as pd
 
 # import spin.pandas as spd
-from xlviews.axes import Axes, chart_position
+from xlviews.chart.axes import Axes, chart_position
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.style import palette

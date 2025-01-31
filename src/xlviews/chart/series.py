@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from xlwings import Sheet
 
-    from xlviews.axes import Axes
+    from xlviews.chart.axes import Axes
 
 
 class Series:

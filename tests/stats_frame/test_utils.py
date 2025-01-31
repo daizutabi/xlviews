@@ -7,7 +7,7 @@ from xlviews.utils import is_excel_installed
 
 
 def test_wrap_wrap():
-    from xlviews.stats import get_wrap
+    from xlviews.frames.stats import get_wrap
 
     assert get_wrap(wrap="wrap") == "wrap"
     assert get_wrap(wrap={"a": "wrap"}) == {"a": "wrap"}
@@ -18,13 +18,13 @@ def test_wrap_wrap():
     [("na", "IFERROR({},NA())"), ("null", 'IFERROR({},"")')],
 )
 def test_wrap_true(kwarg, value):
-    from xlviews.stats import get_wrap
+    from xlviews.frames.stats import get_wrap
 
     assert get_wrap(**{kwarg: True}) == value  # type: ignore
 
 
 def test_wrap_list():
-    from xlviews.stats import get_wrap
+    from xlviews.frames.stats import get_wrap
 
     x = get_wrap(na=["a", "b"], null="c")
     assert isinstance(x, dict)
@@ -34,27 +34,27 @@ def test_wrap_list():
 
 
 def test_wrap_none():
-    from xlviews.stats import get_wrap
+    from xlviews.frames.stats import get_wrap
 
     assert get_wrap() is None
 
 
 def test_func_none():
-    from xlviews.stats import get_func
+    from xlviews.frames.stats import get_func
 
     func = ["count", "max", "mean", "median", "min", "soa"]
     assert sorted(get_func(None)) == func
 
 
 def test_func_str():
-    from xlviews.stats import get_func
+    from xlviews.frames.stats import get_func
 
     assert get_func("count") == ["count"]
 
 
 @pytest.mark.parametrize("func", [["count"], {"a": "count"}])
 def test_func_else(func):
-    from xlviews.stats import get_func
+    from xlviews.frames.stats import get_func
 
     assert get_func(func) == func
 
@@ -65,35 +65,35 @@ def test_func_else(func):
     [(["mean"], 4), (["min", "max", "median"], 12), ({"a": "count"}, 4)],
 )
 def test_length(sf_parent: SheetFrame, funcs, n):
-    from xlviews.stats import get_length
+    from xlviews.frames.stats import get_length
 
     assert get_length(sf_parent, ["x", "y"], funcs) == n
 
 
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 def test_length_none_list(sf_parent: SheetFrame):
-    from xlviews.stats import get_length
+    from xlviews.frames.stats import get_length
 
     assert get_length(sf_parent, [], ["min", "max"]) == 2
 
 
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 def test_length_none_dict(sf_parent: SheetFrame):
-    from xlviews.stats import get_length
+    from xlviews.frames.stats import get_length
 
     assert get_length(sf_parent, [], {"a": "mean"}) == 1
 
 
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 def test_has_header(sf_parent: SheetFrame):
-    from xlviews.stats import has_header
+    from xlviews.frames.stats import has_header
 
     assert has_header(sf_parent)
 
 
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 def test_move_down(sheet: Sheet):
-    from xlviews.stats import move_down
+    from xlviews.frames.stats import move_down
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
     sf = SheetFrame(3, 3, data=df, style=False, sheet=sheet)
@@ -107,7 +107,7 @@ def test_move_down(sheet: Sheet):
 
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 def test_move_down_header(sheet: Sheet):
-    from xlviews.stats import move_down
+    from xlviews.frames.stats import move_down
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
     sf = SheetFrame(3, 3, data=df, style=False, sheet=sheet)

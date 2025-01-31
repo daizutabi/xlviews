@@ -2,7 +2,7 @@ import pytest
 from xlwings import Sheet
 from xlwings.constants import ChartType, LineStyle, MarkerStyle
 
-from xlviews.axes import Axes
+from xlviews.chart.axes import Axes
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

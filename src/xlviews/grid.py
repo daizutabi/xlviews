@@ -8,7 +8,7 @@ import pandas as pd
 
 # from xlviews.decorators import wait_updating
 # from xlviews.chart import chart_position
-from xlviews.axes import chart_position
+from xlviews.chart.axes import chart_position
 
 # from spin.pandas import select
 from xlviews.config import rcParams

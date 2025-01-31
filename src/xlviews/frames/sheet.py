@@ -12,16 +12,17 @@ import xlwings as xw
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range, Sheet
 
-from xlviews import modify
-from xlviews.axes import set_first_position
+from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.formula import aggregate
-from xlviews.frames.table import Table
 from xlviews.grid import FacetGrid
 from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
 from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
+
+from . import modify
+from .table import Table
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -29,8 +30,8 @@ if TYPE_CHECKING:
 
     from numpy.typing import ArrayLike, NDArray
 
-    from xlviews.frames.dist import DistFrame
-    from xlviews.stats import StatsFrame
+    from .dist import DistFrame
+    from .stats import StatsFrame
 
 Func: TypeAlias = str | Range | None
 
@@ -1020,13 +1021,13 @@ class SheetFrame:
         return modify.delete(self, direction, entire=entire)
 
     def dist_frame(self, *args, **kwargs) -> DistFrame:
-        from xlviews.frames.dist import DistFrame
+        from .dist import DistFrame
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist
 
     def stats_frame(self, *args, **kwargs) -> StatsFrame:
-        from xlviews.stats import StatsFrame
+        from .stats import StatsFrame
 
         self.stats = StatsFrame(self, *args, **kwargs)
         return self.stats

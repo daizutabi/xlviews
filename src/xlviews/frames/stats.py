@@ -10,11 +10,12 @@ from xlwings.constants import Direction
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.formula import AGG_FUNCS, aggregate
-from xlviews.frames.sheet import SheetFrame
 from xlviews.group import GroupBy
 from xlviews.range import RangeCollection
 from xlviews.style import set_font, set_number_format
 from xlviews.utils import iter_columns
+
+from .sheet import SheetFrame
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
