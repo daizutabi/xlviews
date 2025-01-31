@@ -646,8 +646,6 @@ class SheetFrame:
 
         return Series(addresses, name=column)
 
-    # def aggregate(self,func:str|Range)
-
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)
         cell = self.sheet.range(self.row, column_int)
@@ -856,11 +854,11 @@ class SheetFrame:
             sel &= self.select(**kwargs)
 
         if self.columns_names is None:
-            yield from self.ranges_row(sel)
+            yield from self._ranges_row(sel)
         else:
-            yield from self.ranges_column(sel)
+            yield from self._ranges_column(sel)
 
-    def ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
+    def _ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
         offset = self.row + self.columns_level
         start = self.column + self.index_level
         end = start + len(self.value_columns) - 1
@@ -871,7 +869,7 @@ class SheetFrame:
 
             yield self.sheet.range((index + offset, start), (index + offset, end))
 
-    def ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
+    def _ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
         offset = self.column + self.index_level
         start = self.row + self.columns_level
         end = start + len(self) - 1
@@ -881,6 +879,24 @@ class SheetFrame:
                 continue
 
             yield self.sheet.range((start, index + offset), (end, index + offset))
+
+    def melt(
+        self,
+        func: Func = None,
+        *,
+        formula: bool = False,
+        value_name: str = "value",
+        **kwargs,
+    ) -> DataFrame:
+        """Unpivot a SheetFrame from wide to long format."""
+        if self.columns_names is None:
+            raise NotImplementedError
+
+        columns = self.value_columns
+        df = DataFrame(columns, columns=self.columns_names)
+        values = [aggregate(func, r, formula=formula, **kwargs) for r in self.ranges()]
+        df[value_name] = values
+        return df
 
     @overload
     def agg(self, func: Func | dict, **kwargs) -> Series: ...
@@ -895,7 +911,7 @@ class SheetFrame:
         formula: bool = False,
         **kwargs,
     ) -> str | Series | DataFrame:
-        agg = partial(self.agg_column, formula=formula, **kwargs)
+        agg = partial(self._agg_column, formula=formula, **kwargs)
 
         if isinstance(func, dict):
             return Series({c: agg(f, c) for c, f in func.items()})
@@ -911,7 +927,7 @@ class SheetFrame:
         values = [{c: agg(f, c) for c in columns} for f in func]
         return DataFrame(values, index=list(func))
 
-    def agg_column(
+    def _agg_column(
         self,
         func: str | Range | None,
         column: str | tuple,

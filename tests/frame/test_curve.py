@@ -214,3 +214,31 @@ def test_groupby(sf: SheetFrame, by, result):
     assert len(g) == len(result)
     for k, v in g.items():
         assert result[k] == v
+
+
+@pytest.fixture(scope="module")
+def df_melt(sf: SheetFrame):
+    return sf.melt(formula=True, value_name="v")
+
+
+def test_melt_len(df_melt: DataFrame):
+    assert len(df_melt) == 16
+
+
+def test_melt_columns(df_melt: DataFrame):
+    assert df_melt.columns.to_list() == ["s", "t", "r", "i", "v"]
+
+
+@pytest.mark.parametrize(
+    ("i", "v"),
+    [
+        (0, ["a", "c", 1, "x", "=$C$6:$C$11"]),
+        (1, ["a", "c", 1, "y", "=$D$6:$D$11"]),
+        (2, ["a", "c", 2, "x", "=$E$6:$E$11"]),
+        (7, ["a", "d", 4, "y", "=$J$6:$J$11"]),
+        (14, ["b", "d", 8, "x", "=$Q$6:$Q$11"]),
+        (15, ["b", "d", 8, "y", "=$R$6:$R$11"]),
+    ],
+)
+def test_melt_value(df_melt: DataFrame, i, v):
+    assert df_melt.iloc[i].to_list() == v

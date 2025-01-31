@@ -5,10 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "xlviews"
 version = "0.1.5"
-authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 description = "A Python package for writing xlsx files."
 readme = "README.md"
 license = { file = "LICENSE" }
+authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.11",

@@ -21,6 +21,13 @@ if __name__ == "__main__":
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
     sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
 
+    len(list(sf.ranges()))
+
+    columns = sf.value_columns
+    DataFrame(columns, columns=sf.columns_names)
+
+    df.melt()
+
     a = ["c"] * 10
     b = ["s"] * 5 + ["t"] * 5
     c = ([100] * 2 + [200] * 3) * 2
