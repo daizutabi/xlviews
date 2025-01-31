@@ -4,7 +4,7 @@ from xlwings import Sheet
 from xlwings.constants import BordersIndex
 
 from xlviews.config import rcParams
-from xlviews.frames.sheet import SheetFrame
+from xlviews.dataframes.sheet import SheetFrame
 from xlviews.utils import is_excel_installed, rgb
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

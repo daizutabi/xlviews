@@ -2,8 +2,8 @@ import pytest
 from pandas import DataFrame
 from xlwings import Range, Sheet
 
+from xlviews.dataframes.table import Table
 from xlviews.formula import NONCONST_VALUE
-from xlviews.frames.table import Table
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -112,7 +112,7 @@ def test_table_error():
 
 
 def test_sheetframe(table: Table):
-    from xlviews.frames.sheet import SheetFrame
+    from xlviews.dataframes.sheet import SheetFrame
 
     sf = SheetFrame(table.cell.row, table.cell.column, sheet=table.sheet, style=False)
     assert sf.table

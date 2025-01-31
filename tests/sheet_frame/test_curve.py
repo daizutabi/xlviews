@@ -5,7 +5,7 @@ import pytest
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Sheet
 
-from xlviews.frames.sheet import SheetFrame
+from xlviews.dataframes.sheet import SheetFrame
 from xlviews.group import groupby
 from xlviews.utils import is_excel_installed
 

@@ -2,15 +2,15 @@ import numpy as np
 import pytest
 from scipy.stats import norm
 
-from xlviews.frames.dist import DistFrame
-from xlviews.frames.sheet import SheetFrame
+from xlviews.dataframes.dist import DistFrame
+from xlviews.dataframes.sheet import SheetFrame
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 def test_init_data(sf: SheetFrame):
-    from xlviews.frames.dist import get_init_data
+    from xlviews.dataframes.dist import get_init_data
 
     df = get_init_data(sf, ["a", "b"], ["x", "y"])
     c = ["a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]
@@ -21,7 +21,7 @@ def test_init_data(sf: SheetFrame):
 
 @pytest.fixture(scope="module")
 def sfd(sf: SheetFrame):
-    from xlviews.frames.dist import DistFrame
+    from xlviews.dataframes.dist import DistFrame
 
     return DistFrame(sf, ["a", "b"], by=["x", "y"])
 

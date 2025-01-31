@@ -3,8 +3,8 @@ import pytest
 from pandas import DataFrame, Series
 from xlwings import Sheet
 
-from xlviews.frames.sheet import SheetFrame
-from xlviews.frames.table import Table
+from xlviews.dataframes.sheet import SheetFrame
+from xlviews.dataframes.table import Table
 from xlviews.group import groupby
 from xlviews.utils import is_excel_installed
 

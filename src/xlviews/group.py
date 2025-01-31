@@ -13,7 +13,7 @@ from xlviews.utils import iter_columns
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
-    from xlviews.frames.sheet import SheetFrame
+    from xlviews.dataframes.sheet import SheetFrame
     from xlviews.range import RangeCollection
 
 H = TypeVar("H")

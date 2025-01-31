@@ -11,39 +11,6 @@ if TYPE_CHECKING:
     from xlwings import Sheet
 
 
-def iter_ranges(
-    sheet: Sheet,
-    row: int | Sequence[int | tuple[int, int]],
-    column: int | Sequence[int | tuple[int, int]],
-) -> Iterator[Range]:
-    if isinstance(row, int) and isinstance(column, int):
-        yield sheet.range(row, column)
-        return
-
-    if isinstance(row, int) and not isinstance(column, int):
-        axis = 0
-        index = column
-    elif isinstance(column, int) and not isinstance(row, int):
-        axis = 1
-        index = row
-    else:
-        msg = "Either row or column must be an integer."
-        raise TypeError(msg)
-
-    def get_range(start_end: int | tuple[int, int]) -> Range:
-        if isinstance(start_end, int):
-            start = end = start_end
-        else:
-            start, end = start_end
-
-        if axis == 0:
-            return sheet.range((row, start), (row, end))
-
-        return sheet.range((start, column), (end, column))
-
-    yield from (get_range(i) for i in index)
-
-
 class RangeCollection:
     ranges: list[Range]
 
@@ -105,3 +72,36 @@ class RangeCollection:
             api = union(api, r.api)
 
         return api
+
+
+def iter_ranges(
+    sheet: Sheet,
+    row: int | Sequence[int | tuple[int, int]],
+    column: int | Sequence[int | tuple[int, int]],
+) -> Iterator[Range]:
+    if isinstance(row, int) and isinstance(column, int):
+        yield sheet.range(row, column)
+        return
+
+    if isinstance(row, int) and not isinstance(column, int):
+        axis = 0
+        index = column
+    elif isinstance(column, int) and not isinstance(row, int):
+        axis = 1
+        index = row
+    else:
+        msg = "Either row or column must be an integer."
+        raise TypeError(msg)
+
+    def get_range(start_end: int | tuple[int, int]) -> Range:
+        if isinstance(start_end, int):
+            start = end = start_end
+        else:
+            start, end = start_end
+
+        if axis == 0:
+            return sheet.range((row, start), (row, end))
+
+        return sheet.range((start, column), (end, column))
+
+    yield from (get_range(i) for i in index)

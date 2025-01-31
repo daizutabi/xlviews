@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
     from xlwings import Chart, Sheet
 
-    from xlviews.frames.sheet import SheetFrame
+    from xlviews.dataframes.sheet import SheetFrame
 
 FIRST_POSITION = {"left": 50, "top": 50}
 
