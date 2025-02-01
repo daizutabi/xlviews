@@ -7,10 +7,11 @@ import xlwings as xw
 from xlwings import Range
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
-from xlviews.address import reference
-from xlviews.chart.series import Series
 from xlviews.config import rcParams
-from xlviews.style import (
+from xlviews.range.address import reference
+
+from .series import Series
+from .style import (
     get_axis_label,
     get_axis_scale,
     get_ticks,

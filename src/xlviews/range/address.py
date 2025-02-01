@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
     from xlwings import Range, Sheet
 
-    from xlviews.range import RangeCollection
+    from .range_collection import RangeCollection
 
 
 if TYPE_CHECKING:

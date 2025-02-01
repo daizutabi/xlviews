@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from xlviews.chart.series import Series
     from xlviews.group import GroupBy
-    from xlviews.range import RangeCollection
+    from xlviews.range.range_collection import RangeCollection
 
 
 def get_range(

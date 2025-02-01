@@ -7,14 +7,14 @@ import numpy as np
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range
 
-from xlviews.formula import aggregate
+from xlviews.range.formula import aggregate
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
     from xlviews.dataframes.sheet import SheetFrame
-    from xlviews.range import RangeCollection
+    from xlviews.range.range_collection import RangeCollection
 
 H = TypeVar("H")
 T = TypeVar("T")

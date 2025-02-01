@@ -5,17 +5,18 @@ from typing import TYPE_CHECKING
 from xlwings import Range
 from xlwings.constants import LineStyle
 
-from xlviews.address import reference
-from xlviews.range import RangeCollection
-from xlviews.style import get_line_style, get_marker_style
+from xlviews.range.address import reference
+from xlviews.range.range_collection import RangeCollection
 from xlviews.utils import rgb
+
+from .style import get_line_style, get_marker_style
 
 if TYPE_CHECKING:
     from typing import Any
 
     from xlwings import Sheet
 
-    from xlviews.chart.axes import Axes
+    from .axes import Axes
 
 
 class Series:

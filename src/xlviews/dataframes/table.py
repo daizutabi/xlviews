@@ -5,8 +5,10 @@ from typing import TYPE_CHECKING
 import xlwings as xw
 from xlwings import Range
 
-from xlviews.formula import const
-from xlviews.style import set_alignment, set_font, set_table_style
+from xlviews.range.formula import const
+from xlviews.range.style import set_alignment, set_font
+
+from .style import set_table_style
 
 if TYPE_CHECKING:
     from xlwings import Sheet

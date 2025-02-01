@@ -66,7 +66,7 @@ def test_add_series_name_range(ax: Axes):
 
 
 def test_add_series_xy_range_collection(ax: Axes):
-    from xlviews.range import RangeCollection
+    from xlviews.range.range_collection import RangeCollection
 
     ax.sheet.range("A1:A10").options(transpose=True).value = list(range(10))
     ax.sheet.range("B1:B10").options(transpose=True).value = list(range(10, 20))

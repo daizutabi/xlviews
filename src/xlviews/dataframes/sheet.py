@@ -15,13 +15,14 @@ from xlwings import Range, Sheet
 from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
-from xlviews.formula import aggregate
 from xlviews.grid import FacetGrid
 from xlviews.group import GroupBy
-from xlviews.range import RangeCollection
-from xlviews.style import set_alignment, set_frame_style, set_wide_column_style
+from xlviews.range.formula import aggregate
+from xlviews.range.range_collection import RangeCollection
+from xlviews.range.style import set_alignment
 
 from . import modify
+from .style import set_frame_style, set_wide_column_style
 from .table import Table
 
 if TYPE_CHECKING:

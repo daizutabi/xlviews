@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from xlwings import Range
 
-from xlviews.address import iter_address
-from xlviews.range import RangeCollection
+from .address import iter_address
+from .range_collection import RangeCollection
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

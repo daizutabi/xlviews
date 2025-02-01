@@ -7,7 +7,8 @@ import pandas as pd
 from xlviews.chart.axes import Axes, chart_position
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
-from xlviews.style import palette
+
+# from xlviews.style import palette
 from xlviews.utils import format_label, label_func_from_list
 
 
