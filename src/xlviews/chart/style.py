@@ -5,7 +5,6 @@ from __future__ import annotations
 import itertools
 from typing import TYPE_CHECKING
 
-import seaborn as sns
 from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.config import rcParams
@@ -14,13 +13,6 @@ from xlviews.utils import rgb, set_font_api
 
 if TYPE_CHECKING:
     from xlwings import Range, Sheet
-
-
-def color_palette(n: int) -> list[tuple[int, int, int]]:
-    """Return a list of colors of length n."""
-    palette = sns.color_palette()
-    palette = palette[:n] if n <= len(palette) else sns.husl_palette(n, l=0.5)
-    return [tuple(int(c * 255) for c in p) for p in palette]  # type: ignore
 
 
 MARKER_DICT: dict[str, int] = {
@@ -66,16 +58,6 @@ def get_line_style(line: int | str | None) -> int:
 def marker_palette(n: int) -> list[str]:
     """Return a list of markers of length n."""
     return list(itertools.islice(itertools.cycle(MARKER_DICT), n))
-
-
-def palette(name: str, n: int) -> list[str] | list[tuple[int, int, int]] | list[None]:
-    if name == "color":
-        return color_palette(n)
-
-    if name == "marker":
-        return marker_palette(n)
-
-    return [None] * n
 
 
 def get_axis_label(axis) -> str | None:  # noqa: ANN001

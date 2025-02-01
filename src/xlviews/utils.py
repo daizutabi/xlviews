@@ -3,11 +3,12 @@ from __future__ import annotations
 from functools import cache
 from typing import TYPE_CHECKING
 
-import matplotlib as mpl
 import xlwings as xw
 from pywintypes import com_error
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
+
+from xlviews.colors import cnames
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -107,7 +108,7 @@ def rgb(
         return color + green * 256 + blue * 256 * 256  # type: ignore
 
     if isinstance(color, str):
-        color = mpl.colors.cnames.get(color, color)  # type: ignore
+        color = cnames.get(color, color)
 
         if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
             raise ValueError("Invalid color format. Expected #xxxxxx.")

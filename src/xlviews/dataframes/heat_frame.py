@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-from itertools import product
 from typing import TYPE_CHECKING
-
-import numpy as np
-import pandas as pd
-from pandas import DataFrame
 
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
@@ -17,6 +12,7 @@ from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
     from xlwings import Range, Sheet
 
 
