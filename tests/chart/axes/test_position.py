@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.mark.parametrize(
     ("pos", "left", "top"),
-    [("right", 269.5, 18), ("inside", 134, 66), ("bottom", 52, 90)],
+    [("right", 312, 18), ("inside", 134, 66), ("bottom", 52, 90)],
 )
 def test_set_first_position(sheet: Sheet, pos: str, left: float, top: float):
     from xlviews.chart.axes import (

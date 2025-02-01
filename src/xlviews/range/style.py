@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import xlwings as xw
 from xlwings import Range, Sheet
-from xlwings.constants import BordersIndex, FormatConditionType, LineStyle
+from xlwings.constants import (
+    BordersIndex,
+    ConditionValueTypes,
+    FormatConditionType,
+    LineStyle,
+)
 
 from xlviews.config import rcParams
 from xlviews.utils import constant, rgb, set_font_api
@@ -83,10 +89,14 @@ def set_fill(rng: Range | RangeCollection, color: int | str | None = None) -> No
 def set_font(
     rng: Range | RangeCollection,
     name: str | None = None,
-    **kwargs,
+    *,
+    size: float | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    color: int | str | None = None,
 ) -> None:
     name = name or rcParams["frame.font.name"]
-    set_font_api(rng.api, name, **kwargs)
+    set_font_api(rng.api, name, size=size, bold=bold, italic=italic, color=color)
 
 
 def set_alignment(
@@ -177,5 +187,34 @@ def hide_unique(rng: Range, length: int, color: int | str = rgb(100, 100, 100)) 
     condition.Font.Italic = True
 
 
-def hide_gridlines(sheet: Sheet) -> None:
+def hide_gridlines(sheet: Sheet | None = None) -> None:
+    sheet = sheet or xw.sheets.active
     sheet.book.app.api.ActiveWindow.DisplayGridlines = False
+
+
+def set_color_condition(rng: Range, values: list[str], colors: list[int]) -> None:
+    condition = rng.api.FormatConditions.AddColorScale(len(values))
+    condition.SetFirstPriority()
+
+    for k, (value, color) in enumerate(zip(values, colors, strict=True)):
+        criteria = condition.ColorScaleCriteria(k + 1)
+        criteria.Type = ConditionValueTypes.xlConditionValueNumber
+        criteria.Value = value
+        criteria.FormatColor.Color = color
+
+
+def set_color_scale(
+    rng: Range,
+    vmin: float | str | Range,
+    vmax: float | str | Range,
+) -> None:
+    if isinstance(vmin, Range):
+        vmin = vmin.get_address()
+
+    if isinstance(vmax, Range):
+        vmax = vmax.get_address()
+
+    values = [f"={vmin}", f"=({vmin} + {vmax}) / 2", f"={vmax}"]
+    colors = [rgb(130, 130, 255), rgb(80, 185, 80), rgb(255, 130, 130)]
+
+    set_color_condition(rng, values, colors)

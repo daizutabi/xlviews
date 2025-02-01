@@ -173,9 +173,6 @@ class SheetFrame:
         if style:
             self.set_style(gray=gray, autofit=autofit, font_size=font_size, **kwargs)
 
-        if self.head is None:
-            self.set_adjacent_column_width(1)
-
         if self.name:
             book = self.sheet.book
             refers_to = "=" + self.cell.get_address(include_sheetname=True)
@@ -1042,6 +1039,8 @@ class SheetFrame:
 
     def dist_frame(self, *args, **kwargs) -> DistFrame:
         from .dist_frame import DistFrame
+
+        self.set_adjacent_column_width(1)
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist

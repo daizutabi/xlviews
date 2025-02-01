@@ -24,6 +24,7 @@ from xlviews.utils import rgb
 if TYPE_CHECKING:
     from xlwings import Range
 
+    from .heat_frame import HeatFrame
     from .sheet_frame import SheetFrame
     from .table import Table
 
@@ -215,3 +216,65 @@ def set_table_style(
         style.TableStyleElements(even_type).Interior.Color = even_color
 
     table.api.TableStyle = style
+
+
+@turn_off_screen_updating
+def set_heat_frame_style(
+    sf: HeatFrame,
+    *,
+    autofit: bool = False,
+    alignment: str | None = "center",
+    border: bool = True,
+    font: bool = True,
+    fill: bool = True,
+    font_size: int | None = None,
+) -> None:
+    """Set style of SheetFrame.
+
+    Args:
+        sf: The SheetFrame object.
+        autofit: Whether to autofit the frame.
+        alignment: The alignment of the frame.
+        border: Whether to draw the border.
+        font: Whether to specify the font.
+        fill: Whether to fill the frame.
+        font_size: The font size to specify directly.
+    """
+    cell = sf.cell
+    sheet = sf.sheet
+
+    set_style = partial(
+        _set_style,
+        border=border,
+        font=font,
+        fill=fill,
+        gray=False,
+        font_size=font_size,
+    )
+
+    index_level = sf.index_level
+    columns_level = sf.columns_level
+    length = len(sf)
+
+    if index_level > 0:
+        start = cell.offset(columns_level, 0)
+        end = cell.offset(columns_level + length - 1, index_level - 1)
+        set_style(start, end, "index")
+
+    width = len(sf.value_columns)
+
+    start = cell.offset(columns_level - 1, index_level)
+    end = cell.offset(columns_level - 1, index_level + width - 1)
+    set_style(start, end, "index")
+
+    start = cell.offset(columns_level, index_level)
+    end = cell.offset(columns_level + length - 1, index_level + width - 1)
+    set_style(start, end, "values")
+
+    rng = sheet.range(cell, end)
+
+    if autofit:
+        rng.columns.autofit()
+
+    if alignment:
+        set_alignment(rng, alignment)
