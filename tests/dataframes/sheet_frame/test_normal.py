@@ -120,8 +120,13 @@ def test_visible_data(sf: SheetFrame, table: Table, name, value):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf._range_all().get_address() == "$C$2:$E$6"
+    assert sf._range_all(True).get_address() == "$C$2:$E$6"
     assert sf.range().get_address() == "$C$2:$E$6"
+
+
+def test_range_all_index_false(sf: SheetFrame):
+    assert sf._range_all(False).get_address() == "$D$3:$E$6"
+    assert sf.range(index=False).get_address() == "$D$3:$E$6"
 
 
 @pytest.mark.parametrize(

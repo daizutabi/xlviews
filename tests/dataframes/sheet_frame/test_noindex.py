@@ -108,8 +108,13 @@ def test_data(sf: SheetFrame, df: DataFrame):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf._range_all().get_address() == "$C$2:$E$6"
+    assert sf._range_all(True).get_address() == "$C$2:$E$6"
     assert sf.range().get_address() == "$C$2:$E$6"
+
+
+def test_range_all_index_false(sf: SheetFrame):
+    assert sf._range_all(False).get_address() == "$D$3:$E$6"
+    assert sf.range(index=False).get_address() == "$D$3:$E$6"
 
 
 @pytest.mark.parametrize(
@@ -190,6 +195,8 @@ def test_address_list(sf: SheetFrame):
     df = sf.get_address(["a", "b"])
     assert df["a"].to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
     assert df["b"].to_list() == ["$E$3", "$E$4", "$E$5", "$E$6"]
+    assert df.index.to_list() == list(range(4))
+    assert df.index.name is None
 
 
 def test_add_column(sheet: Sheet):

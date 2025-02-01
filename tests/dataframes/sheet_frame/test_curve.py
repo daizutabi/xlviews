@@ -83,8 +83,13 @@ def test_index_row(sf: SheetFrame, column):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf._range_all().get_address() == "$B$2:$R$11"
+    assert sf._range_all(True).get_address() == "$B$2:$R$11"
     assert sf.range().get_address() == "$B$2:$R$11"
+
+
+def test_range_all_index_false(sf: SheetFrame):
+    assert sf._range_all(False).get_address() == "$C$6:$R$11"
+    assert sf.range(index=False).get_address() == "$C$6:$R$11"
 
 
 @pytest.mark.parametrize(

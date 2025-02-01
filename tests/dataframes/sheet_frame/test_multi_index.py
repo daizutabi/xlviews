@@ -134,8 +134,13 @@ def test_data(sf: SheetFrame, df: DataFrame):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf._range_all().get_address() == "$F$10:$I$18"
+    assert sf._range_all(True).get_address() == "$F$10:$I$18"
     assert sf.range().get_address() == "$F$10:$I$18"
+
+
+def test_range_all_index_false(sf: SheetFrame):
+    assert sf._range_all(False).get_address() == "$H$11:$I$18"
+    assert sf.range(index=False).get_address() == "$H$11:$I$18"
 
 
 @pytest.mark.parametrize(
@@ -174,6 +179,20 @@ def test_range_index(sf: SheetFrame, start, end, address):
 def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf._range_column(column, start, end).get_address() == address
     assert sf.range(column, start, end).get_address() == address
+
+
+def test_address_list(sf: SheetFrame):
+    df = sf.get_address(["a", "b"], formula=True)
+    assert df["a"].to_list() == [f"=$H${i}" for i in range(11, 19)]
+    assert df["b"].to_list() == [f"=$I${i}" for i in range(11, 19)]
+    assert df.index.names == ["x", "y"]
+    index = df.index.to_list()
+    assert index[0] == (1, 1)
+    assert index[1] == (1, 1)
+    assert index[2] == (1, 2)
+    assert index[3] == (1, 2)
+    assert index[-2] == (2, 2)
+    assert index[-1] == (2, 2)
 
 
 def test_getitem_str(sf: SheetFrame):

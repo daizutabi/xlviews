@@ -440,6 +440,7 @@ class SheetFrame:
         column: str | tuple | None = None,
         start: int | Literal[False] | None = None,
         end: int | None = None,
+        index: bool = True,
     ) -> Range: ...
 
     @overload
@@ -448,6 +449,7 @@ class SheetFrame:
         column: str | tuple,
         start: list[tuple[int, int]],
         end: int | None = None,
+        index: bool = True,
     ) -> RangeCollection: ...
 
     def range(
@@ -455,6 +457,7 @@ class SheetFrame:
         column: str | tuple | None = None,
         start: int | Literal[False] | list[tuple[int, int]] | None = None,
         end: int | None = None,
+        index: bool = True,
     ) -> Range | RangeCollection:
         """Return the range of the column.
 
@@ -475,7 +478,7 @@ class SheetFrame:
                 - other: specified row
         """
         if column is None:
-            return self._range_all()
+            return self._range_all(index)
 
         if isinstance(start, list):
             return RangeCollection(self.range(column, s, e) for s, e in start)
@@ -485,11 +488,15 @@ class SheetFrame:
 
         return self._range_column(column, start, end)
 
-    def _range_all(self) -> Range:
+    def _range_all(self, index: bool) -> Range:
         start = self.cell
         row_offset = self.columns_level + len(self) - 1
         column_offset = self.index_level + len(self.value_columns) - 1
         end = start.offset(row_offset, column_offset)
+
+        if not index:
+            start = start.offset(self.columns_level, self.index_level)
+
         return self.sheet.range(start, end)
 
     def _range_index(
@@ -639,7 +646,13 @@ class SheetFrame:
             Series or DataFrame: The address list of the column.
         """
         if isinstance(column, list):
-            return DataFrame({c: self.get_address(c, **kwargs) for c in column})
+            values = {c: self.get_address(c, formula=formula, **kwargs) for c in column}
+            df = DataFrame(values)
+
+            if self.has_index and self.index_columns[0]:
+                df.index = MultiIndex.from_frame(self._index_frame())
+
+            return df
 
         addresses = [cell.get_address(**kwargs) for cell in self.range(column)]
 
@@ -647,6 +660,12 @@ class SheetFrame:
             addresses = ["=" + address for address in addresses]
 
         return Series(addresses, name=column)
+
+    def _index_frame(self) -> DataFrame:
+        start = self.cell.offset(self.columns_level - 1)
+        end = start.offset(len(self), self.index_level - 1)
+        rng = self.sheet.range(start, end)
+        return rng.options(DataFrame).value.reset_index()  # type: ignore
 
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)

@@ -146,8 +146,13 @@ def test_data(sf: SheetFrame, df: DataFrame):
 
 
 def test_range_all(sf: SheetFrame):
-    assert sf._range_all().get_address() == "$D$20:$H$26"
+    assert sf._range_all(True).get_address() == "$D$20:$H$26"
     assert sf.range().get_address() == "$D$20:$H$26"
+
+
+def test_range_all_index_false(sf: SheetFrame):
+    assert sf._range_all(False).get_address() == "$E$22:$H$26"
+    assert sf.range(index=False).get_address() == "$E$22:$H$26"
 
 
 @pytest.mark.parametrize(
