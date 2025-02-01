@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import re
-import warnings
-from collections import OrderedDict
 from functools import cache
 from typing import TYPE_CHECKING
 
@@ -12,12 +9,11 @@ from pywintypes import com_error
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
-from xlviews.config import rcParams
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from pandas import DataFrame
+    from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.dataframes.sheet import SheetFrame
 
@@ -151,6 +147,28 @@ def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterat
             yield c
 
 
+def set_font_api(
+    api: COMRetryObjectWrapper,
+    name: str | None = None,
+    *,
+    size: float | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    color: int | str | None = None,
+) -> None:
+    font = api.Font
+    if name:
+        font.Name = name  # type: ignore
+    if size:
+        font.Size = size  # type: ignore
+    if bold is not None:
+        font.Bold = bold  # type: ignore
+    if italic is not None:
+        font.Italic = italic  # type: ignore
+    if color is not None:
+        font.Color = rgb(color)  # type: ignore
+
+
 def add_validate_list(
     rng: Range,
     value: list[object],
@@ -166,76 +184,76 @@ def add_validate_list(
     rng.api.Validation.Add(Type=type_, Operator=operator, Formula1=formula)
 
 
-def label_func_from_list(columns, post=None):
-    """
-    カラム名のリストからラベル関数を作成して返す。
+# def label_func_from_list(columns, post=None):
+#     """
+#     カラム名のリストからラベル関数を作成して返す。
 
-    Parameters
-    ----------
-    columns : list of str
-        カラム名のリスト
-    post : str, optional
-        追加文字列
+#     Parameters
+#     ----------
+#     columns : list of str
+#         カラム名のリスト
+#     post : str, optional
+#         追加文字列
 
-    Returns
-    -------
-    callable
-    """
+#     Returns
+#     -------
+#     callable
+#     """
 
-    def get_format(t):
-        name_ = f"column.label.{t}"
-        if name_ in rcParams:
-            return rcParams[name_]
-        return "{" + t + "}"
+#     def get_format(t):
+#         name_ = f"column.label.{t}"
+#         if name_ in rcParams:
+#             return rcParams[name_]
+#         return "{" + t + "}"
 
-    fmt_dict = OrderedDict()
-    for column in columns:
-        fmt_dict[column] = get_format(column)
+#     fmt_dict = OrderedDict()
+#     for column in columns:
+#         fmt_dict[column] = get_format(column)
 
-    def func(**by_key):
-        labels = []
-        for by, fmt in fmt_dict.items():
-            key = by_key[by]
-            if isinstance(fmt, str):
-                label = fmt.format(**{by: key})
-            else:
-                label = fmt(key)
-            labels.append(label)
-        return "_".join(labels) + ("_" + post if post else "")
+#     def func(**by_key):
+#         labels = []
+#         for by, fmt in fmt_dict.items():
+#             key = by_key[by]
+#             if isinstance(fmt, str):
+#                 label = fmt.format(**{by: key})
+#             else:
+#                 label = fmt(key)
+#             labels.append(label)
+#         return "_".join(labels) + ("_" + post if post else "")
 
-    return func
+#     return func
 
 
-def format_label(data, fmt, sel=None, default=None):
-    dict_ = default.copy() if default else {}
-    if callable(fmt):
-        for column in data.columns:
-            try:
-                values = data[column]
-            except TypeError:
-                continue
-            if sel is not None:
-                values = values[sel]
-            values = values.unique()
-            if len(values) == 1:
-                dict_[column] = values[0]
-        return fmt(**dict_)
-    keys = re.findall(r"{([\w.]+)(?:}|:)", fmt)
-    for column in keys:
-        if column in data.columns:
-            values = data[column]
-            if sel is not None:
-                values = values[sel]
-            values = values.unique()
-            if len(values) == 1:
-                dict_[column] = values[0]
-    for key in keys:
-        if key not in dict_:
-            warnings.warn(
-                f"タイトル文字列に含まれる'{key}'が、dfに含まれないか、単一ではない。",
-            )
-            dict_[key] = "XXX"
-    return fmt.format(**dict_)
+# def format_label(data, fmt, sel=None, default=None):
+#     dict_ = default.copy() if default else {}
+#     if callable(fmt):
+#         for column in data.columns:
+#             try:
+#                 values = data[column]
+#             except TypeError:
+#                 continue
+#             if sel is not None:
+#                 values = values[sel]
+#             values = values.unique()
+#             if len(values) == 1:
+#                 dict_[column] = values[0]
+#         return fmt(**dict_)
+#     keys = re.findall(r"{([\w.]+)(?:}|:)", fmt)
+#     for column in keys:
+#         if column in data.columns:
+#             values = data[column]
+#             if sel is not None:
+#                 values = values[sel]
+#             values = values.unique()
+#             if len(values) == 1:
+#                 dict_[column] = values[0]
+#     for key in keys:
+#         if key not in dict_:
+#             warnings.warn(
+#                 f"タイトル文字列に含まれる'{key}'が、dfに含まれないか、単一ではない。",
+#             )
+#             dict_[key] = "XXX"
+#     return fmt.format(**dict_)
 
 
 # def get_sheet(book, name):

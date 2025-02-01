@@ -9,7 +9,7 @@ from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 
 # from xlviews.style import palette
-from xlviews.utils import format_label, label_func_from_list
+# from xlviews.utils import format_label, label_func_from_list
 
 
 def split_style(handle):

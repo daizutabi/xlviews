@@ -16,12 +16,12 @@ from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
-from xlviews.group import GroupBy
 from xlviews.range.formula import aggregate
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_alignment
 
 from . import modify
+from .group import GroupBy
 from .style import set_frame_style, set_wide_column_style
 from .table import Table
 

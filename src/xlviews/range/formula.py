@@ -42,11 +42,7 @@ AGG_FUNCS = {
     "sum": 9,
 }
 
-AGG_FUNCS_SORTED: dict[str, int] = {}
-
-for key in sorted(AGG_FUNCS.keys()):
-    AGG_FUNCS_SORTED[key] = AGG_FUNCS[key]
-
+AGG_FUNCS_SORTED = {key: AGG_FUNCS[key] for key in sorted(AGG_FUNCS.keys())}
 AGG_FUNC_NAMES = ",".join(f'"{name}"' for name in AGG_FUNCS_SORTED)
 AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 

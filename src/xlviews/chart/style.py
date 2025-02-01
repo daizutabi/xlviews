@@ -10,8 +10,7 @@ from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.config import rcParams
 from xlviews.range.address import reference
-from xlviews.range.style import set_font_api
-from xlviews.utils import rgb
+from xlviews.utils import rgb, set_font_api
 
 if TYPE_CHECKING:
     from xlwings import Range, Sheet
@@ -101,6 +100,8 @@ def set_axis_label(
     axis.HasTitle = True
     axis_title = axis.AxisTitle
     axis_title.Text = reference(label, sheet)
+
+    name = name or rcParams["chart.font.name"]
     size = size or rcParams["chart.axis.title.font.size"]
 
     set_font_api(axis_title, name, size=size, **kwargs)
@@ -163,7 +164,9 @@ def set_tick_labels(
     size: float | None = None,
     number_format: str | None = None,
 ) -> None:
+    name = name or rcParams["chart.font.name"]
     size = size or rcParams["chart.axis.ticklabels.font.size"]
+
     set_font_api(axis.TickLabels, name, size=size)
 
     if number_format:

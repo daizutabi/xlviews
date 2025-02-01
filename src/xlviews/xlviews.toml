@@ -1,22 +1,5 @@
-[chart]
-width = 200
-height = 200
-font.name = "Meiryo UI"
-
-[chart.title]
-font.size = 9
-font.bold = true
-
-[chart.legend]
-font.size = 8
-
-[chart.axis.title]
-font.size = 9
-
-[chart.axis.ticklabels]
-font.size = 8
-
 [frame]
+font.name = "Meiryo UI"
 font.size = 9
 
 [frame.index.name]
@@ -69,3 +52,21 @@ sum.color = "purple"
 sum.italic = true
 std.color = "#aaaaaa"
 count.color = "gray"
+
+[chart]
+width = 200
+height = 200
+font.name = "Meiryo UI"
+
+[chart.title]
+font.size = 9
+font.bold = true
+
+[chart.legend]
+font.size = 8
+
+[chart.axis.title]
+font.size = 9
+
+[chart.axis.ticklabels]
+font.size = 8

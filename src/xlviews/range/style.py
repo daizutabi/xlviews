@@ -8,11 +8,9 @@ from xlwings import Range, Sheet
 from xlwings.constants import BordersIndex, FormatConditionType, LineStyle
 
 from xlviews.config import rcParams
-from xlviews.utils import constant, rgb
+from xlviews.utils import constant, rgb, set_font_api
 
 if TYPE_CHECKING:
-    from xlwings._xlwindows import COMRetryObjectWrapper
-
     from .range_collection import RangeCollection
 
 
@@ -82,31 +80,13 @@ def set_fill(rng: Range | RangeCollection, color: int | str | None = None) -> No
         rng.api.Interior.Color = rgb(color)
 
 
-def set_font_api(
-    api: COMRetryObjectWrapper,
+def set_font(
+    rng: Range | RangeCollection,
     name: str | None = None,
-    *,
-    size: float | None = None,
-    bold: bool | None = None,
-    italic: bool | None = None,
-    color: int | str | None = None,
+    **kwargs,
 ) -> None:
-    name = name or rcParams["chart.font.name"]
-
-    font = api.Font
-    font.Name = name  # type: ignore
-    if size:
-        font.Size = size  # type: ignore
-    if bold is not None:
-        font.Bold = bold  # type: ignore
-    if italic is not None:
-        font.Italic = italic  # type: ignore
-    if color is not None:
-        font.Color = rgb(color)  # type: ignore
-
-
-def set_font(rng: Range | RangeCollection, *args, **kwargs) -> None:
-    set_font_api(rng.api, *args, **kwargs)
+    name = name or rcParams["frame.font.name"]
+    set_font_api(rng.api, name, **kwargs)
 
 
 def set_alignment(

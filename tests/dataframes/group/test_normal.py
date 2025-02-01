@@ -2,8 +2,8 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
+from xlviews.dataframes.group import GroupBy
 from xlviews.dataframes.sheet import SheetFrame
-from xlviews.group import GroupBy
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
