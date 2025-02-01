@@ -6,21 +6,29 @@ from xlwings import Sheet
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.table import Table
-from xlviews.utils import is_excel_installed
+from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-@pytest.fixture(scope="module")
-def df():
+def create_data_frame() -> DataFrame:
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]}, index=["x", "x", "y", "y"])
     df.index.name = "name"
     return df
 
 
+def create_sheet_frame(df: DataFrame, **kwargs) -> SheetFrame:
+    return SheetFrame(2, 3, data=df, **kwargs)
+
+
+@pytest.fixture(scope="module")
+def df():
+    return create_data_frame()
+
+
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(2, 3, data=df, style=False, sheet=sheet_module)
+    return create_sheet_frame(df, style=False, sheet=sheet_module)
 
 
 def test_value(sf: SheetFrame):
@@ -119,6 +127,38 @@ def test_visible_data(sf: SheetFrame, table: Table, name, value):
     np.testing.assert_array_equal(df, value)
 
 
+def test_getitem_str(sf: SheetFrame):
+    s = sf["a"]
+    assert isinstance(s, Series)
+    assert s.name == "a"
+    np.testing.assert_array_equal(s, [1, 2, 3, 4])
+
+
+def test_getitem_list(sf: SheetFrame):
+    df = sf[["a", "b"]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == ["a", "b"]
+    x = [[1, 5], [2, 6], [3, 7], [4, 8]]
+    np.testing.assert_array_equal(df, x)
+
+
+@pytest.mark.parametrize(
+    ("name", "a", "sel"),
+    [
+        ("x", None, [True, True, False, False]),
+        ("y", None, [False, False, True, True]),
+        ("x", (2, 3), [False, True, False, False]),
+        ("x", [1, 4], [True, False, False, False]),
+        (["x", "y"], [1, 4], [True, False, False, True]),
+    ],
+)
+def test_select(sf: SheetFrame, name, a, sel):
+    if a is None:
+        np.testing.assert_array_equal(sf.select(name=name), sel)
+    else:
+        np.testing.assert_array_equal(sf.select(name=name, a=a), sel)
+
+
 def test_range_all(sf: SheetFrame):
     assert sf._range_all(True).get_address() == "$C$2:$E$6"
     assert sf.range().get_address() == "$C$2:$E$6"
@@ -174,38 +214,6 @@ def test_first_range(sf: SheetFrame, column, address):
     assert sf.first_range(column).get_address() == address
 
 
-def test_getitem_str(sf: SheetFrame):
-    s = sf["a"]
-    assert isinstance(s, Series)
-    assert s.name == "a"
-    np.testing.assert_array_equal(s, [1, 2, 3, 4])
-
-
-def test_getitem_list(sf: SheetFrame):
-    df = sf[["a", "b"]]
-    assert isinstance(df, DataFrame)
-    assert df.columns.to_list() == ["a", "b"]
-    x = [[1, 5], [2, 6], [3, 7], [4, 8]]
-    np.testing.assert_array_equal(df, x)
-
-
-@pytest.mark.parametrize(
-    ("name", "a", "sel"),
-    [
-        ("x", None, [True, True, False, False]),
-        ("y", None, [False, False, True, True]),
-        ("x", (2, 3), [False, True, False, False]),
-        ("x", [1, 4], [True, False, False, False]),
-        (["x", "y"], [1, 4], [True, False, False, True]),
-    ],
-)
-def test_select(sf: SheetFrame, name, a, sel):
-    if a is None:
-        np.testing.assert_array_equal(sf.select(name=name), sel)
-    else:
-        np.testing.assert_array_equal(sf.select(name=name, a=a), sel)
-
-
 def test_groupby(sf: SheetFrame):
     g = groupby(sf, "name")
     assert len(g) == 2
@@ -242,3 +250,30 @@ def test_ranges_sel(sf2: SheetFrame):
 
     for rng, i in zip(it, [110, 111, 112], strict=True):
         assert rng.get_address() == f"$E${i}:$F${i}"
+
+
+@pytest.fixture(scope="module")
+def address(sf: SheetFrame):
+    return sf.get_address()
+
+
+def test_get_address_index_name(address: DataFrame):
+    assert address.index.name == "name"
+
+
+def test_get_address_index(address: DataFrame):
+    assert address.index.to_list() == ["x", "x", "y", "y"]
+
+
+def test_get_address_value(address: DataFrame):
+    values = [["$D$3", "$E$3"], ["$D$4", "$E$4"], ["$D$5", "$E$5"], ["$D$6", "$E$6"]]
+    np.testing.assert_array_equal(address, values)
+
+
+if __name__ == "__main__":
+    from xlviews.testing import create_sheet
+
+    sheet = create_sheet()
+    sf_ = create_sheet_frame(create_data_frame(), sheet=sheet)
+
+    # print(sf_.get_address())

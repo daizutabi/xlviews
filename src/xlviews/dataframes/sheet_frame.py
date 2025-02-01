@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, TypeAlias, overload
 
 import numpy as np
 import xlwings as xw
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from xlwings import Range, Sheet
 
 from xlviews.chart.axes import set_first_position
@@ -606,64 +606,6 @@ class SheetFrame:
                 if cell.value == cell.offset(-1).value:
                     cell.value = None
 
-    @overload
-    def get_address(
-        self,
-        column: str | tuple,
-        *,
-        formula: bool = False,
-        **kwargs,
-    ) -> Series: ...
-
-    @overload
-    def get_address(
-        self,
-        column: list[str | tuple],
-        *,
-        formula: bool = False,
-        **kwargs,
-    ) -> DataFrame: ...
-
-    def get_address(
-        self,
-        column: str | tuple | list[str | tuple],
-        *,
-        formula: bool = False,
-        **kwargs,
-    ) -> Series | DataFrame:
-        """Return the address list of the column.
-
-        Args:
-            column (str or tuple or list): The name of the column.
-            formula (bool, optional): Whether to add '=' to the beginning
-                of the address.
-            kwargs Keyword arguments for the `Range.get_address` method.
-
-        Returns:
-            Series or DataFrame: The address list of the column.
-        """
-        if isinstance(column, list):
-            values = {c: self.get_address(c, formula=formula, **kwargs) for c in column}
-            df = DataFrame(values)
-
-            if self.has_index and self.index_columns[0]:
-                df.index = MultiIndex.from_frame(self._index_frame())
-
-            return df
-
-        addresses = [cell.get_address(**kwargs) for cell in self.range(column)]
-
-        if formula:
-            addresses = ["=" + address for address in addresses]
-
-        return Series(addresses, name=column)
-
-    def _index_frame(self) -> DataFrame:
-        start = self.cell.offset(self.columns_level - 1)
-        end = start.offset(len(self), self.index_level - 1)
-        rng = self.sheet.range(start, end)
-        return rng.options(DataFrame).value.reset_index()  # type: ignore
-
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)
         cell = self.sheet.range(self.row, column_int)
@@ -856,6 +798,71 @@ class SheetFrame:
             filter_(sel, df[key], value)
 
         return sel
+
+    @overload
+    def get_address(
+        self,
+        column: str | tuple,
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> Series: ...
+
+    @overload
+    def get_address(
+        self,
+        column: list[str | tuple] | None = None,
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> DataFrame: ...
+
+    def get_address(
+        self,
+        column: str | tuple | list[str | tuple] | None = None,
+        *,
+        formula: bool = False,
+        **kwargs,
+    ) -> Series | DataFrame:
+        """Return the address list of the column.
+
+        Args:
+            column (str or tuple or list): The name of the column.
+            formula (bool, optional): Whether to add '=' to the beginning
+                of the address.
+            kwargs Keyword arguments for the `Range.get_address` method.
+
+        Returns:
+            Series or DataFrame: The address list of the column.
+        """
+        if column is None:
+            return self.get_address(self.value_columns, formula=formula, **kwargs)
+
+        if isinstance(column, list):
+            values = {c: self.get_address(c, formula=formula, **kwargs) for c in column}
+            df = DataFrame(values)
+
+            if self.has_index and self.index_columns[0]:
+                index = self._index_frame()
+                if len(index.columns) == 1:
+                    df.index = Index(index[index.columns[0]])
+                else:
+                    df.index = MultiIndex.from_frame(index)
+
+            return df
+
+        addresses = [cell.get_address(**kwargs) for cell in self.range(column)]
+
+        if formula:
+            addresses = ["=" + address for address in addresses]
+
+        return Series(addresses, name=column)
+
+    def _index_frame(self) -> DataFrame:
+        start = self.cell.offset(self.columns_level - 1)
+        end = start.offset(len(self), self.index_level - 1)
+        rng = self.sheet.range(start, end)
+        return rng.options(DataFrame).value.reset_index()  # type: ignore
 
     def ranges(
         self,

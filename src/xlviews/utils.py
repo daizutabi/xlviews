@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from functools import cache
 from typing import TYPE_CHECKING
 
 import xlwings as xw
-from pywintypes import com_error
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
@@ -17,17 +15,6 @@ if TYPE_CHECKING:
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.dataframes.sheet_frame import SheetFrame
-
-
-@cache
-def is_excel_installed() -> bool:
-    try:
-        with xw.App(visible=False):
-            pass
-    except com_error:
-        return False
-
-    return True
 
 
 def constant(type_: str, name: str | None = None) -> int:

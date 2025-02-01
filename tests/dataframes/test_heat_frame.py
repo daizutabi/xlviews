@@ -7,7 +7,7 @@ from xlwings import Sheet
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.utils import is_excel_installed
+from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
@@ -83,21 +83,9 @@ def test_colorbar(sf: HeatFrame, i: int, value: int):
 
 
 if __name__ == "__main__":
-    from itertools import product
+    from xlviews.testing import create_sheet
 
-    import xlwings as xw
-    from pandas import DataFrame
-
-    from xlviews.dataframes.heat_frame import HeatFrame
-    from xlviews.dataframes.sheet_frame import SheetFrame
-    from xlviews.range.style import hide_gridlines
-
-    for app in xw.apps:
-        app.quit()
-
-    book = xw.Book()
-    sheet = book.sheets.add()
-    hide_gridlines()
+    sheet = create_sheet()
 
     values = list(product(range(1, 5), range(1, 7)))
     df = DataFrame(values, columns=["x", "y"])

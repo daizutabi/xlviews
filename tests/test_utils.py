@@ -2,7 +2,7 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.utils import is_excel_installed
+from xlviews.testing import is_excel_installed
 
 
 @pytest.mark.parametrize(

@@ -4,7 +4,7 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.utils import is_excel_installed
+from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
@@ -197,30 +197,27 @@ def test_index_list_as_address(sf: SheetFrame):
 @pytest.mark.parametrize("by", ["x", "y"])
 def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
     a = sf.groupby(by).agg(func, as_address=True, formula=True)
-    b = df.groupby(by).agg(func)
+    b = df.groupby(by).agg(func).astype(float)
     sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
-    a = sf.data
-    assert a.equals(b.astype(float))
+    assert sf.data.equals(b)
 
 
 @pytest.mark.parametrize("func", ["sum", "min", "max"])
 @pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
 def test_sf_group_list_str(sf: SheetFrame, df: DataFrame, func, by):
     a = sf.groupby(by).agg(func, as_address=True, formula=True)
-    b = df.groupby(by).agg(func)
+    b = df.groupby(by).agg(func).astype(float)
     sf = SheetFrame(50, 10, data=a, sheet=sf.sheet, style=False)
-    a = sf.data
-    assert a.equals(b.astype(float))
+    assert sf.data.equals(b)
 
 
 @pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
 @pytest.mark.parametrize("sort", [True, False])
 def test_sf_group_list_str_sort(sf: SheetFrame, df: DataFrame, by, sort):
     a = sf.groupby(by, sort=sort).agg("sum", as_address=True, formula=True)
-    b = df.groupby(by, sort=sort).agg("sum")
+    b = df.groupby(by, sort=sort).agg("sum").astype(float)
     sf = SheetFrame(50, 20, data=a, sheet=sf.sheet, style=False)
-    a = sf.data
-    assert a.equals(b.astype(float))
+    assert sf.data.equals(b)
 
 
 @pytest.mark.parametrize(
@@ -231,10 +228,9 @@ def test_sf_group_list_str_sort(sf: SheetFrame, df: DataFrame, by, sort):
 @pytest.mark.parametrize("sort", [True, False])
 def test_sf_group_list_dict(sf: SheetFrame, df: DataFrame, func, by, sort):
     a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
-    b = df.groupby(by, sort=sort).agg(func)
+    b = df.groupby(by, sort=sort).agg(func).astype(float)
     sf = SheetFrame(50, 30, data=a, sheet=sf.sheet, style=False)
-    a = sf.data
-    assert a.equals(b.astype(float))
+    assert sf.data.equals(b)
 
 
 @pytest.mark.parametrize("func", [["sum", "mean"], ["min", "max"]])
@@ -242,7 +238,6 @@ def test_sf_group_list_dict(sf: SheetFrame, df: DataFrame, func, by, sort):
 def test_sf_group_list_list(sf: SheetFrame, df: DataFrame, func, sort):
     by = ["y", "x"]
     a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
-    b = df.groupby(by, sort=sort).agg(func)  # type: ignore
+    b = df.groupby(by, sort=sort).agg(func).astype(float)
     sf = SheetFrame(50, 40, data=a, sheet=sf.sheet, style=False)
-    a = sf.data
-    assert a.equals(b.astype(float))
+    assert sf.data.equals(b)
