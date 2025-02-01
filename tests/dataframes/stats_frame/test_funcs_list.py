@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from xlviews.dataframes.sheet import SheetFrame
-from xlviews.dataframes.stats import StatsFrame
+from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.dataframes.stats_frame import StatsFrame
 from xlviews.utils import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

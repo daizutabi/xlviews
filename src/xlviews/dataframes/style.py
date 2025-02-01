@@ -24,7 +24,7 @@ from xlviews.utils import rgb
 if TYPE_CHECKING:
     from xlwings import Range
 
-    from .sheet import SheetFrame
+    from .sheet_frame import SheetFrame
     from .table import Table
 
 

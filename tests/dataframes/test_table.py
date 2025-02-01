@@ -112,7 +112,7 @@ def test_table_error():
 
 
 def test_sheetframe(table: Table):
-    from xlviews.dataframes.sheet import SheetFrame
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
     sf = SheetFrame(table.cell.row, table.cell.column, sheet=table.sheet, style=False)
     assert sf.table

@@ -21,7 +21,7 @@ from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_alignment
 
 from . import modify
-from .group import GroupBy
+from .groupby import GroupBy
 from .style import set_frame_style, set_wide_column_style
 from .table import Table
 
@@ -31,8 +31,8 @@ if TYPE_CHECKING:
 
     from numpy.typing import ArrayLike, NDArray
 
-    from .dist import DistFrame
-    from .stats import StatsFrame
+    from .dist_frame import DistFrame
+    from .stats_frame import StatsFrame
 
 Func: TypeAlias = str | Range | None
 
@@ -1022,13 +1022,13 @@ class SheetFrame:
         return modify.delete(self, direction, entire=entire)
 
     def dist_frame(self, *args, **kwargs) -> DistFrame:
-        from .dist import DistFrame
+        from .dist_frame import DistFrame
 
         self.dist = DistFrame(self, *args, **kwargs)
         return self.dist
 
     def stats_frame(self, *args, **kwargs) -> StatsFrame:
-        from .stats import StatsFrame
+        from .stats_frame import StatsFrame
 
         self.stats = StatsFrame(self, *args, **kwargs)
         return self.stats

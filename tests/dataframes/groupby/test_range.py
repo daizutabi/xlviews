@@ -1,7 +1,7 @@
 import pytest
 
-from xlviews.dataframes.group import GroupBy
-from xlviews.dataframes.sheet import SheetFrame
+from xlviews.dataframes.groupby import GroupBy
+from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.range.range_collection import RangeCollection
 from xlviews.utils import is_excel_installed
 

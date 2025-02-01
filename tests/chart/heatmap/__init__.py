@@ -3,7 +3,7 @@ import pandas as pd
 import xlwings as xw
 from pandas import DataFrame
 
-from xlviews.dataframes.sheet import SheetFrame
+from xlviews.dataframes.sheet_frame import SheetFrame
 
 
 def get_unit(a: int, b: int, o: int) -> DataFrame:

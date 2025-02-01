@@ -5,7 +5,7 @@ if __name__ == "__main__":
     from xlwings.constants import ChartType
 
     from xlviews.chart.axes import Axes
-    from xlviews.dataframes.sheet import SheetFrame
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
     for app in xw.apps:
         app.quit()

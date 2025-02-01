@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from xlviews.range.range_collection import RangeCollection
 
-    from .sheet import SheetFrame
+    from .sheet_frame import SheetFrame
 
 H = TypeVar("H")
 T = TypeVar("T")
@@ -163,7 +163,7 @@ class GroupBy:
         **kwargs,
     ) -> DataFrame:
         if as_address:
-            values = {c: self.agg_column("first", c, **kwargs) for c in self.by}
+            values = {c: self._agg_column("first", c, **kwargs) for c in self.by}
             return DataFrame(values)
 
         values = self.keys()
@@ -177,7 +177,7 @@ class GroupBy:
         formula: bool = False,
         **kwargs,
     ) -> DataFrame:
-        agg = partial(self.agg_column, formula=formula, **kwargs)
+        agg = partial(self._agg_column, formula=formula, **kwargs)
 
         index_df = self.index(as_address=as_address, formula=formula, **kwargs)
         index = MultiIndex.from_frame(index_df)
@@ -196,7 +196,7 @@ class GroupBy:
         values = {(c, f): agg(f, c) for c in columns for f in func}
         return DataFrame(values, index=index)
 
-    def agg_column(
+    def _agg_column(
         self,
         func: str | Range | None,
         column: str,

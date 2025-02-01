@@ -12,7 +12,7 @@ from xlviews.decorators import turn_off_screen_updating
 from xlviews.range.style import set_alignment, set_font
 from xlviews.utils import iter_columns
 
-from .sheet import SheetFrame
+from .sheet_frame import SheetFrame
 
 if TYPE_CHECKING:
     from xlwings import Range

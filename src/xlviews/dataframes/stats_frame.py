@@ -14,8 +14,8 @@ from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_font, set_number_format
 from xlviews.utils import iter_columns
 
-from .group import GroupBy
-from .sheet import SheetFrame
+from .groupby import GroupBy
+from .sheet_frame import SheetFrame
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

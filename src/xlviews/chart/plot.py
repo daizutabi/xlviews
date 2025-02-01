@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from xlwings.constants import ChartType
 
-from xlviews.dataframes.sheet import SheetFrame
+from xlviews.dataframes.sheet_frame import SheetFrame
 
 from .axes import Axes
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from xlwings import Range, Sheet
 
     from xlviews.chart.series import Series
-    from xlviews.dataframes.group import GroupBy
+    from xlviews.dataframes.groupby import GroupBy
     from xlviews.range.range_collection import RangeCollection
 
 
