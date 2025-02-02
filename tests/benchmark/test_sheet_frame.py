@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import pytest
 from pandas import DataFrame
@@ -56,15 +54,10 @@ def test_columns(benchmark, sf, shape):
 
 
 if __name__ == "__main__":
-    import time
-
     from xlviews.testing import create_sheet
 
     sheet = create_sheet()
     df_ = create_data_frame(1000, 100)
-    start = time.time()
     sf_ = create_sheet_frame(df_, sheet)
-    end = time.time()
-    print(1e3 * (end - start))
 
     # print(sf_.get_address())

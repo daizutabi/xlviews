@@ -5,19 +5,20 @@ from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import create_sheet_frame, is_excel_installed
+from xlviews.testing.dataframes.sheet_frame.noindex import create_data_frame
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
 def df():
-    return DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
+    return create_data_frame()
 
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(2, 3, data=df, style=False, sheet=sheet_module)
+    return create_sheet_frame(df, sheet_module, 2, 3, style=False)
 
 
 def test_value(sf: SheetFrame):

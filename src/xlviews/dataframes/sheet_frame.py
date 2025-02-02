@@ -209,23 +209,32 @@ class SheetFrame:
 
     def __len__(self) -> int:
         start = self.cell.offset(self.columns_level)
-        cell = start
+        end = start.expand("down")[-1]
+        # end = start.expand("down")[-1]
+        # cell = start
 
-        while cell.value is not None:
-            cell = cell.expand("down")[-1].offset(1)
+        # while cell.value is not None:
+        #     cell = cell.expand("down")[-1].offset(1)
 
-        return cell.row - start.row
+        return end.row - start.row + 1
+
+    def _update_cell(self) -> None:  # important
+        self.cell = self.cell.offset(0, 0)
+
+    def expand(self, mode: str = "table") -> Range:
+        self._update_cell()
+        return self.cell.expand(mode)
 
     @property
     def row(self) -> int:
         """Return the row of the top-left cell."""
-        self.update_cell()
+        self._update_cell()
         return self.cell.row
 
     @property
     def column(self) -> int:
         """Return the column of the top-left cell."""
-        self.update_cell()
+        self._update_cell()
         return self.cell.column
 
     @property
@@ -361,13 +370,6 @@ class SheetFrame:
         values = value_columns[start : end + 1]
         return values.index(column[1]) + start + offset
 
-    def update_cell(self) -> None:  # important
-        self.cell = self.cell.offset(0, 0)
-
-    def expand(self, mode: str = "table") -> Range:
-        self.update_cell()
-        return self.cell.expand(mode)
-
     @property
     def data(self) -> DataFrame:
         """Return the data as a DataFrame."""
@@ -393,7 +395,7 @@ class SheetFrame:
 
     @property
     def visible_data(self) -> DataFrame:
-        self.update_cell()
+        self._update_cell()
         start = self.cell.offset(1, 0)
         end = start.offset(len(self) - 1, len(self.columns) - 1)
         range_ = self.sheet.range(start, end)

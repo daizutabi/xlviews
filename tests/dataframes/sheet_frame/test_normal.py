@@ -6,19 +6,10 @@ from xlwings import Sheet
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.table import Table
-from xlviews.testing import is_excel_installed
+from xlviews.testing import create_sheet_frame, is_excel_installed
+from xlviews.testing.dataframes.sheet_frame.normal import create_data_frame
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
-
-
-def create_data_frame() -> DataFrame:
-    df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]}, index=["x", "x", "y", "y"])
-    df.index.name = "name"
-    return df
-
-
-def create_sheet_frame(df: DataFrame, **kwargs) -> SheetFrame:
-    return SheetFrame(2, 3, data=df, **kwargs)
 
 
 @pytest.fixture(scope="module")
@@ -28,7 +19,7 @@ def df():
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return create_sheet_frame(df, style=False, sheet=sheet_module)
+    return create_sheet_frame(df, sheet_module, 2, 3, style=False)
 
 
 def test_value(sf: SheetFrame):
@@ -268,12 +259,3 @@ def test_get_address_index(address: DataFrame):
 def test_get_address_value(address: DataFrame):
     values = [["$D$3", "$E$3"], ["$D$4", "$E$4"], ["$D$5", "$E$5"], ["$D$6", "$E$6"]]
     np.testing.assert_array_equal(address, values)
-
-
-if __name__ == "__main__":
-    from xlviews.testing import create_sheet
-
-    sheet = create_sheet()
-    sf_ = create_sheet_frame(create_data_frame(), sheet=sheet)
-
-    # print(sf_.get_address())

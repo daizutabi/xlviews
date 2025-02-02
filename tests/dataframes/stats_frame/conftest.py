@@ -6,8 +6,7 @@ from xlwings import Sheet
 from xlviews.dataframes.sheet_frame import SheetFrame
 
 
-@pytest.fixture(scope="module")
-def df():
+def create_data_frame() -> DataFrame:
     df = DataFrame(
         {
             "x": ["a"] * 8 + ["b"] * 8 + ["a"] * 4,
@@ -24,6 +23,15 @@ def df():
     return df
 
 
+def create_sheet_frame(df: DataFrame, **kwargs):
+    return SheetFrame(3, 3, data=df, **kwargs)
+
+
+@pytest.fixture(scope="module")
+def df():
+    return create_data_frame()
+
+
 @pytest.fixture(scope="module")
 def sf_parent(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(3, 3, data=df, table=True, sheet=sheet_module)
+    return create_sheet_frame(df, table=True, sheet=sheet_module)
