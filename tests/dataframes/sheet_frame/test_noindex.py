@@ -5,31 +5,35 @@ from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import create_sheet_frame, is_excel_installed
-from xlviews.testing.dataframes.sheet_frame.noindex import create_data_frame
+from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing.sheet_frame import NoIndex
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def df():
-    return create_data_frame()
+def fc(sheet_module: Sheet):
+    return NoIndex(sheet_module, 2, 3)
 
 
 @pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    return create_sheet_frame(df, sheet_module, 2, 3, style=False)
+def df(fc: FrameContainer):
+    return fc.df
 
 
-def test_value(sf: SheetFrame):
+@pytest.fixture(scope="module")
+def sf(fc: FrameContainer):
+    return fc.sf
+
+
+def test_expand(sf: SheetFrame):
     v = [[None, "a", "b"], [0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]
     assert sf.cell.expand().options(ndim=2).value == v
 
 
-def test_init(sf: SheetFrame, sheet_module: Sheet):
-    assert sf.row == 2
-    assert sf.column == 3
-    assert sf.sheet.name == sheet_module.name
+def test_attrs(sf: SheetFrame, fc: FrameContainer):
+    assert sf.row == fc.row
+    assert sf.column == fc.column
     assert sf.index_level == 1
     assert sf.columns_level == 1
 
@@ -56,7 +60,8 @@ def test_index_columns(sf: SheetFrame):
     assert sf.index_columns == [None]
 
 
-def test_init_index_false(df: DataFrame, sheet: Sheet):
+def test_index_false(sheet: Sheet):
+    df = DataFrame({"a": [1, 2], "b": [2, 4]})
     sf = SheetFrame(2, 3, data=df, index=False, style=False, sheet=sheet)
     assert sf.columns == ["a", "b"]
     assert sf.index_level == 0
@@ -181,25 +186,6 @@ def test_drop_duplicates(sheet: Sheet):
     assert x[2::3].isna().all()
 
 
-def test_address(sf: SheetFrame):
-    s = sf.get_address("a")
-    assert s.to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
-    assert s.name == "a"
-
-
-def test_address_formula(sf: SheetFrame):
-    s = sf.get_address("a", formula=True)
-    assert s.to_list() == ["=$D$3", "=$D$4", "=$D$5", "=$D$6"]
-
-
-def test_address_list(sf: SheetFrame):
-    df = sf.get_address(["a", "b"])
-    assert df["a"].to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
-    assert df["b"].to_list() == ["$E$3", "$E$4", "$E$5", "$E$6"]
-    assert df.index.to_list() == list(range(4))
-    assert df.index.name is None
-
-
 def test_add_column(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
@@ -264,6 +250,25 @@ def test_select(sf: SheetFrame, a, b, sel):
         np.testing.assert_array_equal(sf.select(a=a), sel)
     else:
         np.testing.assert_array_equal(sf.select(a=a, b=b), sel)
+
+
+def test_address(sf: SheetFrame):
+    s = sf.get_address("a")
+    assert s.to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
+    assert s.name == "a"
+
+
+def test_address_formula(sf: SheetFrame):
+    s = sf.get_address("a", formula=True)
+    assert s.to_list() == ["=$D$3", "=$D$4", "=$D$5", "=$D$6"]
+
+
+def test_address_list(sf: SheetFrame):
+    df = sf.get_address(["a", "b"])
+    assert df["a"].to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
+    assert df["b"].to_list() == ["$E$3", "$E$4", "$E$5", "$E$6"]
+    assert df.index.to_list() == list(range(4))
+    assert df.index.name is None
 
 
 def test_groupby(sheet: Sheet):

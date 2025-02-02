@@ -5,28 +5,25 @@ from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing.sheet_frame import MultiIndexColumn
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def df():
-    df = DataFrame(
-        {
-            "x": [1, 1, 1, 1, 2, 2, 2, 2],
-            "y": [1, 1, 2, 2, 1, 1, 2, 2],
-            "z": [1, 1, 1, 2, 2, 1, 1, 1],
-            "c": [1, 2, 3, 4, 5, 6, 7, 8],
-            "d": [11, 12, 13, 14, 15, 16, 17, 18],
-            "e": [21, 22, 23, 24, 25, 26, 27, 28],
-            "f": [31, 32, 33, 34, 35, 36, 37, 38],
-        },
-    )
-    df = df.set_index(["x", "y", "z"])
-    x = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-    df.columns = MultiIndex.from_tuples(x, names=["a", "b"])
-    return df
+def fc(sheet_module: Sheet):
+    return MultiIndexColumn(sheet_module, 5, 3)
+
+
+@pytest.fixture(scope="module")
+def df(fc: FrameContainer):
+    return fc.df
+
+
+@pytest.fixture(scope="module")
+def sf(fc: FrameContainer):
+    return fc.sf
 
 
 def test_df(df: DataFrame):
@@ -43,11 +40,6 @@ def test_df(df: DataFrame):
     assert df.index.to_list() == x
     assert df.index.names == ["x", "y", "z"]
     assert isinstance(df.index, MultiIndex)
-
-
-@pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(5, 3, data=df, style=False, sheet=sheet_module)
 
 
 def test_value_column(sf: SheetFrame):

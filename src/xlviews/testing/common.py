@@ -11,6 +11,8 @@ from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.range.style import hide_gridlines
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from pandas import DataFrame
     from xlwings import Sheet
 
@@ -32,6 +34,7 @@ def create_sheet() -> Sheet:
 
     book = xw.Book()
     sheet = book.sheets.add()
+    sheet.range("A1").column_width = 1
     hide_gridlines(sheet)
 
     return sheet
@@ -45,3 +48,52 @@ def create_sheet_frame(
     **kwargs,
 ) -> SheetFrame:
     return SheetFrame(row, column, data=df, sheet=sheet, **kwargs)
+
+
+class FrameContainer:
+    df: DataFrame
+    sf: SheetFrame
+    row: int = 2
+    column: int = 2
+
+    def __init__(
+        self,
+        sheet: Sheet,
+        row: int = 0,
+        column: int = 0,
+        style: bool = False,
+        **kwargs,
+    ) -> None:
+        self.df = self.dataframe()
+        self.row = row or self.row
+        self.column = column or self.column
+        self.sf = create_sheet_frame(
+            self.df,
+            sheet,
+            self.row,
+            self.column,
+            style=style,
+            **kwargs,
+        )
+        self.init()
+
+    def init(self) -> None:
+        pass
+
+    @classmethod
+    def dataframe(cls) -> DataFrame:
+        raise NotImplementedError
+
+    @staticmethod
+    def from_classes(
+        classes: Iterable[type[FrameContainer]],
+        sheet: Sheet,
+        style: bool = False,
+    ) -> list[FrameContainer]:
+        fcs = [cls(sheet, style=style) for cls in classes]
+
+        if style:
+            for fc in fcs:
+                fc.sf.set_adjacent_column_width(1)
+
+        return fcs
