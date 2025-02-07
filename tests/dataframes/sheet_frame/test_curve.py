@@ -2,25 +2,30 @@ import string
 
 import numpy as np
 import pytest
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing.sheet_frame import Curve
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def sf(sheet_module: Sheet):
-    a = ["a"] * 8 + ["b"] * 8
-    b = (["c"] * 4 + ["d"] * 4) * 2
-    c = np.repeat(range(1, 9), 2)
-    d = ["x", "y"] * 8
-    df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
-    df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
-    return SheetFrame(2, 2, data=df, index=True, style=False, sheet=sheet_module)
+def fc(sheet_module: Sheet):
+    return Curve(sheet_module, 2, 2)
+
+
+@pytest.fixture(scope="module")
+def df(fc: FrameContainer):
+    return fc.df
+
+
+@pytest.fixture(scope="module")
+def sf(fc: FrameContainer):
+    return fc.sf
 
 
 def test_value(sf: SheetFrame):

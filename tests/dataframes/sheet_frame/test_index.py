@@ -6,20 +6,25 @@ from xlwings import Sheet
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.table import Table
-from xlviews.testing import create_sheet_frame, is_excel_installed
-from xlviews.testing.dataframes.sheet_frame.normal import create_data_frame
+from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing.sheet_frame import Index
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def df():
-    return create_data_frame()
+def fc(sheet_module: Sheet):
+    return Index(sheet_module, 2, 3)
 
 
 @pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    return create_sheet_frame(df, sheet_module, 2, 3, style=False)
+def df(fc: FrameContainer):
+    return fc.df
+
+
+@pytest.fixture(scope="module")
+def sf(fc: FrameContainer):
+    return fc.sf
 
 
 def test_value(sf: SheetFrame):
@@ -27,10 +32,9 @@ def test_value(sf: SheetFrame):
     assert sf.cell.expand().options(ndim=2).value == v
 
 
-def test_init(sf: SheetFrame, sheet_module: Sheet):
+def test_init(sf: SheetFrame):
     assert sf.row == 2
     assert sf.column == 3
-    assert sf.sheet.name == sheet_module.name
     assert sf.index_level == 1
     assert sf.columns_level == 1
 

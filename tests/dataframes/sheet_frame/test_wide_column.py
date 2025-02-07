@@ -4,15 +4,25 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing.sheet_frame import WideColumn
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def df():
-    df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
-    return df.set_index(["x", "y"])
+def fc(sheet_module: Sheet):
+    return WideColumn(sheet_module, 4, 2)
+
+
+@pytest.fixture(scope="module")
+def df(fc: FrameContainer):
+    return fc.df
+
+
+@pytest.fixture(scope="module")
+def sf(fc: FrameContainer):
+    return fc.sf
 
 
 def test_df(df: DataFrame):
@@ -21,14 +31,6 @@ def test_df(df: DataFrame):
     assert df.columns.to_list() == ["a", "b"]
     assert df.index.to_list() == [("i", "k"), ("j", "l")]
     assert df.index.names == ["x", "y"]
-
-
-@pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    sf = SheetFrame(4, 2, data=df, style=False, sheet=sheet_module)
-    sf.add_wide_column("u", range(3), autofit=False)
-    sf.add_wide_column("v", range(4), autofit=False)
-    return sf
 
 
 def test_value(sf: SheetFrame):

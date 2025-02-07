@@ -209,14 +209,12 @@ class SheetFrame:
 
     def __len__(self) -> int:
         start = self.cell.offset(self.columns_level)
-        end = start.expand("down")[-1]
-        # end = start.expand("down")[-1]
-        # cell = start
+        cell = start
 
-        # while cell.value is not None:
-        #     cell = cell.expand("down")[-1].offset(1)
+        while cell.value is not None:
+            cell = cell.expand("down")[-1].offset(1)
 
-        return end.row - start.row + 1
+        return cell.row - start.row
 
     def _update_cell(self) -> None:  # important
         self.cell = self.cell.offset(0, 0)

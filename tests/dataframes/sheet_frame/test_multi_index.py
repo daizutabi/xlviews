@@ -1,26 +1,30 @@
 import numpy as np
+import pandas as pd
 import pytest
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing.sheet_frame import MultiIndex
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def df():
-    df = DataFrame(
-        {
-            "x": [1, 1, 1, 1, 2, 2, 2, 2],
-            "y": [1, 1, 2, 2, 1, 1, 2, 2],
-            "a": [1, 2, 3, 4, 5, 6, 7, 8],
-            "b": [11, 12, 13, 14, 15, 16, 17, 18],
-        },
-    )
-    return df.set_index(["x", "y"])
+def fc(sheet_module: Sheet):
+    return MultiIndex(sheet_module, 10, 6)
+
+
+@pytest.fixture(scope="module")
+def df(fc: FrameContainer):
+    return fc.df
+
+
+@pytest.fixture(scope="module")
+def sf(fc: FrameContainer):
+    return fc.sf
 
 
 def test_df(df: DataFrame):
@@ -30,12 +34,7 @@ def test_df(df: DataFrame):
     x = [(1, 1), (1, 1), (1, 2), (1, 2), (2, 1), (2, 1), (2, 2), (2, 2)]
     assert df.index.to_list() == x
     assert df.index.names == ["x", "y"]
-    assert isinstance(df.index, MultiIndex)
-
-
-@pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(10, 6, data=df, style=False, sheet=sheet_module)
+    assert isinstance(df.index, pd.MultiIndex)
 
 
 def test_value(sf: SheetFrame):
