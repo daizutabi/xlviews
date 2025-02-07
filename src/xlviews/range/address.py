@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from xlwings import Range
+
+from .range_collection import RangeCollection
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from xlwings import Range, Sheet
-
-    from .range_collection import RangeCollection
+    from xlwings import Sheet
 
 
 if TYPE_CHECKING:
@@ -28,12 +30,23 @@ def reference(cell: str | tuple[int, int] | Range, sheet: Sheet | None = None) -
     return "=" + cell.get_address(include_sheetname=True)
 
 
-def iter_address(
-    ranges: Iterable[str | Range | RangeCollection],
-    **kwargs,
+def iter_addresses(
+    ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
+    *,
+    row_absolute: bool = True,
+    column_absolute: bool = True,
+    include_sheetname: bool = False,
+    external: bool = False,
+    formula: bool = False,
+    cellwise: bool = False,
 ) -> Iterator[str]:
+    if isinstance(ranges, Range | RangeCollection):
+        ranges = [ranges]
+
     for rng in ranges:
-        if isinstance(rng, str):
-            yield rng
-        else:
-            yield rng.get_address(**kwargs)
+        yield rng.get_address(
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+        )

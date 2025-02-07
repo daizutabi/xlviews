@@ -36,15 +36,17 @@ def test_reference_error(sheet_module: Sheet):
         reference((4, 5))
 
 
-def test_iter_address_str():
-    from xlviews.range.address import iter_address
+@pytest.mark.parametrize(
+    ("rng", "addrs"),
+    [("A1", ["A1"]), ("A1:A3", ["A1:A3"])],
+)
+def test_iter_addresses(rng, addrs, sheet_module: Sheet):
+    from xlviews.range.address import iter_addresses
 
-    assert list(iter_address(("a", "b"))) == ["a", "b"]
+    if isinstance(rng, str):
+        rngs = sheet_module.range(rng)
+    else:
+        rngs = [sheet_module.range(r) for r in rng]
 
-
-def test_iter_address_range(sheet_module: Sheet):
-    from xlviews.range.address import iter_address
-
-    ranges = [sheet_module.range(4, 5), sheet_module.range(6, 7)]
-
-    assert list(iter_address(ranges)) == ["$E$4", "$G$6"]
+    x = list(iter_addresses(rngs, row_absolute=False, column_absolute=False))
+    assert x == addrs
