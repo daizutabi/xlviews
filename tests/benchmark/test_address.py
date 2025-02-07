@@ -6,13 +6,26 @@ from xlviews.testing import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-def get_addresses(rng: Range, **kwargs):
-    return [r.get_address(**kwargs) for r in rng]
+@pytest.fixture(
+    scope="module",
+    params=[(10, 10), (30, 10), (100, 20)],
+    ids=lambda x: str(x),
+)
+def shape(request: pytest.FixtureRequest):
+    return request.param
 
 
-@pytest.mark.parametrize(("rows", "columns"), [(10, 10), (30, 10), (100, 10)])
-def test_get_addresses(benchmark, sheet: Sheet, rows: int, columns: int):
-    rng = sheet.range((1, 1), (rows, columns))
-    assert rng[0].get_address() == "$A$1"
-    x = benchmark(get_addresses, rng)
-    assert x[0] == "$A$1"
+def test_get_addresses(benchmark, sheet: Sheet, shape: tuple[int, int]):
+    nrows, ncolumns = shape
+    rng = sheet.range((1, 1), (nrows, ncolumns))
+    x = benchmark(lambda rng: [x.get_address() for x in rng], rng)
+    assert len(x) == nrows * ncolumns
+
+
+def test_iter_addresses(benchmark, sheet: Sheet, shape: tuple[int, int]):
+    from xlviews.range.address import iter_addresses
+
+    nrows, ncolumns = shape
+    rng = sheet.range((1, 1), (nrows, ncolumns))
+    x = benchmark(lambda x: list(iter_addresses(x, cellwise=True)), rng)
+    assert len(x) == nrows * ncolumns

@@ -39,6 +39,31 @@ def test_range_collection_from_str(sheet_module: Sheet, ranges, n):
 
 
 @pytest.mark.parametrize(
+    ("ranges", "n"),
+    [
+        (["$A$1:$B$3"], 1),
+        (["$A$2:$A$4", "$A$5:$A$8"], 2),
+        (["$A$2:$A$4,$A$5:$A$8"], 1),
+        (["$A$2:$A$4,$A$5:$A$8", "$C$4:$C$7,$D$10:$D$12"], 2),
+    ],
+)
+def test_range_collection_from_range(sheet_module: Sheet, ranges, n):
+    ranges = [sheet_module.range(r) for r in ranges]
+    rc = RangeCollection(ranges)
+    assert len(rc) == n
+    a = rc.get_address()
+    assert a == ",".join(r.get_address() for r in ranges)
+
+
+def test_range_collection_from_range_one(sheet_module: Sheet):
+    rng = sheet_module.range("A1:B2")
+    rc = RangeCollection(rng)
+    assert len(rc) == 4
+    a = rc.get_address()
+    assert a == "$A$1,$B$1,$A$2,$B$2"
+
+
+@pytest.mark.parametrize(
     ("row", "n", "address"),
     [
         ([(4, 5), (10, 14)], 2, "E4:E5,E10:E14"),
