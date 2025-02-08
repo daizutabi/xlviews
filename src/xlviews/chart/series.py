@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 from xlwings import Range
 from xlwings.constants import LineStyle
 
-from xlviews.range.address import reference
+from xlviews.colors import rgb
+
+# from xlviews.range.address import reference
 from xlviews.range.range_collection import RangeCollection
-from xlviews.utils import rgb
 
 from .style import get_line_style, get_marker_style
 

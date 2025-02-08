@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import pywintypes
 from xlwings.constants import TableStyleElementType
 
+from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.range.style import (
@@ -19,7 +20,6 @@ from xlviews.range.style import (
     set_fill,
     set_font,
 )
-from xlviews.utils import rgb
 
 if TYPE_CHECKING:
     from xlwings import Range

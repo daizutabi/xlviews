@@ -13,8 +13,9 @@ from xlwings.constants import (
     LineStyle,
 )
 
+from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.utils import constant, rgb, set_font_api
+from xlviews.utils import constant, set_font_api
 
 if TYPE_CHECKING:
     from .range_collection import RangeCollection

@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING
 
 from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
+from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.range.address import reference
-from xlviews.utils import rgb, set_font_api
+from xlviews.utils import set_font_api
+
+# from xlviews.range.address import reference
 
 if TYPE_CHECKING:
     from xlwings import Range, Sheet

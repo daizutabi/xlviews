@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.range.formula import aggregate
 from xlviews.range.style import set_alignment, set_border, set_color_scale, set_font
-from xlviews.utils import rgb
 
 from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style

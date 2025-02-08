@@ -8,8 +8,8 @@ from xlwings import Range
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
-from xlviews.range.address import reference
 
+# from xlviews.range.address import reference
 from .series import Series
 from .style import (
     get_axis_label,
