@@ -1,6 +1,8 @@
 import pytest
-from xlwings import Range, Sheet
+from xlwings import Range as RangeImpl
+from xlwings import Sheet
 
+from xlviews.range.range import Range
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -8,24 +10,31 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(
     scope="module",
-    params=[(10, 10), (30, 10), (100, 20)],
+    params=[(10, 10), (20, 10), (50, 10)],
     ids=lambda x: str(x),
 )
 def shape(request: pytest.FixtureRequest):
     return request.param
 
 
-def test_get_addresses(benchmark, sheet: Sheet, shape: tuple[int, int]):
+@pytest.fixture(scope="module")
+def rng_impl(shape: tuple[int, int], sheet_module: Sheet):
     nrows, ncolumns = shape
-    rng = sheet.range((1, 1), (nrows, ncolumns))
-    x = benchmark(lambda rng: [x.get_address() for x in rng], rng)
-    assert len(x) == nrows * ncolumns
+    return sheet_module.range((1, 1), (nrows, ncolumns))
 
 
-def test_iter_addresses(benchmark, sheet: Sheet, shape: tuple[int, int]):
-    from xlviews.range.address import iter_addresses
-
+@pytest.fixture(scope="module")
+def rng(shape: tuple[int, int], sheet_module: Sheet):
     nrows, ncolumns = shape
-    rng = sheet.range((1, 1), (nrows, ncolumns))
-    x = benchmark(lambda x: list(iter_addresses(x, cellwise=True)), rng)
-    assert len(x) == nrows * ncolumns
+    return Range((1, 1), (nrows, ncolumns), sheet=sheet_module)
+
+
+def test_get_addresses(benchmark, rng_impl: RangeImpl, rng: Range, shape):
+    x = benchmark(lambda: [r.get_address() for r in rng_impl])
+    assert len(x) == shape[0] * shape[1]
+    assert x == list(rng.iter_addresses())
+
+
+def test_iter_addresses(benchmark, rng: Range, shape):
+    x = benchmark(lambda: list(rng.iter_addresses()))
+    assert len(x) == shape[0] * shape[1]
