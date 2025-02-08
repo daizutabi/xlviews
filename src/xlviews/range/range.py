@@ -15,11 +15,12 @@ if TYPE_CHECKING:
 
 
 class Range:
-    sheet: Sheet
     row: int
     column: int
     row_end: int
     column_end: int
+    sheet: Sheet
+    impl: RangeImpl
 
     def __init__(
         self,
@@ -46,11 +47,9 @@ class Range:
         self.row_end = max(self.row, self.row_end)
         self.column_end = max(self.column, self.column_end)
 
-    @property
-    def impl(self) -> RangeImpl:
         cell1 = (self.row, self.column)
         cell2 = (self.row_end, self.column_end)
-        return self.sheet.range(cell1, cell2)
+        self.impl = self.sheet.range(cell1, cell2)
 
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)
@@ -64,6 +63,12 @@ class Range:
         addr = self.get_address(include_sheetname=True, external=True)
         return f"<{self.__class__.__name__} {addr}>"
 
+    def update(self) -> None:
+        self.impl = self.impl.offset()
+        self.row, self.column = self.impl.row, self.impl.column
+        last_cell = self.impl.last_cell
+        self.row_end, self.column_end = last_cell.row, last_cell.column
+
     def get_address(
         self,
         row_absolute: bool = True,
@@ -72,6 +77,8 @@ class Range:
         external: bool = False,
         formula: bool = False,
     ) -> str:
+        self.update()
+
         it = iter_addresses(
             self,
             row_absolute=row_absolute,
@@ -90,6 +97,8 @@ class Range:
         external: bool = False,
         formula: bool = False,
     ) -> Iterator[str]:
+        self.update()
+
         return iter_addresses(
             self,
             row_absolute=row_absolute,
@@ -99,6 +108,10 @@ class Range:
             cellwise=True,
             formula=formula,
         )
+
+    @property
+    def api(self) -> RangeImpl:
+        return self.impl.api
 
 
 def to_tuple(

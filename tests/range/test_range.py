@@ -1,6 +1,7 @@
 import pytest
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
+from xlwings.constants import Direction
 
 from xlviews.range.range import Range
 from xlviews.testing import is_excel_installed
@@ -95,3 +96,19 @@ def test_iter_addresses(rng: Range, rng_impl: RangeImpl, external):
     x = list(rng.iter_addresses(external=external))
     y = [r.get_address(external=external) for r in rng_impl]
     assert x == y
+
+
+@pytest.mark.parametrize("func", [Range, RangeImpl])
+def test_insert(func, sheet: Sheet):
+    rng = func("E10")
+    rows = sheet.api.Rows("2:4")
+    rows.Insert(Shift=Direction.xlDown)
+    assert rng.get_address() == "$E$13"
+
+
+@pytest.mark.parametrize("func", [Range, RangeImpl])
+def test_delete(func, sheet: Sheet):
+    rng = func("E10")
+    columns = sheet.api.Columns("B:D")
+    columns.Delete()
+    assert rng.get_address() == "$B$10"

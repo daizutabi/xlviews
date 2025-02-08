@@ -29,12 +29,12 @@ def rng(shape: tuple[int, int], sheet_module: Sheet):
     return Range((1, 1), (nrows, ncolumns), sheet=sheet_module)
 
 
-def test_get_addresses(benchmark, rng_impl: RangeImpl, rng: Range, shape):
+def test_address_impl(benchmark, rng_impl: RangeImpl, rng: Range, shape):
     x = benchmark(lambda: [r.get_address() for r in rng_impl])
     assert len(x) == shape[0] * shape[1]
     assert x == list(rng.iter_addresses())
 
 
-def test_iter_addresses(benchmark, rng: Range, shape):
+def test_address(benchmark, rng: Range, shape):
     x = benchmark(lambda: list(rng.iter_addresses()))
     assert len(x) == shape[0] * shape[1]

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlwings import Range
+from xlwings import Range as RangeImpl
+
+from .range import Range
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -25,11 +27,11 @@ class RangeCollection:
     @classmethod
     def from_index(
         cls,
-        sheet: Sheet,
         row: int | Sequence[int | tuple[int, int]],
         column: int | Sequence[int | tuple[int, int]],
+        sheet: Sheet | None = None,
     ) -> Self:
-        return cls(_iter_ranges(sheet, row, column))
+        return cls(_iter_ranges(row, column, sheet))
 
     def __len__(self) -> int:
         return len(self.ranges)
@@ -72,33 +74,29 @@ class RangeCollection:
 
 
 def _iter_ranges(
-    sheet: Sheet,
     row: int | Sequence[int | tuple[int, int]],
     column: int | Sequence[int | tuple[int, int]],
+    sheet: Sheet | None = None,
 ) -> Iterator[Range]:
     if isinstance(row, int) and isinstance(column, int):
-        yield sheet.range(row, column)
-        return
+        yield Range((row, column), sheet=sheet)
 
-    if isinstance(row, int) and not isinstance(column, int):
-        axis = 0
-        index = column
+    elif isinstance(row, int) and not isinstance(column, int):
+        for c in column:
+            start, end = _unpack(c)
+            yield Range((row, start), (row, end), sheet=sheet)
+
     elif isinstance(column, int) and not isinstance(row, int):
-        axis = 1
-        index = row
+        for r in row:
+            start, end = _unpack(r)
+            yield Range((start, column), (end, column), sheet=sheet)
+
     else:
         msg = "Either row or column must be an integer."
         raise TypeError(msg)
 
-    def get_range(start_end: int | tuple[int, int]) -> Range:
-        if isinstance(start_end, int):
-            start = end = start_end
-        else:
-            start, end = start_end
 
-        if axis == 0:
-            return sheet.range((row, start), (row, end))
-
-        return sheet.range((start, column), (end, column))
-
-    yield from (get_range(i) for i in index)
+def _unpack(index: int | tuple[int, int]) -> tuple[int, int]:
+    if isinstance(index, int):
+        return index, index
+    return index
