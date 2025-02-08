@@ -16,6 +16,7 @@ from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
+from xlviews.range.address import iter_addresses
 from xlviews.range.formula import aggregate
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_alignment
@@ -649,17 +650,17 @@ class SheetFrame:
 
             if column in columns:
                 ref = self.range(column, 0)
-                ref = ref.get_address(row_absolute=False)
+                addr = ref.get_address(row_absolute=False)
 
             elif column in wide_columns:
                 ref = self.range(column, -1)[0].offset(1)
-                ref = ref.get_address(column_absolute=False)
+                addr = ref.get_address(column_absolute=False)
 
             else:
                 ref = self.range(column, 0)[0]
-                ref = ref.get_address(column_absolute=False, row_absolute=False)
+                addr = ref.get_address(column_absolute=False, row_absolute=False)
 
-            refs[column] = ref
+            refs[column] = addr
 
         rng.value = formula.format(**refs)
 
@@ -851,12 +852,8 @@ class SheetFrame:
 
             return df
 
-        addresses = [cell.get_address(**kwargs) for cell in self.range(column)]
-
-        if formula:
-            addresses = ["=" + address for address in addresses]
-
-        return Series(addresses, name=column)
+        addresses = iter_addresses(self.range(column), formula=formula, cellwise=True)
+        return Series(list(addresses), name=column)
 
     def _index_frame(self) -> DataFrame:
         start = self.cell.offset(self.columns_level - 1)

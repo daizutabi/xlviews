@@ -254,6 +254,7 @@ def test_select(sf: SheetFrame, a, b, sel):
 
 def test_address(sf: SheetFrame):
     s = sf.get_address("a")
+    assert isinstance(s, Series)
     assert s.to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
     assert s.name == "a"
 
@@ -263,8 +264,11 @@ def test_address_formula(sf: SheetFrame):
     assert s.to_list() == ["=$D$3", "=$D$4", "=$D$5", "=$D$6"]
 
 
-def test_address_list(sf: SheetFrame):
-    df = sf.get_address(["a", "b"])
+@pytest.mark.parametrize("columns", [["a", "b"], ["b", "a"], None])
+def test_address_list_or_none(sf: SheetFrame, columns):
+    df = sf.get_address(columns)
+    assert isinstance(df, DataFrame)
+    assert df.shape == (4, 2)
     assert df["a"].to_list() == ["$D$3", "$D$4", "$D$5", "$D$6"]
     assert df["b"].to_list() == ["$E$3", "$E$4", "$E$5", "$E$6"]
     assert df.index.to_list() == list(range(4))

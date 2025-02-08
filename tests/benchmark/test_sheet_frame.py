@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -32,7 +32,7 @@ def test_create_sheet_frame(benchmark, sheet: Sheet, rows: int, columns: int):
 @pytest.fixture(
     scope="module",
     params=[(100, 10), (1000, 10), (10000, 10), (10, 100), (10, 1000)],
-    ids=lambda x: str(x),
+    ids=lambda x: "_".join([str(i) for i in x]),
 )
 def shape(request: pytest.FixtureRequest):
     return request.param
@@ -51,6 +51,32 @@ def test_len(benchmark, sf, shape):
 
 def test_columns(benchmark, sf, shape):
     assert benchmark(lambda: len(sf.columns)) == shape[1] + 1
+
+
+def test_index(benchmark, sf):
+    assert benchmark(lambda: sf.index("E")) == 8
+
+
+def test_range(benchmark, sf, shape):
+    x = benchmark(lambda: sf.range("A"))
+    assert len(x) == shape[0]
+
+
+def test_get_address_str(benchmark, sf, shape):
+    x = benchmark(lambda: sf.get_address("A"))
+    assert isinstance(x, Series)
+    assert len(x) == shape[0]
+
+
+@pytest.mark.parametrize(
+    "columns",
+    [["A"], ["B", "C", "D"], ["E", "F", "G", "H", "I", "J"]],
+    ids=lambda x: len(x),
+)
+def test_get_address_list(benchmark, sf, columns, shape):
+    x = benchmark(lambda: sf.get_address(columns))
+    assert isinstance(x, DataFrame)
+    assert x.shape == (shape[0], len(columns))
 
 
 if __name__ == "__main__":
