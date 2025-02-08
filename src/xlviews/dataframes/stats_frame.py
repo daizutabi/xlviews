@@ -211,7 +211,7 @@ class StatsFrame(SheetFrame):
             for column, fmt in zip(columns, formats, strict=True):
                 rc = RangeCollection.from_index(self.sheet, rows, column)
 
-                if func in ["median", "min", "mean", "max", "std", "sum"]:
+                if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
                     set_number_format(rc, fmt)
 
                 color = rcParams.get(f"stats.{func}.color")

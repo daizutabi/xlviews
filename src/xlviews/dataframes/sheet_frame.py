@@ -283,7 +283,7 @@ class SheetFrame:
     @overload
     def index(
         self,
-        column: str | tuple,
+        columns: str | tuple,
         *,
         relative: bool = False,
     ) -> int | tuple[int, int]: ...
@@ -291,59 +291,55 @@ class SheetFrame:
     @overload
     def index(
         self,
-        column: list[str | tuple],
+        columns: list[str | tuple],
         *,
         relative: bool = False,
-    ) -> list[int | tuple[int, int]]: ...
+    ) -> list[int] | list[tuple[int, int]]: ...
 
     def index(
         self,
-        column: str | tuple | list[str | tuple],
+        columns: str | tuple | list[str | tuple],
         *,
         relative: bool = False,
-    ) -> int | tuple[int, int] | list[int | tuple[int, int]]:
+    ) -> int | tuple[int, int] | list[int] | list[tuple[int, int]]:
         """Return the column index (1-indexed).
 
         If the column is a hierarchical index and the column name is specified,
         return the row index. If relative is True, return the relative position
         from `self.cell`.
         """
-        if not isinstance(column, str | tuple):
-            return [self.index(c, relative=relative) for c in column]
+        if isinstance(columns, str | tuple):
+            return self.index([columns], relative=relative)[0]
 
-        if self.columns_names and isinstance(column, str):
-            return self._index_row(column, relative=relative)
+        if self.columns_names:
+            columns_str = [c for c in columns if isinstance(c, str)]
+            if len(columns_str) == len(columns):
+                return self._index_row(columns_str, relative=relative)
 
-        columns = self.columns
+        idx = []
+        columns_ = self.columns
+        offset = 1 if relative else self.column
 
-        if column in columns:
-            offset = 1 if relative else self.column
-            return columns.index(column) + offset
+        for column in columns:
+            if column in columns_:
+                idx.append(columns_.index(column) + offset)
+            else:
+                idx.append(self._index_wide(column, relative=relative))
 
-        return self._index_wide(column, relative=relative)
+        return idx
 
-    def _index_row(self, column: str, *, relative: bool = False) -> int:
+    def _index_row(
+        self,
+        columns: list[str],
+        *,
+        relative: bool = False,
+    ) -> list[int]:
         if not self.columns_names:
-            raise NotImplementedError
+            raise ValueError("columns names are not specified")
 
-        row = self.columns_names.index(column)
-        return row + 1 if relative else row + self.row
-
-    @overload
-    def _index_wide(
-        self,
-        column: str,
-        *,
-        relative: bool = False,
-    ) -> tuple[int, int]: ...
-
-    @overload
-    def _index_wide(
-        self,
-        column: tuple[str, str | float],
-        *,
-        relative: bool = False,
-    ) -> int: ...
+        columns_names = self.columns_names
+        offset = 1 if relative else self.row
+        return [columns_names.index(c) + offset for c in columns]
 
     def _index_wide(
         self,
@@ -379,8 +375,11 @@ class SheetFrame:
             df.columns = MultiIndex.from_tuples(self.value_columns)
             return df
 
-        rng = self.expand()
-        rng = rng.options(DataFrame, index=self.index_level, header=self.columns_level)
+        rng = self.expand().options(
+            DataFrame,
+            index=self.index_level,
+            header=self.columns_level,
+        )
         df = rng.value
 
         if not isinstance(df, DataFrame):
