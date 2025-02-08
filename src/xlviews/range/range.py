@@ -20,7 +20,6 @@ class Range:
     row_end: int
     column_end: int
     sheet: Sheet
-    impl: RangeImpl
 
     def __init__(
         self,
@@ -47,10 +46,6 @@ class Range:
         self.row_end = max(self.row, self.row_end)
         self.column_end = max(self.column, self.column_end)
 
-        cell1 = (self.row, self.column)
-        cell2 = (self.row_end, self.column_end)
-        self.impl = self.sheet.range(cell1, cell2)
-
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)
 
@@ -63,11 +58,12 @@ class Range:
         addr = self.get_address(include_sheetname=True, external=True)
         return f"<{self.__class__.__name__} {addr}>"
 
-    def update(self) -> None:
-        self.impl = self.impl.offset()
-        self.row, self.column = self.impl.row, self.impl.column
-        last_cell = self.impl.last_cell
-        self.row_end, self.column_end = last_cell.row, last_cell.column
+    def offset(self, row_offset: int = 0, column_offset: int = 0) -> Self:
+        return self.__class__(
+            (self.row + row_offset, self.column + column_offset),
+            (self.row_end + row_offset, self.column_end + column_offset),
+            sheet=self.sheet,
+        )
 
     def get_address(
         self,
@@ -77,8 +73,6 @@ class Range:
         external: bool = False,
         formula: bool = False,
     ) -> str:
-        self.update()
-
         it = iter_addresses(
             self,
             row_absolute=row_absolute,
@@ -97,8 +91,6 @@ class Range:
         external: bool = False,
         formula: bool = False,
     ) -> Iterator[str]:
-        self.update()
-
         return iter_addresses(
             self,
             row_absolute=row_absolute,
@@ -108,6 +100,12 @@ class Range:
             cellwise=True,
             formula=formula,
         )
+
+    @property
+    def impl(self) -> RangeImpl:
+        cell1 = (self.row, self.column)
+        cell2 = (self.row_end, self.column_end)
+        return self.sheet.range(cell1, cell2)
 
     @property
     def api(self):  # noqa: ANN201

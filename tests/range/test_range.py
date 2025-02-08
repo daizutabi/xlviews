@@ -1,7 +1,6 @@
 import pytest
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
-from xlwings.constants import Direction
 
 from xlviews.range.range import Range
 from xlviews.testing import is_excel_installed
@@ -9,7 +8,7 @@ from xlviews.testing import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-@pytest.fixture(scope="module", params=["A1", "A1:A3", "F4:I4", "C1:E3"])
+@pytest.fixture(scope="module", params=["C5", "D10:D13", "F4:I4", "C5:E9"])
 def addr(request: pytest.FixtureRequest):
     return request.param
 
@@ -82,6 +81,14 @@ def test_repr(rng: Range, rng_impl: RangeImpl):
     assert repr(rng) == repr(rng_impl)
 
 
+@pytest.mark.parametrize("row_offset", [2, 0, -2])
+@pytest.mark.parametrize("column_offset", [2, 0, -2])
+def test_offset(rng: Range, rng_impl: RangeImpl, row_offset, column_offset):
+    x = rng.offset(row_offset, column_offset)
+    y = rng_impl.offset(row_offset, column_offset)
+    assert x.get_address() == y.get_address()
+
+
 def test_impl_from(rng: Range, rng_impl: RangeImpl):
     rng_impl.value = rng_impl.get_address(external=True)
     assert rng_impl.value == rng.impl.value
@@ -96,19 +103,3 @@ def test_iter_addresses(rng: Range, rng_impl: RangeImpl, external):
     x = list(rng.iter_addresses(external=external))
     y = [r.get_address(external=external) for r in rng_impl]
     assert x == y
-
-
-@pytest.mark.parametrize("func", [Range, RangeImpl])
-def test_insert(func, sheet: Sheet):
-    rng = func("E10")
-    rows = sheet.api.Rows("2:4")
-    rows.Insert(Shift=Direction.xlDown)
-    assert rng.get_address() == "$E$13"
-
-
-@pytest.mark.parametrize("func", [Range, RangeImpl])
-def test_delete(func, sheet: Sheet):
-    rng = func("E10")
-    columns = sheet.api.Columns("B:D")
-    columns.Delete()
-    assert rng.get_address() == "$B$10"

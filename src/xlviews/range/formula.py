@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlwings import Range
+from xlwings import Range as RangeImpl
 
-# from .address import iter_addresses
+from .range import Range
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
