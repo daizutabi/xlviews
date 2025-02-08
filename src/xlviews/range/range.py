@@ -70,6 +70,17 @@ class Range:
             for column in range(self.column, self.column_end + 1):
                 yield self.__class__.from_index((row, column), sheet=self.sheet)
 
+    def __getitem__(self, key: int) -> Self:
+        if key < 0:
+            key += len(self)
+
+        if key < 0 or key >= len(self):
+            raise IndexError("Index out of range")
+
+        row = self.row + key // (self.column_end - self.column + 1)
+        column = self.column + key % (self.column_end - self.column + 1)
+        return self.__class__.from_index((row, column), sheet=self.sheet)
+
     def __repr__(self) -> str:
         addr = self.get_address(include_sheetname=True, external=True)
         return f"<{self.__class__.__name__} {addr}>"

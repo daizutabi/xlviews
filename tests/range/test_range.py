@@ -113,6 +113,21 @@ def test_iter(rng: Range, rng_impl: RangeImpl):
     assert x == y
 
 
+def test_getitem(rng: Range, rng_impl: RangeImpl):
+    for k in range(len(rng)):
+        assert rng[k].get_address() == rng_impl[k].get_address()
+
+
+def test_getitem_neg(rng: Range, rng_impl: RangeImpl):
+    for k in range(len(rng)):
+        assert rng[-k].get_address() == rng_impl[-k].get_address()
+
+
+def test_getitem_error(rng: Range):
+    with pytest.raises(IndexError, match="Index out of range"):
+        rng[100]
+
+
 def test_repr(rng: Range, rng_impl: RangeImpl):
     assert repr(rng) == repr(rng_impl)
 
