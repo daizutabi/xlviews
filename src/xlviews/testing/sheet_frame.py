@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -14,12 +14,16 @@ if TYPE_CHECKING:
 
 class NoIndex(FrameContainer):
     row: int = 2
-    column: int = 2
+    column: int = 3
 
     @classmethod
     def dataframe(cls) -> DataFrame:
         values = {"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]}
         return DataFrame(values)
+
+    def kwargs(self, **kwargs) -> dict[str, Any]:
+        kwargs["index"] = False
+        return kwargs
 
 
 class Index(FrameContainer):
@@ -54,26 +58,22 @@ class MultiIndex(FrameContainer):
 
 class MultiColumn(FrameContainer):
     row: int = 2
-    column: int = 13
+    column: int = 11
 
     @classmethod
     def dataframe(cls) -> DataFrame:
-        df = DataFrame(
-            {
-                "c": [1, 2, 3, 4, 5],
-                "d": [11, 12, 13, 14, 15],
-                "e": [21, 22, 23, 24, 25],
-                "f": [31, 32, 33, 34, 35],
-            },
-        )
-        x = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-        df.columns = pd.MultiIndex.from_tuples(x, names=["a", "b"])
+        a = ["a"] * 8 + ["b"] * 8
+        b = (["c"] * 4 + ["d"] * 4) * 2
+        c = np.repeat(range(1, 9), 2)
+        d = ["x", "y"] * 8
+        df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
+        df.columns = pd.MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
         return df
 
 
 class MultiIndexColumn(FrameContainer):
-    row: int = 10
-    column: int = 11
+    row: int = 13
+    column: int = 21
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -94,24 +94,9 @@ class MultiIndexColumn(FrameContainer):
         return df
 
 
-class Curve(FrameContainer):
-    row: int = 2
-    column: int = 19
-
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        a = ["a"] * 8 + ["b"] * 8
-        b = (["c"] * 4 + ["d"] * 4) * 2
-        c = np.repeat(range(1, 9), 2)
-        d = ["x", "y"] * 8
-        df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
-        df.columns = pd.MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
-        return df
-
-
 class WideColumn(FrameContainer):
     row: int = 3
-    column: int = 37
+    column: int = 29
 
     def init(self) -> None:
         self.sf.add_wide_column("u", range(3), autofit=True, style=True)
@@ -130,7 +115,6 @@ def create(sheet: Sheet) -> list[FrameContainer]:
         MultiIndex,
         MultiColumn,
         MultiIndexColumn,
-        Curve,
         WideColumn,
     ]
     return FrameContainer.from_classes(classes, sheet, style=True)

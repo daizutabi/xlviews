@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, TypeAlias, overload
 import numpy as np
 import xlwings as xw
 from pandas import DataFrame, Index, MultiIndex, Series
-from xlwings import Range, Sheet
+from xlwings import Range as RangeImpl
+from xlwings import Sheet
 
 from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
@@ -19,6 +20,7 @@ from xlviews.grid import FacetGrid
 
 # from xlviews.range.address import iter_addresses
 from xlviews.range.formula import aggregate
+from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_alignment
 
@@ -43,7 +45,7 @@ class SheetFrame:
     """Data frame on an Excel sheet."""
 
     sheet: Sheet
-    cell: Range
+    cell: RangeImpl
     name: str | None
     has_index: bool
     index_level: int
@@ -209,6 +211,18 @@ class SheetFrame:
                 self.table = Table(api=api, sheet=self.sheet)
                 break
 
+    def _update_cell(self) -> None:  # important
+        self.cell = self.cell.offset(0, 0)
+
+    def expand(self, mode: str = "table") -> RangeImpl:
+        self._update_cell()
+
+        if self.cell.value is None and self.columns_level > 1:
+            end = self.cell.offset(self.columns_level - 1).expand(mode)
+            return self.sheet.range(self.cell, end)
+
+        return self.cell.expand(mode)
+
     def __len__(self) -> int:
         start = self.cell.offset(self.columns_level)
         cell = start
@@ -217,13 +231,6 @@ class SheetFrame:
             cell = cell.expand("down")[-1].offset(1)
 
         return cell.row - start.row
-
-    def _update_cell(self) -> None:  # important
-        self.cell = self.cell.offset(0, 0)
-
-    def expand(self, mode: str = "table") -> Range:
-        self._update_cell()
-        return self.cell.expand(mode)
 
     @property
     def row(self) -> int:
@@ -246,8 +253,8 @@ class SheetFrame:
         if self.columns_names:
             idx = [tuple(self.columns_names)]
         elif self.has_index:
-            start = self.cell.offset(self.columns_level - 1)
-            end = start.offset(0, self.index_level - 1)
+            start = self.row + self.columns_level - 1, self.column
+            end = start[0], start[1] + self.index_level - 1
             idx = self.sheet.range(start, end).value or []
         else:
             idx = []
@@ -270,8 +277,8 @@ class SheetFrame:
 
     @property
     def wide_columns(self) -> list[str]:
-        start = self.cell.offset(-1, self.index_level)
-        end = start.offset(0, len(self.columns) - self.index_level - 1)
+        start = self.row - 1, self.column + self.index_level
+        end = start[0], start[1] + len(self.columns) - self.index_level - 1
         cs = self.sheet.range(start, end).value or []
         return [c for c in cs if c]
 
@@ -282,83 +289,62 @@ class SheetFrame:
         return iter(self.columns)
 
     @overload
-    def index(
-        self,
-        columns: str | tuple,
-        *,
-        relative: bool = False,
-    ) -> int | tuple[int, int]: ...
+    def index(self, columns: str | tuple) -> int | tuple[int, int]: ...
 
     @overload
     def index(
         self,
         columns: list[str | tuple],
-        *,
-        relative: bool = False,
     ) -> list[int] | list[tuple[int, int]]: ...
 
     def index(
         self,
         columns: str | tuple | list[str | tuple],
-        *,
-        relative: bool = False,
     ) -> int | tuple[int, int] | list[int] | list[tuple[int, int]]:
-        """Return the column index (1-indexed).
-
-        If the column is a hierarchical index and the column name is specified,
-        return the row index. If relative is True, return the relative position
-        from `self.cell`.
-        """
+        """Return the column index (1-indexed)."""
         if isinstance(columns, str | tuple):
-            return self.index([columns], relative=relative)[0]
+            return self.index([columns])[0]
 
         if self.columns_names:
             columns_str = [c for c in columns if isinstance(c, str)]
             if len(columns_str) == len(columns):
-                return self._index_row(columns_str, relative=relative)
+                return self._index_row(columns_str)
 
         idx = []
         columns_ = self.columns
-        offset = 1 if relative else self.column
+        offset = self.column
 
         for column in columns:
             if column in columns_:
                 idx.append(columns_.index(column) + offset)
             else:
-                idx.append(self._index_wide(column, relative=relative))
+                idx.append(self._index_wide(column))
 
         return idx
 
-    def _index_row(
-        self,
-        columns: list[str],
-        *,
-        relative: bool = False,
-    ) -> list[int]:
+    def _index_row(self, columns: list[str]) -> list[int]:
         if not self.columns_names:
             raise ValueError("columns names are not specified")
 
         columns_names = self.columns_names
-        offset = 1 if relative else self.row
+        offset = self.row
         return [columns_names.index(c) + offset for c in columns]
 
     def _index_wide(
         self,
         column: str | tuple[str, str | float],
-        *,
-        relative: bool = False,
     ) -> tuple[int, int] | int:
         value_columns = self.value_columns
 
-        cell_start = self.cell.offset(-1, self.index_level)
-        cell_end = cell_start.offset(0, len(value_columns) - 1)
-        names = self.sheet.range(cell_start, cell_end).options(ndim=1).value or []
+        start = self.row - 1, self.column + self.index_level
+        end = start[0], start[1] + len(value_columns) - 1
+        names = self.sheet.range(start, end).options(ndim=1).value or []
 
         name = column[0] if isinstance(column, tuple) else column
         start = names.index(name)
         end = len(list(takewhile(lambda n: n is None, names[start + 1 :]))) + start
 
-        offset = self.index_level + (1 if relative else self.cell.column)
+        offset = self.index_level + self.cell.column
 
         if isinstance(column, str):
             return start + offset, end + offset
@@ -394,9 +380,12 @@ class SheetFrame:
 
     @property
     def visible_data(self) -> DataFrame:
+        """Return the visible data as a DataFrame."""
         self._update_cell()
-        start = self.cell.offset(1, 0)
-        end = start.offset(len(self) - 1, len(self.columns) - 1)
+        # start = self.cell.offset(1, 0)
+        # end = start.offset(len(self) - 1, len(self.columns) - 1)
+        start = self.row + 1, self.column
+        end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
         range_ = self.sheet.range(start, end)
         data = range_.api.SpecialCells(xw.constants.CellType.xlCellTypeVisible)
         value = [row.Value[0] for row in data.Rows]
@@ -406,31 +395,6 @@ class SheetFrame:
             df = df.set_index(list(df.columns[: self.index_level]))
 
         return df
-
-    def as_table(
-        self,
-        *,
-        const_header: bool = True,
-        autofit: bool = True,
-        style: bool = True,
-    ) -> Table:
-        if self.columns_level != 1:
-            raise NotImplementedError
-
-        self.set_alignment("left")
-
-        end = self.cell.offset(len(self), len(self.columns) - 1)
-        rng = self.sheet.range(self.cell, end)
-
-        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
-        self.table = table
-
-        return table
-
-    def unlist(self) -> None:
-        if self.table:
-            self.table.unlist()
-            self.table = None
 
     @overload
     def range(
@@ -594,19 +558,6 @@ class SheetFrame:
     def __str__(self) -> str:
         return str(self.range()).replace("<Range ", "<SheetFrame ")
 
-    def rename(self, columns: dict[str, str]) -> None:
-        """Rename the columns of the SheetFrame."""
-        for old, new in columns.items():
-            self.range(old, -1).value = new
-
-    def drop_duplicates(self, column: str | tuple | Iterable[str | tuple]) -> None:
-        columns = [column] if isinstance(column, str | tuple) else list(column)
-
-        for column in columns:
-            for cell in reversed(self.range(column)[1:]):
-                if cell.value == cell.offset(-1).value:
-                    cell.value = None
-
     def add_column(self, column: str, value: Any | None = None) -> Range:
         column_int = self.column + len(self.columns)
         cell = self.sheet.range(self.row, column_int)
@@ -712,6 +663,31 @@ class SheetFrame:
             self.set_style()
 
         return rng[0].offset(1)
+
+    def as_table(
+        self,
+        *,
+        const_header: bool = True,
+        autofit: bool = True,
+        style: bool = True,
+    ) -> Table:
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        self.set_alignment("left")
+
+        end = self.cell.offset(len(self), len(self.columns) - 1)
+        rng = self.sheet.range(self.cell, end)
+
+        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
+        self.table = table
+
+        return table
+
+    def unlist(self) -> None:
+        if self.table:
+            self.table.unlist()
+            self.table = None
 
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
@@ -1022,20 +998,20 @@ class SheetFrame:
         self.children.append(child)
         child.parent = self
 
-    def get_child_cell(self) -> Range:
+    def get_child_cell(self) -> RangeImpl:
         """Get the cell of the child SheetFrame."""
         offset = len(self.columns) + 1
         offset += sum(len(child.columns) + 1 for child in self.children)
         return self.cell.offset(0, offset)
 
-    def get_adjacent_cell(self, offset: int = 0) -> Range:
+    def get_adjacent_cell(self, offset: int = 0) -> RangeImpl:
         """Get the adjacent cell of the SheetFrame."""
         if self.children:
             return self.get_child_cell()
 
         return self.cell.offset(0, len(self.columns) + offset + 1)
 
-    def move(self, count: int, direction: str = "down", width: int = 0) -> Range:
+    def move(self, count: int, direction: str = "down", width: int = 0) -> RangeImpl:
         return modify.move(self, count, direction, width)
 
     def delete(self, direction: str = "up", *, entire: bool = False) -> None:
