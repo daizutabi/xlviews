@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING
 
 from xlwings import Range
 
-from .address import iter_address
-from .range_collection import RangeCollection
+from .address import iter_addresses
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from .range_collection import RangeCollection
 
 
 NONCONST_VALUE = "*"
@@ -49,7 +50,7 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 def _aggregate(
     func: str | Range | None,
-    ranges: Iterable[str | Range | RangeCollection] | str | Range | RangeCollection,
+    ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
     option: int,
     **kwargs,
 ) -> str:
@@ -58,10 +59,7 @@ def _aggregate(
         median = aggregate("median", ranges, option, **kwargs)
         return f"{std}/{median}"
 
-    if isinstance(ranges, str | Range | RangeCollection):
-        ranges = [ranges]
-
-    column = ",".join(iter_address(ranges, **kwargs))
+    column = ",".join(iter_addresses(ranges, **kwargs))
 
     if func is None:
         return column
@@ -80,7 +78,7 @@ def _aggregate(
 
 def aggregate(
     func: str | Range | None,
-    ranges: Iterable[str | Range | RangeCollection] | str | Range | RangeCollection,
+    ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
     option: int = 7,  # ignore hidden rows and error values
     formula: bool = False,
     **kwargs,

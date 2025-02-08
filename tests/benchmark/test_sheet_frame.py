@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -30,9 +30,8 @@ def test_create_sheet_frame(benchmark, sheet: Sheet, rows: int, columns: int):
 
 
 @pytest.fixture(
-    scope="module",
     params=[(100, 10), (1000, 10), (10000, 10), (10, 100), (10, 1000)],
-    ids=lambda x: str(x),
+    ids=lambda x: "_".join([str(i) for i in x]),
 )
 def shape(request: pytest.FixtureRequest):
     return request.param
@@ -45,19 +44,47 @@ def sf(shape: tuple[int, int], sheet: Sheet):
     return create_sheet_frame(df, sheet)
 
 
-def test_len(benchmark, sf, shape):
+def test_len(benchmark, sf: SheetFrame, shape):
     assert benchmark(len, sf) == shape[0]
 
 
-def test_columns(benchmark, sf, shape):
+def test_columns(benchmark, sf: SheetFrame, shape):
     assert benchmark(lambda: len(sf.columns)) == shape[1] + 1
 
 
-if __name__ == "__main__":
-    from xlviews.testing import create_sheet
+def test_index_str(benchmark, sf: SheetFrame):
+    assert benchmark(lambda: sf.index("E")) == 8
 
-    sheet = create_sheet()
-    df_ = create_data_frame(1000, 100)
-    sf_ = create_sheet_frame(df_, sheet)
 
-    # print(sf_.get_address())
+@pytest.fixture(
+    params=[
+        ["A"],
+        ["A", "B", "C", "D"],
+        ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+    ],
+    ids=lambda x: f"C{len(x)}",
+)
+def columns(request: pytest.FixtureRequest):
+    return request.param
+
+
+def test_index_list(benchmark, sf: SheetFrame, columns):
+    x = benchmark(lambda: sf.index(columns))
+    assert x == list(range(4, len(columns) + 4))
+
+
+def test_range(benchmark, sf: SheetFrame, shape):
+    x = benchmark(lambda: sf.range("A"))
+    assert len(x) == shape[0]
+
+
+def test_get_address_str(benchmark, sf: SheetFrame, shape):
+    x = benchmark(lambda: sf.get_address("A"))
+    assert isinstance(x, Series)
+    assert len(x) == shape[0]
+
+
+def test_get_address_list(benchmark, sf: SheetFrame, shape, columns):
+    x = benchmark(lambda: sf.get_address(columns))
+    assert isinstance(x, DataFrame)
+    assert x.shape == (shape[0], len(columns))

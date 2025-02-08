@@ -15,10 +15,7 @@ class RangeCollection:
     ranges: list[Range]
 
     def __init__(self, ranges: Iterable) -> None:
-        self.ranges = []
-
-        for rng in ranges:
-            self.ranges.append(rng if isinstance(rng, Range) else Range(rng))
+        self.ranges = [r if isinstance(r, Range) else Range(r) for r in ranges]
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
@@ -32,7 +29,7 @@ class RangeCollection:
         row: int | Sequence[int | tuple[int, int]],
         column: int | Sequence[int | tuple[int, int]],
     ) -> Self:
-        return cls(iter_ranges(sheet, row, column))
+        return cls(_iter_ranges(sheet, row, column))
 
     def __len__(self) -> int:
         return len(self.ranges)
@@ -74,7 +71,7 @@ class RangeCollection:
         return api
 
 
-def iter_ranges(
+def _iter_ranges(
     sheet: Sheet,
     row: int | Sequence[int | tuple[int, int]],
     column: int | Sequence[int | tuple[int, int]],

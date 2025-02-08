@@ -180,8 +180,9 @@ def test_range_column(sf: SheetFrame, column, start, end, address):
     assert sf.range(column, start, end).get_address() == address
 
 
-def test_address_list(sf: SheetFrame):
-    df = sf.get_address(["a", "b"], formula=True)
+@pytest.mark.parametrize("columns", [["a", "b"], ["b", "a"], None])
+def test_address_list_or_none(sf: SheetFrame, columns):
+    df = sf.get_address(columns, formula=True)
     assert df["a"].to_list() == [f"=$H${i}" for i in range(11, 19)]
     assert df["b"].to_list() == [f"=$I${i}" for i in range(11, 19)]
     assert df.index.names == ["x", "y"]
