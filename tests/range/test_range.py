@@ -166,6 +166,21 @@ def test_iter_addresses_formula(rng: Range, rng_impl: RangeImpl, external):
     ("addr", "value"),
     [
         ("A1", "a"),
+        ("A1:C1", ["a", "a", "a"]),
+        ("A1:A3", ["a", "a", "a"]),
+        ("A1:B2", [["a", "a"], ["a", "a"]]),
+    ],
+)
+def test_value(addr, value, sheet: Sheet):
+    rng = Range(addr, sheet=sheet)
+    rng.value = "a"
+    assert rng.value == value
+
+
+@pytest.mark.parametrize(
+    ("addr", "value"),
+    [
+        ("A1", "a"),
         ("A1:C1", (("a", "a", "a"),)),
         ("A1:A3", (("a",), ("a",), ("a",))),
         ("A1:B2", (("a", "a"), ("a", "a"))),
@@ -173,5 +188,5 @@ def test_iter_addresses_formula(rng: Range, rng_impl: RangeImpl, external):
 )
 def test_api(addr, value, sheet: Sheet):
     rng = Range(addr, sheet=sheet)
-    rng.impl.value = "a"
+    rng.value = "a"
     assert rng.api.Value == value

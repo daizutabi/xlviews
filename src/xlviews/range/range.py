@@ -9,7 +9,7 @@ from .address import get_index, index_to_column_name, split_book, split_sheet
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-    from typing import Self
+    from typing import Any, Self
 
     from xlwings import Sheet
 
@@ -133,6 +133,14 @@ class Range:
         cell1 = (self.row, self.column)
         cell2 = (self.row_end, self.column_end)
         return self.sheet.range(cell1, cell2)
+
+    @property
+    def value(self) -> Any:
+        return self.impl.value
+
+    @value.setter
+    def value(self, value: Any) -> None:
+        self.impl.value = value
 
     @property
     def api(self):  # noqa: ANN201

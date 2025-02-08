@@ -5,6 +5,7 @@ from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
 from xlviews.range.formula import NONCONST_VALUE
+from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
 from xlviews.testing import is_excel_installed
 
@@ -16,52 +17,45 @@ def df():
     return DataFrame({"a": [1, 1, 1, 1], "b": [2, 2, 3, 3], "c": [4, 4, 4, 4]})
 
 
-@pytest.fixture(scope="module")
-def rng_impl(df: DataFrame, sheet_module: Sheet):
+@pytest.fixture(scope="module", params=[lambda x: x, Range], ids=["RangeImpl", "Range"])
+def rng(df: DataFrame, sheet_module: Sheet, request: pytest.FixtureRequest):
     rng = sheet_module.range("B3")
     rng.options(DataFrame, header=1, index=False).value = df
-    return rng.expand()
+    return request.param(rng.expand())
 
 
-def test_range_address(rng_impl: RangeImpl):
-    assert rng_impl.get_address() == "$B$3:$D$7"
+def test_range_address(rng: Range | RangeImpl):
+    assert rng.get_address() == "$B$3:$D$7"
 
 
-# @pytest.mark.parametrize("k", range(3))
-# def test_range_value(rng_impl: RangeImpl, df: DataFrame, k: int):
-#     value = rng_impl.options(transpose=True).value
-#     assert isinstance(value, list)
-#     assert len(value) == 3
-#     np.testing.assert_array_equal(df[value[k][0]], value[k][1:])
+@pytest.fixture(scope="module")
+def column(rng: Range | RangeImpl):
+    start = rng[0].offset(1)
+    end = start.offset(3)
+    return rng.__class__(start, end)
 
 
-# @pytest.fixture(scope="module")
-# def column(rng: Range):
-#     start = rng[0].offset(1)
-#     end = start.offset(3)
-#     return rng.sheet.range(start, end)
+def test_column(column: Range | RangeImpl):
+    assert column.get_address() == "$B$4:$B$7"
 
 
-# def test_column(column: Range):
-#     assert column.get_address() == "$B$4:$B$7"
+@pytest.fixture(scope="module")
+def const_header(rng: Range | RangeImpl):
+    rng_impl = rng if isinstance(rng, RangeImpl) else rng.impl
+    end = rng_impl[0].expand("right")
+    return rng.__class__(rng[0], end).offset(-1)
 
 
-# @pytest.fixture(scope="module")
-# def const_header(rng: Range):
-#     end = rng[0].expand("right")
-#     return rng.sheet.range(rng[0], end).offset(-1)
+def test_header(const_header: Range | RangeImpl):
+    assert const_header.get_address() == "$B$2:$D$2"
 
 
-# def test_header(const_header: Range):
-#     assert const_header.get_address() == "$B$2:$D$2"
+@pytest.mark.parametrize(("k", "value"), [(0, 1), (1, NONCONST_VALUE), (2, 4)])
+def test_const(column: Range, const_header: Range, k, value):
+    from xlviews.range.formula import const
 
-
-# @pytest.mark.parametrize(("k", "value"), [(0, 1), (1, NONCONST_VALUE), (2, 4)])
-# def test_const(column: Range, const_header: Range, k, value):
-#     from xlviews.range.formula import const
-
-#     const_header.value = const(column, "=")
-#     assert const_header.value[k] == value
+    const_header.value = const(column, "=")
+    assert const_header.value[k] == value
 
 
 # @pytest.fixture(scope="module")
