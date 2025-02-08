@@ -1,5 +1,4 @@
 import pytest
-from xlwings import Range as RangeImpl
 from xlwings import Sheet
 from xlwings.constants import BordersIndex
 
