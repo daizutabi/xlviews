@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from itertools import chain
 from typing import TYPE_CHECKING
 
-from xlwings import Range as RangeImpl
-
-from .range import Range
+from .range import Range, iter_addresses
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from typing import Self
 
+    from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
 
@@ -17,7 +17,7 @@ class RangeCollection:
     ranges: list[Range]
 
     def __init__(self, ranges: Iterable) -> None:
-        self.ranges = [r if isinstance(r, Range) else Range(r) for r in ranges]
+        self.ranges = list(chain.from_iterable(_iter_ranges(r) for r in ranges))
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
@@ -31,7 +31,7 @@ class RangeCollection:
         column: int | Sequence[int | tuple[int, int]],
         sheet: Sheet | None = None,
     ) -> Self:
-        return cls(_iter_ranges(row, column, sheet))
+        return cls(_iter_ranges_from_index(row, column, sheet))
 
     def __len__(self) -> int:
         return len(self.ranges)
@@ -47,14 +47,31 @@ class RangeCollection:
         include_sheetname: bool = False,
         external: bool = False,
     ) -> str:
-        return ",".join(
-            rng.get_address(
-                row_absolute=row_absolute,
-                column_absolute=column_absolute,
-                include_sheetname=include_sheetname,
-                external=external,
-            )
-            for rng in self
+        it = self.iter_addresses(
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+        )
+        return ",".join(it)
+
+    def iter_addresses(
+        self,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        cellwise: bool = False,
+        formula: bool = False,
+    ) -> Iterator[str]:
+        return iter_addresses(
+            self,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            cellwise=cellwise,
+            formula=formula,
         )
 
     @property
@@ -73,7 +90,19 @@ class RangeCollection:
         return api
 
 
-def _iter_ranges(
+def _iter_ranges(cell: str | Range | RangeImpl | tuple[int, int]) -> Iterator[Range]:
+    if isinstance(cell, Range):
+        yield cell
+
+    elif isinstance(cell, str):
+        for c in cell.split(","):
+            yield Range(c)
+
+    else:
+        yield Range(cell)
+
+
+def _iter_ranges_from_index(
     row: int | Sequence[int | tuple[int, int]],
     column: int | Sequence[int | tuple[int, int]],
     sheet: Sheet | None = None,

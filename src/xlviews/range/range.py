@@ -110,7 +110,7 @@ class Range:
         )
 
     @property
-    def api(self) -> RangeImpl:
+    def api(self):  # noqa: ANN201
         return self.impl.api
 
 
