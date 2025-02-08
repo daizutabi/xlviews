@@ -135,49 +135,19 @@ def test_data(sf: SheetFrame, df: DataFrame):
     assert df_.index.name == df.index.name
 
 
-# def test_range_all(sf: SheetFrame):
-#     assert sf._range_all(True).get_address() == "$C$5:$I$14"
-#     assert sf.range().get_address() == "$C$5:$I$14"
-
-
-# def test_range_all_index_false(sf: SheetFrame):
-#     assert sf._range_all(False).get_address() == "$F$7:$I$14"
-#     assert sf.range(index=False).get_address() == "$F$7:$I$14"
-
-
-# @pytest.mark.parametrize(
-#     ("start", "end", "address"),
-#     [
-#         (False, None, "$C$5:$E$14"),
-#         (-1, None, "$C$5:$E$6"),
-#         (0, None, "$C$7:$E$7"),
-#         (None, None, "$C$7:$E$14"),
-#         (20, None, "$C$20:$E$20"),
-#         (20, 100, "$C$20:$E$100"),
-#     ],
-# )
-# def test_range_index(sf: SheetFrame, start, end, address):
-#     assert sf._range_index(start, end).get_address() == address
-#     assert sf.range("index", start, end).get_address() == address
-
-
-# @pytest.mark.parametrize(
-#     ("column", "start", "end", "address"),
-#     [
-#         ("x", -1, None, "$C$5:$C$6"),
-#         ("y", 0, None, "$D$7"),
-#         ("z", None, None, "$E$7:$E$14"),
-#         (("a2", "b2"), False, None, "$I$5:$I$14"),
-#         (("a1", "b1"), -1, None, "$F$5:$F$6"),
-#         (("a1", "b2"), 0, None, "$G$7"),
-#         (("a2", "b1"), None, None, "$H$7:$H$14"),
-#         ("y", 30, None, "$D$30"),
-#         (("a1", "b2"), 30, 40, "$G$30:$G$40"),
-#     ],
-# )
-# def test_range_column(sf: SheetFrame, column, start, end, address):
-#     assert sf._range_column(column, start, end).get_address() == address
-#     assert sf.range(column, start, end).get_address() == address
+@pytest.mark.parametrize(
+    ("column", "offset", "address"),
+    [
+        ("x", -1, "$C$5:$C$6"),
+        ("y", 0, "$D$7"),
+        ("z", None, "$E$7:$E$14"),
+        (("a1", "b1"), -1, "$F$5:$F$6"),
+        (("a1", "b2"), 0, "$G$7"),
+        (("a2", "b1"), None, "$H$7:$H$14"),
+    ],
+)
+def test_range_column(sf: SheetFrame, column, offset, address):
+    assert sf.range(column, offset).get_address() == address
 
 
 # def test_getitem_str(sf: SheetFrame):

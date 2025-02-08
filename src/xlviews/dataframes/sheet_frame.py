@@ -402,127 +402,30 @@ class SheetFrame:
 
         return df
 
-    @overload
-    def range(
-        self,
-        column: str | tuple | None = None,
-        start: int | Literal[False] | None = None,
-        end: int | None = None,
-        index: bool = True,
-    ) -> Range: ...
-
-    @overload
     def range(
         self,
         column: str | tuple,
-        start: list[tuple[int, int]],
-        end: int | None = None,
-        index: bool = True,
-    ) -> RangeCollection: ...
-
-    def range(
-        self,
-        column: str | tuple | None = None,
-        start: int | Literal[False] | list[tuple[int, int]] | None = None,
-        end: int | None = None,
-        index: bool = True,
-    ) -> Range | RangeCollection:
+        offset: Literal[0, -1] | None = None,
+    ) -> RangeImpl:
         """Return the range of the column.
 
-        If the column is a hierarchical index and the column name is specified,
-        return the range of the column.
-
         Args:
-            column (str or tuple, optional): The name of the column.
-                If omitted, return the range of the entire SheetFrame.
-            start (int, optional):
+            column (str or tuple): The name of the column.
+            offset (int, optional):
                 - None: entire row data without column row
                 - 0: first row
                 - -1: column row
-                - False: entire row with column row
-                - other: specified row
-            end (int, optional):
-                - None : same as start.
-                - other: specified row
         """
-        if column is None:
-            return self._range_all(index)
-
-        if isinstance(start, list):
-            return RangeCollection(self.range(column, s, e) for s, e in start)
-
-        if column == "index":
-            return self._range_index(start, end)
-
-        return self._range_column(column, start, end)
-
-    def _range_all(self, index: bool) -> Range:
-        start = self.cell
-        row_offset = self.columns_level + len(self) - 1
-        column_offset = self.index_level + len(self.value_columns) - 1
-        end = start.offset(row_offset, column_offset)
-
-        if not index:
-            start = start.offset(self.columns_level, self.index_level)
-
-        return self.sheet.range(start, end)
-
-    def _range_index(
-        self,
-        start: int | Literal[False] | None = None,
-        end: int | None = None,
-    ) -> Range:
-        """Return the range of the index."""
-        if not self.index_level:
-            raise NotImplementedError
-
-        if self.columns_names and (start in [-1, None] or start is False):
-            raise ValueError("index start must be a specific row")
-
-        c = self.index_level - 1
-        match start:
-            case False:  # entire row with column row
-                cell_start = self.cell
-                cell_end = cell_start.offset(self.columns_level + len(self) - 1, c)
-
-            case 0:  # first row
-                cell_start = self.cell.offset(self.columns_level)
-                cell_end = cell_start.offset(0, c)
-
-            case -1:  # column row
-                cell_start = self.cell
-                cell_end = cell_start.offset(self.columns_level - 1, c)
-
-            case None:  # entire row data without column row
-                cell_start = self.cell.offset(self.columns_level)
-                cell_end = cell_start.offset(len(self) - 1, c)
-
-            case _:
-                column = self.cell.column
-                cell_start = self.sheet.range(start, column)
-                cell_end = self.sheet.range(end or start, column + c)
-
-        return self.sheet.range(cell_start, cell_end)
-
-    def _range_column(  # noqa: C901
-        self,
-        column: str | tuple,
-        start: int | Literal[False] | None = None,
-        end: int | None = None,
-    ) -> Range:
         if self.columns_names and isinstance(column, str):
             raise NotImplementedError
 
-        if start is False:  # entire row with column row
-            header = self._range_column(column, -1)
-            values = self._range_column(column)
-            return self.sheet.range(header[0], values[-1])
-
         index = self.index(column)
 
-        match start:
-            case 0:  # first row
-                start = self.row + self.columns_level
+        match offset:
+            case 0:  # first data row
+                start = end = self.row + self.columns_level
+                if not isinstance(index, tuple):
+                    return self.sheet.range(start, index)
 
             case -1:  # column row
                 start = end = self.row
@@ -533,30 +436,32 @@ class SheetFrame:
                     if isinstance(index, tuple):
                         start -= 1
 
-            case None:  # entire row data without column row
+            case None:  # entire data rows
                 start = self.row + self.columns_level
                 end = start + len(self) - 1
+
+            case _:
+                msg = f"invalid offset: {offset}"
+                raise ValueError(msg)
 
         if isinstance(index, tuple):  # wide column
             column_start, column_end = index
         else:
             column_start = column_end = index
 
-        cell_start = self.sheet.range(start, column_start)
+        # if end == 0:
+        #     if not isinstance(index, tuple):
+        #         return self.sheet.range(start, column_start)
 
-        if end is None:
-            if not isinstance(index, tuple):
-                return cell_start
+        # wide column
+        # cell_start = self.sheet.range(start, column_start)
+        # cell_end = cell_start.offset(0, column_end - column_start)
+        # return self.sheet.range(cell_start, cell_end)
+        # return self.sheet.range((start, column_start), (start, column_end))
 
-            # wide column
-            cell_end = cell_start.offset(0, column_end - column_start)
-            return self.sheet.range(cell_start, cell_end)
-
-        cell_end = self.sheet.range(end, column_end)
-        return self.sheet.range(cell_start, cell_end)
-
-    def first_range(self, column: str | tuple) -> Range:
-        return self.range(column, 0)
+        # cell_end = self.sheet.range(end, column_end)
+        # return self.sheet.range(cell_start, cell_end)
+        return self.sheet.range((start, column_start), (end, column_end))
 
     def add_column(
         self,

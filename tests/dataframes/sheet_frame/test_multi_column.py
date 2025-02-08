@@ -107,52 +107,16 @@ def test_data(sf: SheetFrame, df: DataFrame):
     assert df_.columns.name == df.columns.name
 
 
-# def test_range_all(sf: SheetFrame):
-#     assert sf._range_all(True).get_address() == "$B$2:$R$11"
-#     assert sf.range().get_address() == "$B$2:$R$11"
-
-
-# def test_range_all_index_false(sf: SheetFrame):
-#     assert sf._range_all(False).get_address() == "$C$6:$R$11"
-#     assert sf.range(index=False).get_address() == "$C$6:$R$11"
-
-
-# @pytest.mark.parametrize(
-#     ("start", "end", "address"),
-#     [
-#         (0, None, "$B$6"),
-#         (50, None, "$B$50"),
-#         (15, 16, "$B$15:$B$16"),
-#     ],
-# )
-# def test_range_index(sf: SheetFrame, start: int | None, end, address):
-#     assert sf._range_index(start, end).get_address() == address
-#     assert sf.range("index", start, end).get_address() == address
-
-
-# @pytest.mark.parametrize(
-#     ("column", "start", "end", "address"),
-#     [
-#         (("a", "c", 1, "y"), False, None, "$D$2:$D$11"),
-#         (("a", "d", 4, "y"), -1, None, "$J$2:$J$5"),
-#         (("a", "d", 3, "x"), 0, None, "$G$6"),
-#         (("b", "d", 7, "x"), None, None, "$O$6:$O$11"),
-#         (("a", "d", 3, "y"), 100, None, "$H$100"),
-#     ],
-# )
-# def test_range_column(sf: SheetFrame, column, start, end, address):
-#     assert sf._range_column(column, start, end).get_address() == address
-#     assert sf.range(column, start, end).get_address() == address
-
-
-# @pytest.mark.parametrize(
-#     ("column", "start", "end", "address"),
-#     [
-#         (("a", "d", 3, "y"), [(3, 5), (7, 8)], None, "$H$3:$H$5,$H$7:$H$8"),
-#     ],
-# )
-# def test_range_start_list(sf: SheetFrame, column, start, end, address):
-#     assert sf.range(column, start, end).get_address() == address
+@pytest.mark.parametrize(
+    ("column", "offset", "address"),
+    [
+        (("a", "d", 4, "y"), -1, "$J$2:$J$5"),
+        (("a", "d", 3, "x"), 0, "$G$6"),
+        (("b", "d", 7, "x"), None, "$O$6:$O$11"),
+    ],
+)
+def test_range(sf: SheetFrame, column, offset, address):
+    assert sf.range(column, offset).get_address() == address
 
 
 # def test_range_column_error(sf: SheetFrame):

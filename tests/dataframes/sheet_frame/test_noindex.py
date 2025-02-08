@@ -104,69 +104,22 @@ def test_data(sf: SheetFrame, df: DataFrame):
     assert df_.columns.name == df.columns.name
 
 
-# def test_range_all(sf: SheetFrame):
-#     assert sf._range_all(True).get_address() == "$C$2:$E$6"
-#     assert sf.range().get_address() == "$C$2:$E$6"
+@pytest.mark.parametrize(
+    ("column", "offset", "address"),
+    [
+        ("a", 0, "$C$3"),
+        ("a", -1, "$C$2"),
+        ("b", -1, "$D$2"),
+        ("a", None, "$C$3:$C$6"),
+    ],
+)
+def test_range(sf: SheetFrame, column, offset, address):
+    assert sf.range(column, offset).get_address() == address
 
 
-# def test_range_all_index_false(sf: SheetFrame):
-#     assert sf._range_all(False).get_address() == "$D$3:$E$6"
-#     assert sf.range(index=False).get_address() == "$D$3:$E$6"
-
-
-# @pytest.mark.parametrize(
-#     ("start", "end", "address"),
-#     [
-#         (False, None, "$C$2:$C$6"),
-#         (-1, None, "$C$2"),
-#         (0, None, "$C$3"),
-#         (None, None, "$C$3:$C$6"),
-#         (10, None, "$C$10"),
-#         (10, 100, "$C$10:$C$100"),
-#     ],
-# )
-# def test_range_index(sf: SheetFrame, start, end, address):
-#     assert sf._range_index(start, end).get_address() == address
-#     assert sf.range("index", start, end).get_address() == address
-
-
-# @pytest.mark.parametrize(
-#     ("column", "start", "end", "address"),
-#     [
-#         ("a", -1, None, "$D$2"),
-#         ("b", -1, None, "$E$2"),
-#         ("a", 1, None, "$D$1"),
-#         ("a", 2, None, "$D$2"),
-#         ("b", 100, None, "$E$100"),
-#         ("a", None, None, "$D$3:$D$6"),
-#         ("a", False, None, "$D$2:$D$6"),
-#         ("b", False, None, "$E$2:$E$6"),
-#         ("a", 2, 100, "$D$2:$D$100"),
-#     ],
-# )
-# def test_range_column(sf: SheetFrame, column, start, end, address):
-#     assert sf._range_column(column, start, end).get_address() == address
-#     assert sf.range(column, start, end).get_address() == address
-
-
-# def test_rename(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
-#     sf.rename({"a": "A", "b": "B"})
-#     assert sf.columns == [None, "A", "B"]
-
-
-# def test_drop_duplicates(sheet: Sheet):
-#     df = DataFrame({"a": [1, 1, 2, 2, 3, 3], "b": [4, 4, 4, 5, 5, 5]})
-#     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
-#     sf.drop_duplicates(["a", "b"])
-#     x = sf["a"]
-#     assert x[::2].to_list() == [1, 2, 3]
-#     assert x[1::2].isna().all()
-#     x = sf["b"]
-#     assert x[::3].to_list() == [4, 5]
-#     assert x[1::3].isna().all()
-#     assert x[2::3].isna().all()
+def test_range_error(sf: SheetFrame):
+    with pytest.raises(ValueError, match="invalid offset"):
+        sf.range("a", 1)  # type: ignore
 
 
 # def test_add_column(sheet: Sheet):

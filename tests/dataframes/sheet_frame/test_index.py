@@ -99,6 +99,20 @@ def test_data(sf: SheetFrame, df: DataFrame):
     assert df_.columns.name == df.columns.name
 
 
+@pytest.mark.parametrize(
+    ("column", "offset", "address"),
+    [
+        ("b", 0, "$E$3"),
+        ("a", -1, "$D$2"),
+        ("b", -1, "$E$2"),
+        ("name", -1, "$C$2"),
+        ("a", None, "$D$3:$D$6"),
+    ],
+)
+def test_range(sf: SheetFrame, column, offset, address):
+    assert sf.range(column, offset).get_address() == address
+
+
 # @pytest.fixture
 # def table(sf: SheetFrame):
 #     yield sf.as_table()
@@ -157,53 +171,6 @@ def test_data(sf: SheetFrame, df: DataFrame):
 #         np.testing.assert_array_equal(sf.select(name=name), sel)
 #     else:
 #         np.testing.assert_array_equal(sf.select(name=name, a=a), sel)
-
-
-# def test_range_all(sf: SheetFrame):
-#     assert sf._range_all(True).get_address() == "$C$2:$E$6"
-#     assert sf.range().get_address() == "$C$2:$E$6"
-
-
-# def test_range_all_index_false(sf: SheetFrame):
-#     assert sf._range_all(False).get_address() == "$D$3:$E$6"
-#     assert sf.range(index=False).get_address() == "$D$3:$E$6"
-
-
-# @pytest.mark.parametrize(
-#     ("start", "end", "address"),
-#     [
-#         (False, None, "$C$2:$C$6"),
-#         (-1, None, "$C$2"),
-#         (0, None, "$C$3"),
-#         (None, None, "$C$3:$C$6"),
-#         (10, None, "$C$10"),
-#         (10, 100, "$C$10:$C$100"),
-#     ],
-# )
-# def test_range_index(sf: SheetFrame, start, end, address):
-#     assert sf._range_index(start, end).get_address() == address
-#     assert sf.range("index", start, end).get_address() == address
-
-
-# @pytest.mark.parametrize(
-#     ("column", "start", "end", "address"),
-#     [
-#         ("a", -1, None, "$D$2"),
-#         ("b", -1, None, "$E$2"),
-#         ("name", -1, None, "$C$2"),
-#         ("a", 1, None, "$D$1"),
-#         ("a", 2, None, "$D$2"),
-#         ("b", 100, None, "$E$100"),
-#         ("a", None, None, "$D$3:$D$6"),
-#         ("a", False, None, "$D$2:$D$6"),
-#         ("b", False, None, "$E$2:$E$6"),
-#         ("name", False, None, "$C$2:$C$6"),
-#         ("a", 2, 100, "$D$2:$D$100"),
-#     ],
-# )
-# def test_range_column(sf: SheetFrame, column, start, end, address):
-#     assert sf._range_column(column, start, end).get_address() == address
-#     assert sf.range(column, start, end).get_address() == address
 
 
 # @pytest.mark.parametrize(
