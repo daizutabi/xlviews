@@ -28,7 +28,7 @@ class Range:
         sheet: Sheet | None = None,
     ) -> None:
         t1 = to_tuple(cell1, sheet)
-        self.sheet, self.row, self.colmn = t1[:3]
+        self.sheet, self.row, self.column = t1[:3]
 
         if cell2 is None:
             self.row_end, self.column_end = t1[3:]
@@ -48,7 +48,9 @@ class Range:
 
     @property
     def impl(self) -> RangeImpl:
-        return self.sheet.range((self.row, self.colmn), (self.row_end, self.column_end))
+        cell1 = (self.row, self.column)
+        cell2 = (self.row_end, self.column_end)
+        return self.sheet.range(cell1, cell2)
 
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)
@@ -57,6 +59,10 @@ class Range:
         for row in range(self.row, self.row_end + 1):
             for column in range(self.column, self.column_end + 1):
                 yield self.__class__((row, column), sheet=self.sheet)
+
+    def __repr__(self) -> str:
+        addr = self.get_address(include_sheetname=True, external=True)
+        return f"<{self.__class__.__name__} {addr}>"
 
     def get_address(
         self,
