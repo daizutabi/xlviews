@@ -449,18 +449,6 @@ class SheetFrame:
         else:
             column_start = column_end = index
 
-        # if end == 0:
-        #     if not isinstance(index, tuple):
-        #         return self.sheet.range(start, column_start)
-
-        # wide column
-        # cell_start = self.sheet.range(start, column_start)
-        # cell_end = cell_start.offset(0, column_end - column_start)
-        # return self.sheet.range(cell_start, cell_end)
-        # return self.sheet.range((start, column_start), (start, column_end))
-
-        # cell_end = self.sheet.range(end, column_end)
-        # return self.sheet.range(cell_start, cell_end)
         return self.sheet.range((start, column_start), (end, column_end))
 
     def add_column(
