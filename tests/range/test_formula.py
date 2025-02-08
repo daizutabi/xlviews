@@ -51,88 +51,88 @@ def test_header(const_header: Range | RangeImpl):
 
 
 @pytest.mark.parametrize(("k", "value"), [(0, 1), (1, NONCONST_VALUE), (2, 4)])
-def test_const(column: Range, const_header: Range, k, value):
+def test_const(column: Range | RangeImpl, const_header: Range | RangeImpl, k, value):
     from xlviews.range.formula import const
 
     const_header.value = const(column, "=")
     assert const_header.value[k] == value
 
 
-# @pytest.fixture(scope="module")
-# def ranges(sheet_module: Sheet):
-#     rng = sheet_module.range("B100")
-#     rng.options(transpose=True).value = [1, 2, 3, 4, 0, 5, 6, 7, 8, 9, 10]
-#     rng1 = rng.expand("down")
-#     sheet_module.range("B104").value = None
+@pytest.fixture(scope="module")
+def ranges(sheet_module: Sheet):
+    rng = sheet_module.range("B100")
+    rng.options(transpose=True).value = [1, 2, 3, 4, 0, 5, 6, 7, 8, 9, 10]
+    rng1 = rng.expand("down")
+    sheet_module.range("B104").value = None
 
-#     rng = sheet_module.range("C100")
-#     rng.options(transpose=True).value = [11, 12, 13, 14, 15, 16, 17, 0, 18, 19, 20]
-#     rng2 = rng.expand("down")
-#     sheet_module.range("C107").value = None
+    rng = sheet_module.range("C100")
+    rng.options(transpose=True).value = [11, 12, 13, 14, 15, 16, 17, 0, 18, 19, 20]
+    rng2 = rng.expand("down")
+    sheet_module.range("C107").value = None
 
-#     return [rng1, rng2]
-
-
-# def test_ranges(ranges: list[Range]):
-#     assert ranges[0].get_address() == "$B$100:$B$110"
-#     assert ranges[1].get_address() == "$C$100:$C$110"
+    return [Range(rng1), Range(rng2)]
 
 
-# @pytest.mark.parametrize("apply", [list, RangeCollection])
-# def test_aggregate_value(ranges: list[Range], apply):
-#     from xlviews.range.formula import aggregate
-
-#     x = aggregate("count", apply(ranges))
-#     assert x == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
+def test_ranges(ranges: list[Range]):
+    assert ranges[0].get_address() == "$B$100:$B$110"
+    assert ranges[1].get_address() == "$C$100:$C$110"
 
 
-# @pytest.mark.parametrize("apply", [list, RangeCollection])
-# def test_aggregate_none(ranges: list[Range], apply):
-#     from xlviews.range.formula import aggregate
-
-#     x = aggregate(None, apply(ranges))
-#     assert x == "$B$100:$B$110,$C$100:$C$110"
+@pytest.fixture(scope="module", params=[list, RangeCollection], ids=["list", "rc"])
+def cls(request: pytest.FixtureRequest):
+    return request.param
 
 
-# @pytest.mark.parametrize("apply", [list, RangeCollection])
-# def test_aggregate_formula(ranges: list[Range], apply):
-#     from xlviews.range.formula import aggregate
+def test_aggregate_value(ranges: list[Range], cls):
+    from xlviews.range.formula import aggregate
 
-#     x = aggregate("max", apply(ranges), formula=True)
-#     assert x == "=AGGREGATE(4,7,$B$100:$B$110,$C$100:$C$110)"
-
-
-# FUNC_VALUES = [
-#     ("count", 20),
-#     ("sum", 210),
-#     ("min", 1),
-#     ("max", 20),
-#     ("mean", 10.5),
-#     ("median", 10.5),
-#     ("std", np.std(range(1, 21))),
-#     ("soa", np.std(range(1, 21)) / 10.5),
-# ]
+    x = aggregate("count", cls(ranges))
+    assert x == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
 
 
-# @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
-# @pytest.mark.parametrize("apply", [list, RangeCollection])
-# def test_aggregate_str(ranges: list[Range], apply, func, value):
-#     from xlviews.range.formula import aggregate
+def test_aggregate_none(ranges: list[Range], cls):
+    from xlviews.range.formula import aggregate
 
-#     formula = aggregate(func, apply(ranges))
-#     cell = ranges[0].sheet.range("D100")
-#     cell.value = "=" + formula
-#     assert cell.value == value
+    x = aggregate(None, cls(ranges))
+    assert x == "$B$100:$B$110,$C$100:$C$110"
 
 
-# @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
-# @pytest.mark.parametrize("apply", [list, RangeCollection])
-# def test_aggregate_range(ranges: list[Range], apply, func, value):
-#     from xlviews.range.formula import aggregate
+def test_aggregate_formula(ranges: list[Range], cls):
+    from xlviews.range.formula import aggregate
 
-#     ref = ranges[0].sheet.range("E100")
-#     ref.value = func
-#     formula = aggregate(ref, apply(ranges))
-#     cell = ranges[0].sheet.range("D100")
-#     cell.value = "=" + formula
-#     assert cell.value == value
+    x = aggregate("max", cls(ranges), formula=True)
+    assert x == "=AGGREGATE(4,7,$B$100:$B$110,$C$100:$C$110)"
+
+
+FUNC_VALUES = [
+    ("count", 20),
+    ("sum", 210),
+    ("min", 1),
+    ("max", 20),
+    ("mean", 10.5),
+    ("median", 10.5),
+    ("std", np.std(range(1, 21))),
+    ("soa", np.std(range(1, 21)) / 10.5),
+]
+
+
+@pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
+def test_aggregate_str(ranges: list[Range], cls, func, value):
+    from xlviews.range.formula import aggregate
+
+    cell = ranges[0].sheet.range("D100")
+    cell.value = aggregate(func, cls(ranges), formula=True)
+    assert cell.value == value
+
+
+@pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
+@pytest.mark.parametrize("apply", [lambda x: x, Range])
+def test_aggregate_range(ranges: list[Range], cls, func, value, apply):
+    from xlviews.range.formula import aggregate
+
+    ref = apply(ranges[0].sheet.range("E100"))
+    ref.value = func
+    formula = aggregate(ref, cls(ranges))
+    cell = ranges[0].sheet.range("D100")
+    cell.value = "=" + formula
+    assert cell.value == value
