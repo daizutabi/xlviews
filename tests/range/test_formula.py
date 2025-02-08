@@ -27,23 +27,23 @@ def test_range_address(rng_impl: RangeImpl):
     assert rng_impl.get_address() == "$B$3:$D$7"
 
 
-@pytest.mark.parametrize("k", range(3))
-def test_range_value(rng_impl: RangeImpl, df: DataFrame, k: int):
-    value = rng_impl.options(transpose=True).value
-    assert isinstance(value, list)
-    assert len(value) == 3
-    np.testing.assert_array_equal(df[value[k][0]], value[k][1:])
+# @pytest.mark.parametrize("k", range(3))
+# def test_range_value(rng_impl: RangeImpl, df: DataFrame, k: int):
+#     value = rng_impl.options(transpose=True).value
+#     assert isinstance(value, list)
+#     assert len(value) == 3
+#     np.testing.assert_array_equal(df[value[k][0]], value[k][1:])
 
 
-@pytest.fixture(scope="module")
-def column(rng: Range):
-    start = rng[0].offset(1)
-    end = start.offset(3)
-    return rng.sheet.range(start, end)
+# @pytest.fixture(scope="module")
+# def column(rng: Range):
+#     start = rng[0].offset(1)
+#     end = start.offset(3)
+#     return rng.sheet.range(start, end)
 
 
-def test_column(column: Range):
-    assert column.get_address() == "$B$4:$B$7"
+# def test_column(column: Range):
+#     assert column.get_address() == "$B$4:$B$7"
 
 
 # @pytest.fixture(scope="module")

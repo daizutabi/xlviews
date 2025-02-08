@@ -39,8 +39,9 @@ def test_range_str(addr_impl: str, include_sheetname, external):
     assert x == addr_impl
 
 
-def test_range_str_str(addr_impl: str, include_sheetname, external):
-    rng = Range(addr_impl, addr_impl)
+@pytest.mark.parametrize("func", [lambda x: x, Range])
+def test_range_str_str(addr_impl: str, include_sheetname, external, func):
+    rng = func(Range(addr_impl, addr_impl))
     x = rng.get_address(include_sheetname=include_sheetname, external=external)
     assert x == addr_impl
 
@@ -72,9 +73,44 @@ def test_range_tuple_tuple(rng_impl: RangeImpl, addr_impl, include_sheetname, ex
     assert x == addr_impl
 
 
+def test_range_error(sheet: Sheet, sheet_module: Sheet):
+    with pytest.raises(ValueError, match="Cells are not in the same sheet"):
+        Range(sheet.range("A1"), sheet_module.range("B2"))
+
+
+def test_range_book_error(sheet_module: Sheet):
+    with pytest.raises(ValueError, match="Book name does not match"):
+        Range("[a]b!A1")
+
+
+def test_range_sheet_error(sheet_module: Sheet):
+    with pytest.raises(ValueError, match="Sheet not found"):
+        Range("b!A1")
+
+
+def test_range_type_error(sheet_module: Sheet):
+    with pytest.raises(TypeError, match="Invalid type"):
+        Range(1)  # type: ignore
+
+
+def test_range_other_sheet(sheet_module: Sheet, sheet: Sheet):
+    rng = Range(f"{sheet.name}!A1", sheet=sheet_module)
+    assert rng.sheet.name == sheet.name
+
+
 @pytest.fixture(scope="module")
 def rng(rng_impl: RangeImpl):
     return Range(rng_impl)
+
+
+def test_len(rng: Range, rng_impl: RangeImpl):
+    assert len(rng) == len(rng_impl)
+
+
+def test_iter(rng: Range, rng_impl: RangeImpl):
+    x = [r.get_address() for r in rng]
+    y = [r.get_address() for r in rng_impl]
+    assert x == y
 
 
 def test_repr(rng: Range, rng_impl: RangeImpl):
@@ -103,3 +139,24 @@ def test_iter_addresses(rng: Range, rng_impl: RangeImpl, external):
     x = list(rng.iter_addresses(external=external))
     y = [r.get_address(external=external) for r in rng_impl]
     assert x == y
+
+
+def test_iter_addresses_formula(rng: Range, rng_impl: RangeImpl, external):
+    x = list(rng.iter_addresses(external=external, formula=True))
+    y = ["=" + r.get_address(external=external) for r in rng_impl]
+    assert x == y
+
+
+@pytest.mark.parametrize(
+    ("addr", "value"),
+    [
+        ("A1", "a"),
+        ("A1:C1", (("a", "a", "a"),)),
+        ("A1:A3", (("a",), ("a",), ("a",))),
+        ("A1:B2", (("a", "a"), ("a", "a"))),
+    ],
+)
+def test_api(addr, value, sheet: Sheet):
+    rng = Range(addr, sheet=sheet)
+    rng.impl.value = "a"
+    assert rng.api.Value == value

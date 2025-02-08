@@ -23,10 +23,13 @@ class Range:
 
     def __init__(
         self,
-        cell1: str | Range | RangeImpl | tuple[int, int],
+        cell1: str | Range | RangeImpl | tuple[int, int] | None = None,
         cell2: str | Range | RangeImpl | tuple[int, int] | None = None,
         sheet: Sheet | None = None,
     ) -> None:
+        if cell1 is None:
+            return
+
         t1 = to_tuple(cell1, sheet)
         self.sheet, self.row, self.column = t1[:3]
 
@@ -46,20 +49,33 @@ class Range:
         self.row_end = max(self.row, self.row_end)
         self.column_end = max(self.column, self.column_end)
 
+    @classmethod
+    def from_index(
+        cls,
+        start: tuple[int, int],
+        end: tuple[int, int] | None = None,
+        sheet: Sheet | None = None,
+    ) -> Self:
+        rng = cls()
+        rng.sheet = sheet or xlwings.sheets.active
+        rng.row, rng.column = start
+        rng.row_end, rng.column_end = end or start
+        return rng
+
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)
 
     def __iter__(self) -> Iterator[Self]:
         for row in range(self.row, self.row_end + 1):
             for column in range(self.column, self.column_end + 1):
-                yield self.__class__((row, column), sheet=self.sheet)
+                yield self.__class__.from_index((row, column), sheet=self.sheet)
 
     def __repr__(self) -> str:
         addr = self.get_address(include_sheetname=True, external=True)
         return f"<{self.__class__.__name__} {addr}>"
 
     def offset(self, row_offset: int = 0, column_offset: int = 0) -> Self:
-        return self.__class__(
+        return self.__class__.from_index(
             (self.row + row_offset, self.column + column_offset),
             (self.row_end + row_offset, self.column_end + column_offset),
             sheet=self.sheet,
@@ -139,13 +155,14 @@ def to_tuple(
             raise ValueError(msg)
 
         if sheet_name != sheet.name:
-            sheet = sheet.book.sheets[sheet_name]
-            if not sheet:
+            if sheet_name not in [s.name for s in sheet.book.sheets]:
                 msg = f"Sheet not found: {sheet_name}"
                 raise ValueError(msg)
 
+            sheet = sheet.book.sheets[sheet_name]
+
         index = get_index(address)
-        return sheet, *index
+        return sheet, *index  # type: ignore
 
     msg = f"Invalid type: {type(cell)}"
     raise TypeError(msg)
