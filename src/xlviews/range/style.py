@@ -5,7 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import xlwings as xw
-from xlwings import Range, Sheet
+from xlwings import Range as RangeImpl
+from xlwings import Sheet
 from xlwings.constants import (
     BordersIndex,
     ConditionValueTypes,
@@ -15,6 +16,7 @@ from xlwings.constants import (
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
+from xlviews.range.range import Range
 from xlviews.utils import constant, set_font_api
 
 if TYPE_CHECKING:
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def set_border_line(
-    rng: Range,
+    rng: Range | RangeImpl,
     index: str,
     weight: int = 2,
     color: int | str = 0,
@@ -38,7 +40,7 @@ def set_border_line(
 
 
 def set_border_edge(
-    rng: Range,
+    rng: Range | RangeImpl,
     weight: int | tuple[int, int, int, int] = 3,
     color: int | str = 0,
 ) -> None:
@@ -63,13 +65,17 @@ def set_border_edge(
     set_border_line(bottom, "xlInsideHorizontal", weight=wb, color=color)
 
 
-def set_border_inside(rng: Range, weight: int = 1, color: int | str = 0) -> None:
+def set_border_inside(
+    rng: Range | RangeImpl,
+    weight: int = 1,
+    color: int | str = 0,
+) -> None:
     set_border_line(rng, "xlInsideVertical", weight=weight, color=color)
     set_border_line(rng, "xlInsideHorizontal", weight=weight, color=color)
 
 
 def set_border(
-    rng: Range,
+    rng: Range | RangeImpl,
     edge_weight: int | tuple[int, int, int, int] = 2,
     inside_weight: int = 1,
     edge_color: int | str = 0,
@@ -82,13 +88,16 @@ def set_border(
         set_border_inside(rng, inside_weight, inside_color)
 
 
-def set_fill(rng: Range | RangeCollection, color: int | str | None = None) -> None:
+def set_fill(
+    rng: Range | RangeCollection | RangeImpl,
+    color: int | str | None = None,
+) -> None:
     if color is not None:
         rng.api.Interior.Color = rgb(color)
 
 
 def set_font(
-    rng: Range | RangeCollection,
+    rng: Range | RangeCollection | RangeImpl,
     name: str | None = None,
     *,
     size: float | None = None,
@@ -101,7 +110,7 @@ def set_font(
 
 
 def set_alignment(
-    rng: Range | RangeCollection,
+    rng: Range | RangeCollection | RangeImpl,
     horizontal_alignment: str | None = None,
     vertical_alignment: str | None = None,
 ) -> None:
@@ -112,16 +121,12 @@ def set_alignment(
         rng.api.VerticalAlignment = constant(vertical_alignment)
 
 
-def set_number_format(rng: Range | RangeCollection, fmt: str) -> None:
-    if isinstance(rng, Range):
-        rng.number_format = fmt
-    else:
-        for r in rng:
-            r.number_format = fmt
+def set_number_format(rng: Range | RangeCollection | RangeImpl, fmt: str) -> None:
+    rng.api.NumberFormat = fmt
 
 
 def set_banding(
-    rng: Range,
+    rng: Range | RangeImpl,
     axis: int = 0,
     even_color: int | str = rgb(240, 250, 255),
     odd_color: int | str = rgb(255, 255, 255),
@@ -144,7 +149,10 @@ def set_banding(
     banding(1, rgb(even_color))
 
 
-def hide_succession(rng: Range, color: int | str = rgb(200, 200, 200)) -> None:
+def hide_succession(
+    rng: Range | RangeImpl,
+    color: int | str = rgb(200, 200, 200),
+) -> None:
     cell = rng[0].get_address(row_absolute=False, column_absolute=False)
 
     start = rng[0].offset(-2).get_address(column_absolute=False)
@@ -170,12 +178,16 @@ def hide_succession(rng: Range, color: int | str = rgb(200, 200, 200)) -> None:
     condition.Font.Color = rgb(color)
 
 
-def hide_unique(rng: Range, length: int, color: int | str = rgb(100, 100, 100)) -> None:
-    def address(r: Range) -> str:
+def hide_unique(
+    rng: Range | RangeImpl,
+    length: int,
+    color: int | str = rgb(100, 100, 100),
+) -> None:
+    def address(r: Range | RangeImpl) -> str:
         return r.get_address(row_absolute=False, column_absolute=False)
 
-    start = rng[0, 0].offset(1, 0)
-    end = rng[0, 0].offset(length, 0)
+    start = rng[0].offset(1, 0)
+    end = rng[0].offset(length, 0)
     cell = address(Range(start, end))
     ref = address(start)
     formula = f"=COUNTIF({cell}, {ref}) = {length}"
@@ -193,7 +205,11 @@ def hide_gridlines(sheet: Sheet | None = None) -> None:
     sheet.book.app.api.ActiveWindow.DisplayGridlines = False
 
 
-def set_color_condition(rng: Range, values: list[str], colors: list[int]) -> None:
+def set_color_condition(
+    rng: Range | RangeImpl,
+    values: list[str],
+    colors: list[int],
+) -> None:
     condition = rng.api.FormatConditions.AddColorScale(len(values))
     condition.SetFirstPriority()
 
@@ -205,14 +221,14 @@ def set_color_condition(rng: Range, values: list[str], colors: list[int]) -> Non
 
 
 def set_color_scale(
-    rng: Range,
-    vmin: float | str | Range,
-    vmax: float | str | Range,
+    rng: Range | RangeImpl,
+    vmin: float | str | Range | RangeImpl,
+    vmax: float | str | Range | RangeImpl,
 ) -> None:
-    if isinstance(vmin, Range):
+    if isinstance(vmin, Range | RangeImpl):
         vmin = vmin.get_address()
 
-    if isinstance(vmax, Range):
+    if isinstance(vmax, Range | RangeImpl):
         vmax = vmax.get_address()
 
     values = [f"={vmin}", f"=({vmin} + {vmax}) / 2", f"={vmax}"]

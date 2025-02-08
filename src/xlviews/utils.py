@@ -6,7 +6,7 @@ import xlwings as xw
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
-from xlviews.colors import cnames
+from xlviews.colors import rgb
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
