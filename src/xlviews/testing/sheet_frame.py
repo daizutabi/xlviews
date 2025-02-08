@@ -25,6 +25,9 @@ class NoIndex(FrameContainer):
         kwargs["index"] = False
         return kwargs
 
+    def init(self) -> None:
+        self.sf.add_column("c", [9, 10, 11, 12], style=True, number_format="0.0")
+
 
 class Index(FrameContainer):
     row: int = 8
@@ -38,10 +41,13 @@ class Index(FrameContainer):
         df.index.name = "name"
         return df
 
+    def init(self) -> None:
+        self.sf.add_formula_column("c", "={a}+{b}", autofit=True, style=True)
+
 
 class MultiIndex(FrameContainer):
     row: int = 2
-    column: int = 6
+    column: int = 7
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -58,7 +64,7 @@ class MultiIndex(FrameContainer):
 
 class MultiColumn(FrameContainer):
     row: int = 2
-    column: int = 11
+    column: int = 12
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -73,7 +79,7 @@ class MultiColumn(FrameContainer):
 
 class MultiIndexColumn(FrameContainer):
     row: int = 13
-    column: int = 21
+    column: int = 22
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -96,16 +102,18 @@ class MultiIndexColumn(FrameContainer):
 
 class WideColumn(FrameContainer):
     row: int = 3
-    column: int = 29
-
-    def init(self) -> None:
-        self.sf.add_wide_column("u", range(3), autofit=True, style=True)
-        self.sf.add_wide_column("v", range(4), autofit=True, style=True)
+    column: int = 30
 
     @classmethod
     def dataframe(cls) -> DataFrame:
         df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
         return df.set_index(["x", "y"])
+
+    def init(self) -> None:
+        self.sf.add_wide_column("u", range(3))
+        self.sf.add_wide_column("v", range(4))
+        self.sf.add_formula_column("u", "={u}+{a}")
+        self.sf.add_formula_column("v", "={b}-{v}", autofit=True, style=True)
 
 
 def create(sheet: Sheet) -> list[FrameContainer]:

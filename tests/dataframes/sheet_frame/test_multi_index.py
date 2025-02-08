@@ -33,6 +33,7 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.sheet.name == sheet_module.name
     assert sf.index_level == 2
     assert sf.columns_level == 1
+    assert sf.columns_names is None
 
 
 def test_set_data_from_sheet(sf: SheetFrame):

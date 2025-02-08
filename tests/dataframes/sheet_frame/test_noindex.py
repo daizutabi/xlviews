@@ -31,6 +31,7 @@ def test_init(sf: SheetFrame, fc: FrameContainer):
     assert sf.column == fc.column
     assert sf.index_level == 0
     assert sf.columns_level == 1
+    assert sf.columns_names is None
 
 
 def test_set_data_from_sheet(sf: SheetFrame):
@@ -45,6 +46,14 @@ def test_set_data_from_sheet(sf: SheetFrame):
 def test_expand(sf: SheetFrame):
     v = [["a", "b"], [1, 5], [2, 6], [3, 7], [4, 8]]
     assert sf.expand().options(ndim=2).value == v
+
+
+def test_repr(sf: SheetFrame):
+    assert repr(sf).endswith("!$C$2:$D$6>")
+
+
+def test_str(sf: SheetFrame):
+    assert str(sf).endswith("!$C$2:$D$6>")
 
 
 def test_len(sf: SheetFrame):
@@ -138,14 +147,6 @@ def test_data(sf: SheetFrame, df: DataFrame):
 # def test_range_column(sf: SheetFrame, column, start, end, address):
 #     assert sf._range_column(column, start, end).get_address() == address
 #     assert sf.range(column, start, end).get_address() == address
-
-
-# def test_repr(sf: SheetFrame):
-#     assert repr(sf).endswith("!$C$2:$E$6>")
-
-
-# def test_str(sf: SheetFrame):
-#     assert str(sf).endswith("!$C$2:$E$6>")
 
 
 # def test_rename(sheet: Sheet):

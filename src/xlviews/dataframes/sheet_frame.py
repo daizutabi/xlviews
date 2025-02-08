@@ -223,6 +223,12 @@ class SheetFrame:
 
         return self.cell.expand(mode)
 
+    def __repr__(self) -> str:
+        return repr(self.expand()).replace("<Range ", "<SheetFrame ")
+
+    def __str__(self) -> str:
+        return str(self.expand()).replace("<Range ", "<SheetFrame ")
+
     def __len__(self) -> int:
         start = self.cell.offset(self.columns_level)
         cell = start
@@ -552,13 +558,15 @@ class SheetFrame:
     def first_range(self, column: str | tuple) -> Range:
         return self.range(column, 0)
 
-    def __repr__(self) -> str:
-        return repr(self.range()).replace("<Range ", "<SheetFrame ")
-
-    def __str__(self) -> str:
-        return str(self.range()).replace("<Range ", "<SheetFrame ")
-
-    def add_column(self, column: str, value: Any | None = None) -> Range:
+    def add_column(
+        self,
+        column: str,
+        value: Any | None = None,
+        *,
+        number_format: str | None = None,
+        autofit: bool = False,
+        style: bool = False,
+    ) -> Range:
         column_int = self.column + len(self.columns)
         cell = self.sheet.range(self.row, column_int)
         cell.value = column
@@ -567,6 +575,16 @@ class SheetFrame:
 
         if value is not None:
             rng.options(transpose=True).value = value
+
+        if number_format:
+            rng.number_format = number_format
+
+        if autofit:
+            rng = rng.sheet.range(rng[0].offset(-1), rng[-1])
+            rng.autofit()
+
+        if style:
+            self.set_style()
 
         return rng
 
@@ -577,7 +595,8 @@ class SheetFrame:
         *,
         number_format: str | None = None,
         autofit: bool = False,
-    ) -> None:
+        style: bool = False,
+    ) -> Range:
         """Add a formula column.
 
         Args:
@@ -621,6 +640,11 @@ class SheetFrame:
         if autofit:
             rng = rng.sheet.range(rng[0].offset(-1), rng[-1])
             rng.autofit()
+
+        if style:
+            self.set_style()
+
+        return rng
 
     def add_wide_column(
         self,

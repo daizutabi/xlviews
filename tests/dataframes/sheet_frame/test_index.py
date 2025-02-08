@@ -32,6 +32,7 @@ def test_init(sf: SheetFrame):
     assert sf.column == 3
     assert sf.index_level == 1
     assert sf.columns_level == 1
+    assert sf.columns_names is None
 
 
 def test_set_data_from_sheet(sf: SheetFrame):
