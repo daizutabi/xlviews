@@ -81,6 +81,10 @@ class Range:
         column = self.column + key % (self.column_end - self.column + 1)
         return self.__class__.from_index((row, column), sheet=self.sheet)
 
+    @property
+    def last_cell(self) -> Self:
+        return self[-1]
+
     def __repr__(self) -> str:
         addr = self.get_address(include_sheetname=True, external=True)
         return f"<{self.__class__.__name__} {addr}>"

@@ -122,21 +122,6 @@ def test_range_error(sf: SheetFrame):
         sf.range("a", 1)  # type: ignore
 
 
-# def test_add_column(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
-#     rng = sf.add_column("c")
-#     assert rng.get_address() == "$E$3:$E$5"
-#     assert sf.columns == [None, "a", "b", "c"]
-
-
-# def test_add_column_value(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
-#     sf.add_column("c", [7, 8, 9])
-#     np.testing.assert_array_equal(sf["c"], [7, 8, 9])
-
-
 # def test_getitem_str(sf: SheetFrame):
 #     s = sf["a"]
 #     assert isinstance(s, Series)

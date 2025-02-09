@@ -22,7 +22,7 @@ from xlviews.grid import FacetGrid
 from xlviews.range.formula import aggregate
 from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
-from xlviews.range.style import set_alignment
+from xlviews.range.style import set_alignment, set_number_format
 
 from . import modify
 from .groupby import GroupBy
@@ -459,22 +459,19 @@ class SheetFrame:
         number_format: str | None = None,
         autofit: bool = False,
         style: bool = False,
-    ) -> Range:
+    ) -> RangeImpl:
         column_int = self.column + len(self.columns)
-        cell = self.sheet.range(self.row, column_int)
-        cell.value = column
+        self.sheet.range(self.row, column_int).value = column
 
         rng = self.range(column)
 
         if value is not None:
             rng.options(transpose=True).value = value
-
-        if number_format:
-            rng.number_format = number_format
+            if number_format:
+                rng.number_format = number_format
 
         if autofit:
-            rng = rng.sheet.range(rng[0].offset(-1), rng[-1])
-            rng.autofit()
+            self.sheet.range(rng.offset(-1), rng.last_cell).autofit()
 
         if style:
             self.set_style()
@@ -483,13 +480,13 @@ class SheetFrame:
 
     def add_formula_column(
         self,
-        rng: Range | str,
+        rng: Range | RangeImpl | str,
         formula: str,
         *,
         number_format: str | None = None,
         autofit: bool = False,
         style: bool = False,
-    ) -> Range:
+    ) -> RangeImpl:
         """Add a formula column.
 
         Args:
@@ -506,6 +503,8 @@ class SheetFrame:
                 rng = self.add_column(rng)
             else:
                 rng = self.range(rng)
+        elif isinstance(rng, Range):
+            rng = rng.impl
 
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
@@ -531,8 +530,7 @@ class SheetFrame:
             rng.number_format = number_format
 
         if autofit:
-            rng = rng.sheet.range(rng[0].offset(-1), rng[-1])
-            rng.autofit()
+            self.sheet.range(rng[0].offset(-1), rng[-1]).autofit()
 
         if style:
             self.set_style()
@@ -547,7 +545,7 @@ class SheetFrame:
         number_format: str | None = None,
         autofit: bool = True,
         style: bool = False,
-    ) -> Range:
+    ) -> RangeImpl:
         """Add a wide column.
 
         Args:
@@ -580,31 +578,6 @@ class SheetFrame:
             self.set_style()
 
         return rng[0].offset(1)
-
-    def as_table(
-        self,
-        *,
-        const_header: bool = True,
-        autofit: bool = True,
-        style: bool = True,
-    ) -> Table:
-        if self.columns_level != 1:
-            raise NotImplementedError
-
-        self.set_alignment("left")
-
-        end = self.cell.offset(len(self), len(self.columns) - 1)
-        rng = self.sheet.range(self.cell, end)
-
-        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
-        self.table = table
-
-        return table
-
-    def unlist(self) -> None:
-        if self.table:
-            self.table.unlist()
-            self.table = None
 
     @overload
     def __getitem__(self, column: str | tuple) -> Series: ...
@@ -653,45 +626,30 @@ class SheetFrame:
         else:
             rng.options(transpose=True).value = value
 
-    def select(self, **kwargs) -> NDArray[np.bool_]:
-        """Return the selection of the SheetFrame.
+    def as_table(
+        self,
+        *,
+        const_header: bool = True,
+        autofit: bool = True,
+        style: bool = True,
+    ) -> Table:
+        if self.columns_level != 1:
+            raise NotImplementedError
 
-        Keyword arguments are column names and values. The conditions are as follows:
-           - list : the specified elements are selected.
-           - tuple : the range of the value.
-           - other : the value is selected if it matches.
-        """
+        self.set_alignment("left")
 
-        def filter_(
-            sel: NDArray[np.bool_],
-            array: Series,
-            value: str | list | tuple,
-        ) -> None:
-            if isinstance(value, list):
-                sel &= array.isin(value)
-            elif isinstance(value, tuple):
-                sel &= (array >= value[0]) & (array <= value[1])
-            else:
-                sel &= array == value
+        end = self.cell.offset(len(self), len(self.columns) - 1)
+        rng = self.sheet.range(self.cell, end)
 
-        if self.columns_names is None:
-            # vertical selection
-            sel = np.ones(len(self), dtype=bool)
+        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
+        self.table = table
 
-            for key, value in kwargs.items():
-                filter_(sel, self[key], value)
+        return table
 
-            return sel
-
-        # horizontal selection
-        columns = self.value_columns
-        sel = np.ones(len(columns), dtype=bool)
-        df = DataFrame(columns, columns=self.columns_names)
-
-        for key, value in kwargs.items():
-            filter_(sel, df[key], value)
-
-        return sel
+    def unlist(self) -> None:
+        if self.table:
+            self.table.unlist()
+            self.table = None
 
     @overload
     def get_address(
