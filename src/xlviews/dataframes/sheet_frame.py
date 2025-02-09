@@ -578,40 +578,6 @@ class SheetFrame:
 
         return rng[0].offset(1)
 
-    # @overload
-    # def __getitem__(self, column: str | tuple) -> Series: ...
-
-    # @overload
-    # def __getitem__(self, column: Sequence[str | tuple]) -> DataFrame: ...
-
-    # def __getitem__(
-    #     self,
-    #     column: str | tuple | Sequence[str | tuple],
-    # ) -> Series | DataFrame:
-    #     """Return the column data.
-
-    #     If column is a string, return a Series. If column is a list,
-    #     return a DataFrame. The index is ignored.
-    #     """
-    #     if isinstance(column, list):
-    #         return DataFrame({c: self[c] for c in column})
-
-    #     if isinstance(column, str | tuple):
-    #         row = self.row + self.columns_level
-    #         name, column_index = column, self.index(column)
-    #         start = self.sheet.range(row, column_index)
-
-    #         if len(self) == 1:
-    #             array = [start.value]
-    #         else:
-    #             end = start.offset(len(self) - 1, 0)
-    #             rng = self.sheet.range(start, end)
-    #             array = rng.options(np.array).value
-
-    #         return Series(array, name=name)
-
-    #     raise NotImplementedError
-
     def __setitem__(self, column: str | tuple, value: ArrayLike) -> None:
         if column in self:
             rng = self.range(column).impl
@@ -625,107 +591,21 @@ class SheetFrame:
         else:
             rng.options(transpose=True).value = value
 
-    @overload
-    def get_address(
-        self,
-        column: str | tuple,
-        *,
-        formula: bool = False,
-        **kwargs,
-    ) -> Series: ...
-
-    @overload
-    def get_address(
-        self,
-        column: list[str | tuple] | None = None,
-        *,
-        formula: bool = False,
-        **kwargs,
-    ) -> DataFrame: ...
-
-    def get_address(
-        self,
-        column: str | tuple | list[str | tuple] | None = None,
-        *,
-        formula: bool = False,
-        **kwargs,
-    ) -> Series | DataFrame:
-        """Return the address list of the column.
-
-        Args:
-            column (str or tuple or list): The name of the column.
-            formula (bool, optional): Whether to add '=' to the beginning
-                of the address.
-            kwargs Keyword arguments for the `Range.get_address` method.
-
-        Returns:
-            Series or DataFrame: The address list of the column.
-        """
-        if column is None:
-            return self.get_address(self.value_columns, formula=formula, **kwargs)
-
-        if isinstance(column, list):
-            values = {c: self.get_address(c, formula=formula, **kwargs) for c in column}
-            df = DataFrame(values)
-
-            if self.has_index and self.index_columns[0]:
-                index = self._index_frame()
-                if len(index.columns) == 1:
-                    df.index = Index(index[index.columns[0]])
-                else:
-                    df.index = MultiIndex.from_frame(index)
-
-            return df
-
-        addresses = iter_addresses(self.range(column), formula=formula, cellwise=True)
-        return Series(list(addresses), name=column)
-
-    def _index_frame(self) -> DataFrame:
-        start = self.cell.offset(self.columns_level - 1)
-        end = start.offset(len(self), self.index_level - 1)
-        rng = self.sheet.range(start, end)
-        return rng.options(DataFrame).value.reset_index()  # type: ignore
-
-    def ranges(
-        self,
-        sel: Sequence[bool] | NDArray[np.bool_] | None = None,
-        **kwargs,
-    ) -> Iterator[Range]:
-        if sel is None:
-            n = len(self) if self.columns_names is None else len(self.value_columns)
-            sel = np.ones(n, dtype=bool)
-        elif not isinstance(sel, np.ndarray):
-            sel = np.array(sel, dtype=bool)
-
-        if kwargs:
-            sel &= self.select(**kwargs)
-
+    def ranges(self) -> Iterator[Range]:
         if self.columns_names is None:
-            yield from self._ranges_row(sel)
+            start = self.column + self.index_level
+            end = start + len(self.value_columns) - 1
+            o = self.row + self.columns_level
+            for index in range(len(self)):
+                yield Range((index + o, start), (index + o, end), sheet=self.sheet)
+
         else:
-            yield from self._ranges_column(sel)
+            start = self.row + self.columns_level
+            end = start + len(self) - 1
+            o = self.column + self.index_level
 
-    def _ranges_row(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
-        offset = self.row + self.columns_level
-        start = self.column + self.index_level
-        end = start + len(self.value_columns) - 1
-
-        for index in range(len(self)):
-            if not sel[index]:
-                continue
-
-            yield self.sheet.range((index + offset, start), (index + offset, end))
-
-    def _ranges_column(self, sel: NDArray[np.bool_]) -> Iterator[Range]:
-        offset = self.column + self.index_level
-        start = self.row + self.columns_level
-        end = start + len(self) - 1
-
-        for index in range(len(self.value_columns)):
-            if not sel[index]:
-                continue
-
-            yield self.sheet.range((start, index + offset), (end, index + offset))
+            for index in range(len(self.value_columns)):
+                yield Range((start, index + o), (end, index + o), sheet=self.sheet)
 
     def melt(
         self,
