@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from xlwings import Sheet
 
+from xlviews.dataframes.groupby import GroupBy
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.range.address import index_to_column_name
 from xlviews.testing import is_excel_installed
@@ -87,3 +88,15 @@ def test_range(benchmark, sf: SheetFrame, shape):
 def test_ranges(benchmark, sf: SheetFrame, shape):
     x = benchmark(lambda: list(sf.ranges()))
     assert len(x) == shape[0]
+
+
+def test_agg(benchmark, sf: SheetFrame, columns):
+    x = benchmark(lambda: sf.agg(["sum", "count"], columns))
+    assert isinstance(x, DataFrame)
+    assert x.shape == (2, len(columns))
+
+
+def test_groupby(benchmark, sf: SheetFrame, columns):
+    x = benchmark(lambda: sf.groupby(columns))
+    assert isinstance(x, GroupBy)
+    assert len(x) == len(sf)

@@ -621,10 +621,20 @@ class SheetFrame:
         return df
 
     @overload
-    def agg(self, func: Func | dict, **kwargs) -> Series: ...
+    def agg(
+        self,
+        func: Func | dict,
+        columns: str | tuple | Sequence[str | tuple] | None = None,
+        **kwargs,
+    ) -> Series: ...
 
     @overload
-    def agg(self, func: Sequence[Func], **kwargs) -> DataFrame: ...
+    def agg(
+        self,
+        func: Sequence[Func],
+        columns: str | tuple | Sequence[str | tuple] | None = None,
+        **kwargs,
+    ) -> DataFrame: ...
 
     def agg(
         self,
@@ -632,33 +642,52 @@ class SheetFrame:
         columns: str | tuple | Sequence[str | tuple] | None = None,
         **kwargs,
     ) -> str | Series | DataFrame:
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        column = self.column
+        if isinstance(func, dict):
+            columns = list(func.keys())
+            idx = [self.index(c) for c in func]
+        elif columns is None:
+            columns = self.value_columns
+            start = column + self.index_level
+            end = start + len(columns)
+            idx = list(range(start, end))
+        elif isinstance(columns, str | tuple):
+            idx = [self.columns.index(columns) + column]
+            columns = [columns]
+        else:
+            cs = self.columns
+            idx = [cs.index(c) + column for c in columns]
+
+        start = self.row + self.columns_level
+        end = start + len(self) - 1
+        rngs = [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
+
         agg = partial(self._agg_column, **kwargs)
 
         if isinstance(func, dict):
-            return Series({c: agg(f, c) for c, f in func.items()})
-
-        if columns is None:
-            columns = self.value_columns
-        elif isinstance(columns, str | tuple):
-            columns = [columns]
+            it = zip(columns, rngs, func.values(), strict=True)
+            return Series({c: agg(f, r) for c, r, f in it})
 
         if func is None or isinstance(func, str | Range):
-            return Series({c: agg(func, c) for c in columns})
+            it = zip(columns, rngs, strict=True)
+            return Series({c: agg(func, r) for c, r in it})
 
-        values = [{c: agg(f, c) for c in columns} for f in func]
+        cr = list(zip(columns, rngs, strict=True))
+        values = [{c: agg(f, r) for c, r in cr} for f in func]
         return DataFrame(values, index=list(func))
 
     def _agg_column(
         self,
         func: str | Range | None,
-        column: str | tuple,
+        rng: Range,
         **kwargs,
     ) -> str:
         if func == "first":
-            rng = self.range(column)[0]
+            rng = rng[0]
             func = None
-        else:
-            rng = self.range(column)
 
         return aggregate(func, rng, **kwargs)
 
