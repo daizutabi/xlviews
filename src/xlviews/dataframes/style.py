@@ -179,7 +179,7 @@ def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
     edge_color = rcParams["frame.gray.border.color"] if gray else 0
 
     for wide_column in wide_columns:
-        rng = sf.range(wide_column, 0).offset(-1)
+        rng = sf.range(wide_column, 0).offset(-1).impl
 
         er = 3 if wide_column == wide_columns[-1] else 2
         edge_weight = (1, er - 1, 1, 1) if gray else (2, er, 2, 2)
@@ -189,7 +189,7 @@ def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
         _set_style_font(rng, "wide-columns", gray=gray)
 
     for wide_column in wide_columns:
-        rng = sf.range(wide_column, 0).offset(-2)
+        rng = sf.range(wide_column, 0).offset(-2).impl
 
         el = 3 if wide_column == wide_columns[0] else 2
         edge_weight = (el - 1, 2, 2, 1) if gray else (el, 3, 3, 2)
