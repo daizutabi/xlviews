@@ -4,15 +4,15 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.range.address import index_to_column_name
 from xlviews.testing import is_excel_installed
-from xlviews.utils import int_to_column_name
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 def create_data_frame(rows: int = 10, columns: int = 10) -> DataFrame:
     values = np.arange(rows * columns).reshape((rows, columns))
-    cnames = [int_to_column_name(i + 1) for i in range(columns)]
+    cnames = [index_to_column_name(i + 1) for i in range(columns)]
     df = DataFrame(values, columns=cnames)
     df.index.name = "name"
     return df
@@ -52,6 +52,12 @@ def test_columns(benchmark, sf: SheetFrame, shape):
     assert benchmark(lambda: len(sf.columns)) == shape[1] + 1
 
 
+def test_data(benchmark, sf: SheetFrame, shape):
+    x = benchmark(lambda: sf.data)
+    assert isinstance(x, DataFrame)
+    assert x.shape == shape
+
+
 def test_index_str(benchmark, sf: SheetFrame):
     assert benchmark(lambda: sf.index("E")) == 8
 
@@ -76,15 +82,3 @@ def test_index_list(benchmark, sf: SheetFrame, columns):
 def test_range(benchmark, sf: SheetFrame, shape):
     x = benchmark(lambda: sf.range("A"))
     assert len(x) == shape[0]
-
-
-def test_get_address_str(benchmark, sf: SheetFrame, shape):
-    x = benchmark(lambda: sf.get_address("A"))
-    assert isinstance(x, Series)
-    assert len(x) == shape[0]
-
-
-def test_get_address_list(benchmark, sf: SheetFrame, shape, columns):
-    x = benchmark(lambda: sf.get_address(columns))
-    assert isinstance(x, DataFrame)
-    assert x.shape == (shape[0], len(columns))

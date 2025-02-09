@@ -150,21 +150,6 @@ def test_range_column(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-def test_getitem_str(sf: SheetFrame):
-    s = sf["x"]
-    assert isinstance(s, Series)
-    assert s.name == "x"
-    np.testing.assert_array_equal(s, [1, 1, 1, 1, 2, 2, 2, 2])
-
-
-def test_getitem_list(sf: SheetFrame):
-    df = sf[["z", ("a1", "b1")]]
-    assert isinstance(df, DataFrame)
-    assert df.columns.to_list() == ["z", ("a1", "b1")]
-    x = np.array([[1, 1, 1, 2, 2, 1, 1, 1], range(1, 9)]).T
-    np.testing.assert_array_equal(df, x)
-
-
 # @pytest.mark.parametrize(
 #     ("by", "one", "two"),
 #     [

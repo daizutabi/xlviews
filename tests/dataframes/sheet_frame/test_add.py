@@ -23,7 +23,7 @@ def test_add_column_value(sheet: Sheet):
     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     rng = sf.add_column("c", [7, 8, 9], number_format="0.0")
     assert rng.get_address() == "$E$3:$E$5"
-    np.testing.assert_array_equal(sf["c"], [7, 8, 9])
+    np.testing.assert_array_equal(sf.data["c"], [7, 8, 9])
 
 
 @pytest.mark.parametrize(
@@ -39,10 +39,10 @@ def test_add_formula_column(formula, value, use_setitem, sheet: Sheet):
     else:
         sf.add_formula_column("c", formula)
 
-    np.testing.assert_array_equal(sf["c"], value)
+    np.testing.assert_array_equal(sf.data["c"], value)
 
     sf.add_formula_column("c", formula + "+1")
-    np.testing.assert_array_equal(sf["c"], [v + 1 for v in value])
+    np.testing.assert_array_equal(sf.data["c"], [v + 1 for v in value])
 
 
 @pytest.mark.parametrize("apply", [lambda x: x, Range])
@@ -66,5 +66,7 @@ def test_formula_wide(formula, value, sheet: Sheet):
     sf = SheetFrame(10, 3, data=df, style=False, sheet=sheet)
     sf.add_wide_column("c", [1, 2, 3, 4], number_format="0", style=True)
     sf.add_formula_column("c", formula, number_format="0", autofit=True)
-    np.testing.assert_array_equal(sf[("c", 1)], value[0])
-    np.testing.assert_array_equal(sf[("c", 4)], value[1])
+    a = sf.range(("c", 1)).value
+    np.testing.assert_array_equal(a, value[0])
+    a = sf.range(("c", 4)).value
+    np.testing.assert_array_equal(a, value[1])

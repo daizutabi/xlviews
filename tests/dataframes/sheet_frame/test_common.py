@@ -26,7 +26,7 @@ def test_row_one(sheet: Sheet):
     df = DataFrame({"a": [1], "b": [2]})
     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
     assert len(sf) == 1
-    np.testing.assert_array_equal(sf["a"], [1])
+    np.testing.assert_array_equal(sf.data["a"], [1])
 
 
 def test_column_one(sheet: Sheet):
@@ -34,7 +34,7 @@ def test_column_one(sheet: Sheet):
     sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
     assert len(sf) == 3
     assert sf.columns == ["a"]
-    np.testing.assert_array_equal(sf["a"], [1, 2, 3])
+    np.testing.assert_array_equal(sf.data["a"], [1, 2, 3])
 
 
 @pytest.mark.parametrize("number_format", ["0", "0.00", "0.00%"])

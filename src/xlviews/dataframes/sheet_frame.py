@@ -578,39 +578,39 @@ class SheetFrame:
 
         return rng[0].offset(1)
 
-    @overload
-    def __getitem__(self, column: str | tuple) -> Series: ...
+    # @overload
+    # def __getitem__(self, column: str | tuple) -> Series: ...
 
-    @overload
-    def __getitem__(self, column: Sequence[str | tuple]) -> DataFrame: ...
+    # @overload
+    # def __getitem__(self, column: Sequence[str | tuple]) -> DataFrame: ...
 
-    def __getitem__(
-        self,
-        column: str | tuple | Sequence[str | tuple],
-    ) -> Series | DataFrame:
-        """Return the column data.
+    # def __getitem__(
+    #     self,
+    #     column: str | tuple | Sequence[str | tuple],
+    # ) -> Series | DataFrame:
+    #     """Return the column data.
 
-        If column is a string, return a Series. If column is a list,
-        return a DataFrame. The index is ignored.
-        """
-        if isinstance(column, list):
-            return DataFrame({c: self[c] for c in column})
+    #     If column is a string, return a Series. If column is a list,
+    #     return a DataFrame. The index is ignored.
+    #     """
+    #     if isinstance(column, list):
+    #         return DataFrame({c: self[c] for c in column})
 
-        if isinstance(column, str | tuple):
-            row = self.row + self.columns_level
-            name, column_index = column, self.index(column)
-            start = self.sheet.range(row, column_index)
+    #     if isinstance(column, str | tuple):
+    #         row = self.row + self.columns_level
+    #         name, column_index = column, self.index(column)
+    #         start = self.sheet.range(row, column_index)
 
-            if len(self) == 1:
-                array = [start.value]
-            else:
-                end = start.offset(len(self) - 1, 0)
-                rng = self.sheet.range(start, end)
-                array = rng.options(np.array).value
+    #         if len(self) == 1:
+    #             array = [start.value]
+    #         else:
+    #             end = start.offset(len(self) - 1, 0)
+    #             rng = self.sheet.range(start, end)
+    #             array = rng.options(np.array).value
 
-            return Series(array, name=name)
+    #         return Series(array, name=name)
 
-        raise NotImplementedError
+    #     raise NotImplementedError
 
     def __setitem__(self, column: str | tuple, value: ArrayLike) -> None:
         if column in self:

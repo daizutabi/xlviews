@@ -119,23 +119,6 @@ def test_range(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-def test_getitem_tuple(sf: SheetFrame):
-    s = sf[("a", "d", 4, "x")]
-    assert isinstance(s, Series)
-    assert s.name == ("a", "d", 4, "x")
-    np.testing.assert_array_equal(s, [36, 37, 38, 39, 40, 41])
-    s = sf["a", "d", 4, "x"]
-    np.testing.assert_array_equal(s, [36, 37, 38, 39, 40, 41])
-
-
-def test_getitem_list(sf: SheetFrame):
-    df = sf[[("a", "d", 4, "x"), ("a", "d", 4, "y")]]
-    assert isinstance(df, DataFrame)
-    assert df.columns.to_list() == [("a", "d", 4, "x"), ("a", "d", 4, "y")]
-    x = np.arange(36, 48).reshape(2, 6).T
-    np.testing.assert_array_equal(df, x)
-
-
 # def test_ranges(sf: SheetFrame):
 #     for rng, i in zip(sf.ranges(), range(2, 18), strict=True):
 #         c = string.ascii_uppercase[i]
