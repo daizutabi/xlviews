@@ -38,7 +38,6 @@ class StatsGroupBy(GroupBy):
         self,
         column: str,
         funcs: list[str] | dict[str, str],
-        wrap: str | None = None,
         default: str = "median",
     ) -> Iterator[str]:
         for ranges in self.ranges(column):
@@ -46,7 +45,7 @@ class StatsGroupBy(GroupBy):
                 funcs = [funcs.get(column, default)]
 
             for func in funcs:
-                yield get_formula(func, ranges, wrap)
+                yield get_formula(func, ranges)
 
     def get_index(self, funcs: list[str]) -> list[str]:
         return funcs * len(self.group)
@@ -66,14 +65,12 @@ class StatsGroupBy(GroupBy):
     def get_values(
         self,
         funcs: list[str] | dict[str, str],
-        wrap: str | dict[str, str] | None = None,
         default: str = "median",
     ) -> NDArray[np.str_]:
         values = [self.get_index(funcs)] if isinstance(funcs, list) else []
 
         for column in self.sf.columns:
-            wrap_ = wrap.get(column) if isinstance(wrap, dict) else wrap
-            it = self.iter_formulas(column, funcs, wrap_, default)
+            it = self.iter_formulas(column, funcs, default)
             values.append(list(it))
 
         return np.array(values).T
@@ -81,11 +78,10 @@ class StatsGroupBy(GroupBy):
     def get_frame(
         self,
         funcs: list[str] | dict[str, str],
-        wrap: str | dict[str, str] | None = None,
         default: str = "median",
         func_column_name: str = "func",
     ) -> DataFrame:
-        values = self.get_values(funcs, wrap, default)
+        values = self.get_values(funcs, default)
         columns = self.get_columns(funcs, func_column_name)
         df = DataFrame(values, columns=columns)
         return df.set_index(columns[: -len(self.sf.value_columns)])
@@ -94,7 +90,6 @@ class StatsGroupBy(GroupBy):
 def get_formula(
     func: str | Range,
     ranges: Range | RangeCollection | None,
-    wrap: str | None = None,
 ) -> str:
     if not ranges:
         return ""
@@ -104,16 +99,13 @@ def get_formula(
 
     formula = aggregate(func, ranges)
 
-    if wrap:
-        formula = wrap.format(formula)
-
     return f"={formula}"
 
 
 class StatsFrame(SheetFrame):
     parent: SheetFrame
 
-    @turn_off_screen_updating
+    # @turn_off_screen_updating
     def __init__(
         self,
         parent: SheetFrame,
@@ -121,9 +113,6 @@ class StatsFrame(SheetFrame):
         *,
         by: str | list[str] | None = None,
         table: bool = True,
-        wrap: str | dict[str, str] | None = None,
-        na: str | list[str] | bool = False,
-        null: str | list[str] | bool = False,
         default: str = "median",
         func_column_name: str = "func",
         succession: bool = False,
@@ -142,14 +131,12 @@ class StatsFrame(SheetFrame):
             autofilter (bool): If True, the displayed functions are limited to
                 the default ones.
             table (bool): If True, the frame is displayed in table format.
-            wrap (str or dict, optional): A string to wrap the aggregation
-                functions. {} is replaced with the aggregation functions.
-            na (bool): If True, self.wrap = 'IFERROR({},NA())' is used.
-            null (bool): If True, self.wrap = 'IFERROR({},"")' is used.
             succession (bool, optional): If True, the continuous index is hidden.
             **kwargs: Passed to SheetFrame.__init__.
         """
         funcs = get_func(funcs)
+        by = get_by(parent, by)
+        offset = get_length(parent, by, funcs) + 2
 
         # Store the position of the parent SheetFrame before moving down.
         row = parent.row
@@ -157,14 +144,10 @@ class StatsFrame(SheetFrame):
         if isinstance(funcs, list):
             column -= 1
 
-        by = list(iter_columns(parent, by)) if by else []
-        offset = get_length(parent, by, funcs) + 2
-
         move_down(parent, offset)
 
         gr = StatsGroupBy(parent, by)
-        wrap = get_wrap(wrap, na=na, null=null)
-        df = gr.get_frame(funcs, wrap, default, func_column_name)
+        df = gr.get_frame(funcs, default, func_column_name)
 
         super().__init__(
             row,
@@ -224,36 +207,6 @@ class StatsFrame(SheetFrame):
         set_font(self.range(func_column_name), italic=True)
 
 
-def get_wrap(
-    wrap: str | dict[str, str] | None = None,
-    *,
-    na: str | list[str] | bool = False,
-    null: str | list[str] | bool = False,
-) -> str | dict[str, str] | None:
-    if wrap:
-        return wrap
-
-    if na is True:
-        return "IFERROR({},NA())"
-
-    if null is True:
-        return 'IFERROR({},"")'
-
-    wrap = {}
-
-    if na:
-        nas = [na] if isinstance(na, str) else na
-        for na in nas:
-            wrap[na] = "IFERROR({},NA())"
-
-    if null:
-        nulls = [null] if isinstance(null, str) else null
-        for null in nulls:
-            wrap[null] = 'IFERROR({},"")'
-
-    return wrap or None
-
-
 def get_func(
     func: str | list[str] | dict[str, str] | None,
 ) -> list[str] | dict[str, str]:
@@ -264,6 +217,13 @@ def get_func(
         return func
 
     return [func] if isinstance(func, str) else func
+
+
+def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
+    if not by:
+        return [c for c in sf.index_columns if isinstance(c, str)]
+
+    return list(iter_columns(sf, by))
 
 
 def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
