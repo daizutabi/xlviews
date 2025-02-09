@@ -154,25 +154,6 @@ def test_setitem_new_column(sheet: Sheet):
     np.testing.assert_array_equal(sf["c"], x)
 
 
-# @pytest.mark.parametrize(
-#     ("a", "b", "sel"),
-#     [
-#         (1, None, [True, False, False, False]),
-#         (3, None, [False, False, True, False]),
-#         ([2, 4], None, [False, True, False, True]),
-#         ((2, 4), None, [False, True, True, True]),
-#         (1, 5, [True, False, False, False]),
-#         (1, 6, [False, False, False, False]),
-#         ((1, 3), (6, 8), [False, True, True, False]),
-#     ],
-# )
-# def test_select(sf: SheetFrame, a, b, sel):
-#     if b is None:
-#         np.testing.assert_array_equal(sf.select(a=a), sel)
-#     else:
-#         np.testing.assert_array_equal(sf.select(a=a, b=b), sel)
-
-
 # def test_address(sf: SheetFrame):
 #     s = sf.get_address("a")
 #     assert isinstance(s, Series)

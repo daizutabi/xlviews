@@ -129,20 +129,20 @@ def test_range_column(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-# @pytest.mark.parametrize(
-#     ("column", "value"),
-#     [("a", [1, 2]), (("u", 1), [np.nan, np.nan])],
-# )
-# def test_getitem_str(sf: SheetFrame, column, value):
-#     s = sf[column]
-#     assert isinstance(s, Series)
-#     assert s.name == column
-#     np.testing.assert_array_equal(s, value)
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [("a", [1, 2]), (("u", 1), [np.nan, np.nan])],
+)
+def test_getitem_str(sf: SheetFrame, column, value):
+    s = sf[column]
+    assert isinstance(s, Series)
+    assert s.name == column
+    np.testing.assert_array_equal(s, value)
 
 
-# def test_getitem_list(sf: SheetFrame):
-#     df = sf[["b", ("v", 3)]]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["b", ("v", 3)]
-#     x = [[3, np.nan], [4, np.nan]]
-#     np.testing.assert_array_equal(df, x)
+def test_getitem_list(sf: SheetFrame):
+    df = sf[["b", ("v", 3)]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == ["b", ("v", 3)]
+    x = [[3, np.nan], [4, np.nan]]
+    np.testing.assert_array_equal(df, x)

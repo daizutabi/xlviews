@@ -113,64 +113,19 @@ def test_range(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-# @pytest.fixture
-# def table(sf: SheetFrame):
-#     yield sf.as_table()
-#     sf.unlist()
+def test_getitem_str(sf: SheetFrame):
+    s = sf["a"]
+    assert isinstance(s, Series)
+    assert s.name == "a"
+    np.testing.assert_array_equal(s, [1, 2, 3, 4])
 
 
-# @pytest.mark.parametrize("value", ["x", "y"])
-# def test_table(table: Table, value):
-#     table.auto_filter("name", value)
-#     header = table.const_header.value
-#     assert isinstance(header, list)
-#     assert header[0] == value
-
-
-# @pytest.mark.parametrize(
-#     ("name", "value"),
-#     [
-#         ("x", [[1, 5], [2, 6]]),
-#         ("y", [[3, 7], [4, 8]]),
-#     ],
-# )
-# def test_visible_data(sf: SheetFrame, table: Table, name, value):
-#     table.auto_filter("name", name)
-#     df = sf.visible_data
-#     assert df.index.to_list() == [name, name]
-#     np.testing.assert_array_equal(df, value)
-
-
-# def test_getitem_str(sf: SheetFrame):
-#     s = sf["a"]
-#     assert isinstance(s, Series)
-#     assert s.name == "a"
-#     np.testing.assert_array_equal(s, [1, 2, 3, 4])
-
-
-# def test_getitem_list(sf: SheetFrame):
-#     df = sf[["a", "b"]]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["a", "b"]
-#     x = [[1, 5], [2, 6], [3, 7], [4, 8]]
-#     np.testing.assert_array_equal(df, x)
-
-
-# @pytest.mark.parametrize(
-#     ("name", "a", "sel"),
-#     [
-#         ("x", None, [True, True, False, False]),
-#         ("y", None, [False, False, True, True]),
-#         ("x", (2, 3), [False, True, False, False]),
-#         ("x", [1, 4], [True, False, False, False]),
-#         (["x", "y"], [1, 4], [True, False, False, True]),
-#     ],
-# )
-# def test_select(sf: SheetFrame, name, a, sel):
-#     if a is None:
-#         np.testing.assert_array_equal(sf.select(name=name), sel)
-#     else:
-#         np.testing.assert_array_equal(sf.select(name=name, a=a), sel)
+def test_getitem_list(sf: SheetFrame):
+    df = sf[["a", "b"]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == ["a", "b"]
+    x = [[1, 5], [2, 6], [3, 7], [4, 8]]
+    np.testing.assert_array_equal(df, x)
 
 
 # @pytest.mark.parametrize(

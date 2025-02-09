@@ -119,44 +119,21 @@ def test_range(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-# def test_range_column_error(sf: SheetFrame):
-#     with pytest.raises(NotImplementedError):
-#         sf._range_column("s")
-
-#     with pytest.raises(NotImplementedError):
-#         sf.range("t")
-
-
-# def test_getitem_tuple(sf: SheetFrame):
-#     s = sf[("a", "d", 4, "x")]
-#     assert isinstance(s, Series)
-#     assert s.name == ("a", "d", 4, "x")
-#     np.testing.assert_array_equal(s, [36, 37, 38, 39, 40, 41])
-#     s = sf["a", "d", 4, "x"]
-#     np.testing.assert_array_equal(s, [36, 37, 38, 39, 40, 41])
+def test_getitem_tuple(sf: SheetFrame):
+    s = sf[("a", "d", 4, "x")]
+    assert isinstance(s, Series)
+    assert s.name == ("a", "d", 4, "x")
+    np.testing.assert_array_equal(s, [36, 37, 38, 39, 40, 41])
+    s = sf["a", "d", 4, "x"]
+    np.testing.assert_array_equal(s, [36, 37, 38, 39, 40, 41])
 
 
-# def test_getitem_list(sf: SheetFrame):
-#     df = sf[[("a", "d", 4, "x"), ("a", "d", 4, "y")]]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == [("a", "d", 4, "x"), ("a", "d", 4, "y")]
-#     x = np.arange(36, 48).reshape(2, 6).T
-#     np.testing.assert_array_equal(df, x)
-
-
-# @pytest.mark.parametrize(
-#     ("kwargs", "sel"),
-#     [
-#         ({"s": "a"}, [True] * 8 + [False] * 8),
-#         ({"i": "x"}, [True, False] * 8),
-#         ({"s": "a", "i": "x"}, [True, False] * 4 + [False] * 8),
-#         ({"r": (3, 6)}, [False] * 4 + [True] * 8 + [False] * 4),
-#         ({"r": [1, 8]}, [True] * 2 + [False] * 12 + [True] * 2),
-#     ],
-# )
-# def test_select(sf: SheetFrame, kwargs, sel):
-#     x = sf.select(**kwargs)
-#     np.testing.assert_array_equal(x, sel)
+def test_getitem_list(sf: SheetFrame):
+    df = sf[[("a", "d", 4, "x"), ("a", "d", 4, "y")]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == [("a", "d", 4, "x"), ("a", "d", 4, "y")]
+    x = np.arange(36, 48).reshape(2, 6).T
+    np.testing.assert_array_equal(df, x)
 
 
 # def test_ranges(sf: SheetFrame):
