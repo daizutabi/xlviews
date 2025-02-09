@@ -121,7 +121,7 @@ def _iter_ranges_from_index(
             yield Range((start, column), (end, column), sheet=sheet)
 
     else:
-        msg = "Either row or column must be an integer."
+        msg = f"Either row or column must be an integer: {row=}, {column=}"
         raise TypeError(msg)
 
 

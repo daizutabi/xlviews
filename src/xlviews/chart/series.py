@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlwings import Range
+from xlwings import Range as RangeImpl
 from xlwings.constants import LineStyle
 
 from xlviews.colors import rgb
-
-# from xlviews.range.address import reference
+from xlviews.range.address import reference
+from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
 
 from .style import get_line_style, get_marker_style
@@ -30,7 +30,7 @@ class Series:
         axes: Axes,
         x: Any,
         y: Any | None = None,
-        label: str | tuple[int, int] | Range = "",
+        label: str | tuple[int, int] | Range | RangeImpl = "",
         chart_type: int | None = None,
         sheet: Sheet | None = None,
     ) -> None:
@@ -71,7 +71,7 @@ class Series:
 
     @x.setter
     def x(self, x: Any) -> None:
-        if isinstance(x, Range | RangeCollection):
+        if isinstance(x, Range | RangeImpl | RangeCollection):
             self.api.XValues = x.api
         else:
             self.api.XValues = x
@@ -82,7 +82,7 @@ class Series:
 
     @y.setter
     def y(self, y: Any) -> None:
-        if isinstance(y, Range | RangeCollection):
+        if isinstance(y, Range | RangeImpl | RangeCollection):
             self.api.Values = y.api
         else:
             self.api.Values = y

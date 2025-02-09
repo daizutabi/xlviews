@@ -71,8 +71,8 @@ def test_add_series_xy_range_collection(ax: Axes):
     ax.sheet.range("A1:A10").options(transpose=True).value = list(range(10))
     ax.sheet.range("B1:B10").options(transpose=True).value = list(range(10, 20))
 
-    x = RangeCollection.from_index(ax.sheet, [(1, 3), (8, 10)], 1)
-    y = RangeCollection.from_index(ax.sheet, [(1, 3), (8, 10)], 2)
+    x = RangeCollection.from_index([(1, 3), (8, 10)], 1, ax.sheet)
+    y = RangeCollection.from_index([(1, 3), (8, 10)], 2, ax.sheet)
     s = ax.add_series(x, y)
 
     assert s.api.XValues == (0, 1, 2, 7, 8, 9)

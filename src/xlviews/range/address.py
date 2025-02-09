@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING
 import xlwings
 
 if TYPE_CHECKING:
+    from xlwings import Range as RangeImpl
     from xlwings import Sheet
+
+    from xlviews.range.range import Range
 
 
 @cache
@@ -101,3 +104,20 @@ def get_index(address: str) -> tuple[int, int, int, int]:
 
     msg = f"Invalid address format: {address}"
     raise ValueError(msg)
+
+
+def reference(
+    cell: str | tuple[int, int] | Range | RangeImpl,
+    sheet: Sheet | None = None,
+) -> str:
+    """Return a reference to a cell with sheet name for chart."""
+    if isinstance(cell, str):
+        return cell
+
+    if isinstance(cell, tuple):
+        if sheet is None:
+            raise ValueError("`sheet` is required when `cell` is a tuple")
+
+        cell = sheet.range(*cell)
+
+    return "=" + cell.get_address(include_sheetname=True)

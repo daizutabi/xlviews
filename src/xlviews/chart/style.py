@@ -9,12 +9,14 @@ from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
+from xlviews.range.address import reference
 from xlviews.utils import set_font_api
 
-# from xlviews.range.address import reference
-
 if TYPE_CHECKING:
-    from xlwings import Range, Sheet
+    from xlwings import Range as RangeImpl
+    from xlwings import Sheet
+
+    from xlviews.range.range import Range
 
 
 MARKER_DICT: dict[str, int] = {
@@ -71,7 +73,7 @@ def get_axis_label(axis) -> str | None:  # noqa: ANN001
 
 def set_axis_label(
     axis,  # noqa: ANN001
-    label: str | tuple[int, int] | Range | None = None,
+    label: str | tuple[int, int] | Range | RangeImpl | None = None,
     name: str | None = None,
     size: float | None = None,
     sheet: Sheet | None = None,

@@ -6,6 +6,7 @@ from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.range.formula import aggregate
+from xlviews.range.range import Range
 from xlviews.range.style import set_alignment, set_border, set_color_scale, set_font
 
 from .sheet_frame import SheetFrame
@@ -13,7 +14,8 @@ from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-    from xlwings import Range, Sheet
+    from xlwings import Range as RangeImpl
+    from xlwings import Sheet
 
 
 class HeatFrame(SheetFrame):
@@ -45,23 +47,29 @@ class HeatFrame(SheetFrame):
 
         self.set_extrema(vmin, vmax)
         self.set_colorbar()
-        set_color_scale(self.range(index=False), self.vmin, self.vmax)
+
+        set_color_scale(self.heat_range(), self.vmin, self.vmax)
 
         self.set_label(value)
 
         if autofit:
             self.label.columns.autofit()
 
+    def heat_range(self) -> Range:
+        start = self.row + 1, self.column + 1
+        end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
+        return Range(start, end, self.sheet)
+
     @property
-    def vmin(self) -> Range:
+    def vmin(self) -> RangeImpl:
         return self.cell.offset(len(self), len(self.columns) + 1)
 
     @property
-    def vmax(self) -> Range:
+    def vmax(self) -> RangeImpl:
         return self.cell.offset(1, len(self.columns) + 1)
 
     @property
-    def label(self) -> Range:
+    def label(self) -> RangeImpl:
         return self.cell.offset(0, len(self.columns) + 1)
 
     def set_extrema(
@@ -69,7 +77,7 @@ class HeatFrame(SheetFrame):
         vmin: float | str | None = None,
         vmax: float | str | None = None,
     ) -> None:
-        rng = self.range(index=False)
+        rng = self.heat_range()
 
         if vmin is None:
             vmin = aggregate("min", rng, formula=True)
