@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 from pandas import DataFrame
 
 from xlviews.dataframes.stats_frame import StatsFrame
 from xlviews.testing.common import FrameContainer, create_sheet
-
-if TYPE_CHECKING:
-    from xlwings import Sheet
 
 
 class Parent(FrameContainer):
@@ -34,14 +29,10 @@ class Parent(FrameContainer):
         return df
 
 
-def main(sheet: Sheet) -> None:
-    fc = Parent(sheet, 3, 3, style=True, table=True)
+if __name__ == "__main__":
+    sheet = create_sheet()
+    fc = Parent(sheet, 3, 3, style=True, table=True, succession=True)
     sf_parent = fc.sf
 
     funcs = ["count", "max", "median", "soa"]
-    StatsFrame(sf_parent, funcs, by=":y", table=True)
-
-
-if __name__ == "__main__":
-    sheet = create_sheet()
-    main(sheet)
+    StatsFrame(sf_parent, funcs, by=":y", table=True, succession=True)
