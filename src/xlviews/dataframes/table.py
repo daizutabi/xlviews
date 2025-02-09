@@ -29,6 +29,7 @@ class Table:
         style: bool = False,
         sheet: Sheet | None = None,
         api: COMRetryObjectWrapper | None = None,
+        index_level: int | None = None,
     ) -> None:
         if isinstance(rng, Range):
             self.cell = rng[0]
@@ -51,7 +52,7 @@ class Table:
             self.header.api.EntireColumn.AutoFit()
 
         if const_header:
-            self.add_const_header()
+            self.add_const_header(index_level)
 
         if style:
             set_table_style(self)
@@ -80,18 +81,27 @@ class Table:
 
         return [c or "" for c in names]
 
-    def add_const_header(self, clear: bool = False) -> None:
+    def add_const_header(
+        self,
+        columns: int | None = None,
+        *,
+        clear: bool = False,
+    ) -> None:
         """Write the filtered element above the header.
 
         Args:
+            columns (int | None, optional): The number of columns to add the const
+                header to.
             clear (bool, optional): If True, clear the header.
         """
         if clear:
             self.const_header.value = None
         else:
-            self.const_header.value = const(self.column, "=")
-            set_font(self.const_header, size=8, italic=True, color="blue")
-            set_alignment(self.const_header, "center")
+            const_header = self.const_header[:columns]
+            if const_header:
+                const_header.value = const(self.column, "=")
+                set_font(const_header, size=8, italic=True, color="blue")
+                set_alignment(const_header, "center")
 
     def auto_filter(self, *args, clear: bool = False, **field_criteria) -> None:
         """Filter the table by the given criteria.
