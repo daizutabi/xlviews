@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from pandas import DataFrame
-from xlwings import Range
 from xlwings.constants import Direction
 
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.range.formula import AGG_FUNCS, aggregate
+from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_font, set_number_format
 from xlviews.utils import iter_columns
@@ -209,7 +209,7 @@ class StatsFrame(SheetFrame):
         for key, rows in group.items():
             func = key[0]
             for column, fmt in zip(columns, formats, strict=True):
-                rc = RangeCollection.from_index(self.sheet, rows, column)
+                rc = RangeCollection.from_index(rows, column, self.sheet)
 
                 if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
                     set_number_format(rc, fmt)
@@ -272,7 +272,7 @@ def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
     if not by:
         return n
 
-    return len(sf[by].drop_duplicates()) * n
+    return len(sf.data.reset_index()[by].drop_duplicates()) * n
 
 
 def has_header(sf: SheetFrame) -> bool:
