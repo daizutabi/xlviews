@@ -112,7 +112,9 @@ class WideColumn(FrameContainer):
         self.sf.add_wide_column("v", range(4), style=True)
 
 
-def create(sheet: Sheet) -> list[FrameContainer]:
+if __name__ == "__main__":
+    sheet = create_sheet()
+
     classes = [
         NoIndex,
         Index,
@@ -121,9 +123,5 @@ def create(sheet: Sheet) -> list[FrameContainer]:
         MultiIndexColumn,
         WideColumn,
     ]
-    return FrameContainer.from_classes(classes, sheet, style=True)
 
-
-if __name__ == "__main__":
-    sheet = create_sheet()
-    create(sheet)
+    FrameContainer.from_classes(classes, sheet, style=True)
