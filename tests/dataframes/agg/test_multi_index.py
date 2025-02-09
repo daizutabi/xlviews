@@ -4,6 +4,7 @@ from pandas import DataFrame, Series
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.range.range import Range
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -22,9 +23,9 @@ def df():
     return df.set_index(["x", "y"])
 
 
-@pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(2, 2, data=df, style=False, sheet=sheet_module)
+@pytest.fixture
+def sf(df: DataFrame, sheet: Sheet):
+    return SheetFrame(2, 2, data=df, style=False, sheet=sheet)
 
 
 @pytest.mark.parametrize(
@@ -70,11 +71,31 @@ def test_sf_str(sf: SheetFrame, df: DataFrame, func: str):
     np.testing.assert_array_equal(sf.data[0], b)
 
 
+@pytest.mark.parametrize("name", ["sum", "count", "min", "max", "mean"])
+def test_sf_range(sf: SheetFrame, df: DataFrame, name: str):
+    func = Range((20, 1), sheet=sf.sheet)
+    a = sf.agg(func, formula=True)
+    b = df.agg(name)
+    assert isinstance(a, Series)
+    assert a.index.to_list() == b.index.to_list()
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    func.value = name
+    np.testing.assert_array_equal(sf.data[0], b)
+
+
 def test_sf_str_columns(sf: SheetFrame):
     a = sf.agg("mean", columns="a", formula=True)
     assert len(a) == 1
-    sf = SheetFrame(20, 10, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
     np.testing.assert_array_equal(sf.data, [[4.5]])
+
+
+def test_sf_str_columns_list(sf: SheetFrame):
+    a = sf.agg("mean", columns=["a", "b"], formula=True)
+    assert len(a) == 2
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    df = DataFrame([[4.5], [14.5]], index=["a", "b"], columns=[0.0])
+    assert df.equals(sf.data)
 
 
 def test_sf_dict(sf: SheetFrame, df: DataFrame):
@@ -101,7 +122,7 @@ def test_sf_list(sf: SheetFrame, df: DataFrame):
 def test_sf_list_columns(sf: SheetFrame, df: DataFrame):
     a = sf.agg(["sum", "count"], columns="b", formula=True)
     assert isinstance(a, DataFrame)
-    sf = SheetFrame(20, 20, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
     np.testing.assert_array_equal(sf.data, [[116], [8]])
 
 
