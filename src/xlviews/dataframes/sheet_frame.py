@@ -662,7 +662,7 @@ class SheetFrame:
         **kwargs,
     ) -> str:
         if func == "first":
-            rng = self.first_range(column)
+            rng = self.range(column)[0]
             func = None
         else:
             rng = self.range(column)

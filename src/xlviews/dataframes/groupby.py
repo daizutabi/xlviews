@@ -72,7 +72,7 @@ def groupby(
     if sf.columns_names is None:
         if isinstance(by, list) or ":" in by:
             by = list(iter_columns(sf, by))
-        values = sf.data[by]
+        values = sf.data.reset_index()[by]
 
     else:
         df = DataFrame(sf.value_columns, columns=sf.columns_names)

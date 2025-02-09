@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from xlwings import Sheet
 
+from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
 from xlviews.testing.sheet_frame import WideColumn
@@ -127,3 +128,27 @@ def test_data(sf: SheetFrame, df: DataFrame):
 )
 def test_range_column(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
+
+
+@pytest.mark.parametrize(
+    ("by", "v1", "v2"),
+    [
+        ("x", [(5, 6), (9, 9)], [(7, 8)]),
+        ("y", [(5, 5), (7, 7), (9, 9)], [(6, 6), (8, 8)]),
+    ],
+)
+def test_groupby(sf: SheetFrame, by, v1, v2):
+    g = groupby(sf, by)
+    assert len(g) == 2
+    keys = list(g.keys())
+    assert g[keys[0]] == v1
+    assert g[keys[1]] == v2
+
+
+def test_groupby_list(sf: SheetFrame):
+    g = groupby(sf, ["x", "y"])
+    assert len(g) == 4
+    assert g[("i", "k")] == [(5, 5), (9, 9)]
+    assert g[("i", "l")] == [(6, 6)]
+    assert g[("j", "k")] == [(7, 7)]
+    assert g[("j", "l")] == [(8, 8)]

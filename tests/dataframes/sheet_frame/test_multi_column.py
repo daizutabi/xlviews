@@ -2,7 +2,7 @@ import string
 
 import numpy as np
 import pytest
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
@@ -119,80 +119,67 @@ def test_range(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-# def test_ranges(sf: SheetFrame):
-#     for rng, i in zip(sf.ranges(), range(2, 18), strict=True):
-#         c = string.ascii_uppercase[i]
-#         assert rng.get_address() == f"${c}$6:${c}$11"
+def test_ranges(sf: SheetFrame):
+    for rng, i in zip(sf.ranges(), range(2, 18), strict=True):
+        c = string.ascii_uppercase[i]
+        assert rng.get_address() == f"${c}$6:${c}$11"
 
 
-# def test_ranges_sel(sf: SheetFrame):
-#     sel = [False] * 8 + [True] * 8
-#     for rng, i in zip(sf.ranges(sel), range(10, 18), strict=True):
-#         c = string.ascii_uppercase[i]
-#         assert rng.get_address() == f"${c}$6:${c}$11"
+@pytest.mark.parametrize(
+    ("by", "result"),
+    [
+        ("s", {("a",): [(3, 10)], ("b",): [(11, 18)]}),
+        (
+            ["s", "t"],
+            {
+                ("a", "c"): [(3, 6)],
+                ("a", "d"): [(7, 10)],
+                ("b", "c"): [(11, 14)],
+                ("b", "d"): [(15, 18)],
+            },
+        ),
+        (
+            ["s", "i"],
+            {
+                ("a", "x"): [(3, 3), (5, 5), (7, 7), (9, 9)],
+                ("a", "y"): [(4, 4), (6, 6), (8, 8), (10, 10)],
+                ("b", "x"): [(11, 11), (13, 13), (15, 15), (17, 17)],
+                ("b", "y"): [(12, 12), (14, 14), (16, 16), (18, 18)],
+            },
+        ),
+        (None, {(): [(3, 18)]}),
+    ],
+)
+def test_groupby(sf: SheetFrame, by, result):
+    g = groupby(sf, by)
+    assert len(g) == len(result)
+    for k, v in g.items():
+        assert result[k] == v
 
 
-# def test_ranges_kwargs(sf: SheetFrame):
-#     for rng, i in zip(sf.ranges(i="y"), range(3, 18, 2), strict=True):
-#         c = string.ascii_uppercase[i]
-#         assert rng.get_address() == f"${c}$6:${c}$11"
+@pytest.fixture(scope="module")
+def df_melt(sf: SheetFrame):
+    return sf.melt(formula=True, value_name="v")
 
 
-# @pytest.mark.parametrize(
-#     ("by", "result"),
-#     [
-#         ("s", {("a",): [(3, 10)], ("b",): [(11, 18)]}),
-#         (
-#             ["s", "t"],
-#             {
-#                 ("a", "c"): [(3, 6)],
-#                 ("a", "d"): [(7, 10)],
-#                 ("b", "c"): [(11, 14)],
-#                 ("b", "d"): [(15, 18)],
-#             },
-#         ),
-#         (
-#             ["s", "i"],
-#             {
-#                 ("a", "x"): [(3, 3), (5, 5), (7, 7), (9, 9)],
-#                 ("a", "y"): [(4, 4), (6, 6), (8, 8), (10, 10)],
-#                 ("b", "x"): [(11, 11), (13, 13), (15, 15), (17, 17)],
-#                 ("b", "y"): [(12, 12), (14, 14), (16, 16), (18, 18)],
-#             },
-#         ),
-#         (None, {(): [(3, 18)]}),
-#     ],
-# )
-# def test_groupby(sf: SheetFrame, by, result):
-#     g = groupby(sf, by)
-#     assert len(g) == len(result)
-#     for k, v in g.items():
-#         assert result[k] == v
+def test_melt_len(df_melt: DataFrame):
+    assert len(df_melt) == 16
 
 
-# @pytest.fixture(scope="module")
-# def df_melt(sf: SheetFrame):
-#     return sf.melt(formula=True, value_name="v")
+def test_melt_columns(df_melt: DataFrame):
+    assert df_melt.columns.to_list() == ["s", "t", "r", "i", "v"]
 
 
-# def test_melt_len(df_melt: DataFrame):
-#     assert len(df_melt) == 16
-
-
-# def test_melt_columns(df_melt: DataFrame):
-#     assert df_melt.columns.to_list() == ["s", "t", "r", "i", "v"]
-
-
-# @pytest.mark.parametrize(
-#     ("i", "v"),
-#     [
-#         (0, ["a", "c", 1, "x", "=$C$6:$C$11"]),
-#         (1, ["a", "c", 1, "y", "=$D$6:$D$11"]),
-#         (2, ["a", "c", 2, "x", "=$E$6:$E$11"]),
-#         (7, ["a", "d", 4, "y", "=$J$6:$J$11"]),
-#         (14, ["b", "d", 8, "x", "=$Q$6:$Q$11"]),
-#         (15, ["b", "d", 8, "y", "=$R$6:$R$11"]),
-#     ],
-# )
-# def test_melt_value(df_melt: DataFrame, i, v):
-#     assert df_melt.iloc[i].to_list() == v
+@pytest.mark.parametrize(
+    ("i", "v"),
+    [
+        (0, ["a", "c", 1, "x", "=$C$6:$C$11"]),
+        (1, ["a", "c", 1, "y", "=$D$6:$D$11"]),
+        (2, ["a", "c", 2, "x", "=$E$6:$E$11"]),
+        (7, ["a", "d", 4, "y", "=$J$6:$J$11"]),
+        (14, ["b", "d", 8, "x", "=$Q$6:$Q$11"]),
+        (15, ["b", "d", 8, "y", "=$R$6:$R$11"]),
+    ],
+)
+def test_melt_value(df_melt: DataFrame, i, v):
+    assert df_melt.iloc[i].to_list() == v

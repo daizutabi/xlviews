@@ -1,11 +1,9 @@
 import numpy as np
 import pytest
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.dataframes.table import Table
 from xlviews.testing import FrameContainer, is_excel_installed
 from xlviews.testing.sheet_frame import Index
 
@@ -111,67 +109,3 @@ def test_data(sf: SheetFrame, df: DataFrame):
 )
 def test_range(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
-
-
-# @pytest.mark.parametrize(
-#     ("column", "address"),
-#     [("a", "$D$3"), ("b", "$E$3"), ("name", "$C$3")],
-# )
-# def test_first_range(sf: SheetFrame, column, address):
-#     assert sf.first_range(column).get_address() == address
-
-
-# def test_groupby(sf: SheetFrame):
-#     g = groupby(sf, "name")
-#     assert len(g) == 2
-#     assert g[("x",)] == [(3, 4)]
-#     assert g[("y",)] == [(5, 6)]
-
-#     assert len(groupby(sf, ["name", "a"])) == 4
-
-
-# @pytest.fixture(scope="module")
-# def sf2(sheet_module: Sheet):
-#     a = ["c"] * 10
-#     b = ["s"] * 5 + ["t"] * 5
-#     c = ([100] * 2 + [200] * 3) * 2
-#     x = list(range(10))
-#     y = list(range(10, 20))
-#     df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
-#     df = df.set_index(["a", "b", "c"])
-#     return SheetFrame(102, 2, data=df, index=True, style=False, sheet=sheet_module)
-
-
-# @pytest.mark.parametrize(
-#     ("kwargs", "r"),
-#     [({}, range(103, 113)), ({"c": 100}, [103, 104, 108, 109])],
-# )
-# def test_ranges(sf2: SheetFrame, kwargs, r):
-#     for rng, i in zip(sf2.ranges(**kwargs), r, strict=True):
-#         assert rng.get_address() == f"$E${i}:$F${i}"
-
-
-# def test_ranges_sel(sf2: SheetFrame):
-#     sel = sf2.select(c=200)
-#     it = sf2.ranges(sel, b="t")
-
-#     for rng, i in zip(it, [110, 111, 112], strict=True):
-#         assert rng.get_address() == f"$E${i}:$F${i}"
-
-
-# @pytest.fixture(scope="module")
-# def address(sf: SheetFrame):
-#     return sf.get_address()
-
-
-# def test_get_address_index_name(address: DataFrame):
-#     assert address.index.name == "name"
-
-
-# def test_get_address_index(address: DataFrame):
-#     assert address.index.to_list() == ["x", "x", "y", "y"]
-
-
-# def test_get_address_value(address: DataFrame):
-#     values = [["$D$3", "$E$3"], ["$D$4", "$E$4"], ["$D$5", "$E$5"], ["$D$6", "$E$6"]]
-#     np.testing.assert_array_equal(address, values)

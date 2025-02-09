@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
@@ -150,33 +150,33 @@ def test_range_column(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
 
 
-# @pytest.mark.parametrize(
-#     ("by", "one", "two"),
-#     [
-#         ("x", [(7, 10)], [(11, 14)]),
-#         ("y", [(7, 8), (11, 12)], [(9, 10), (13, 14)]),
-#         ("z", [(7, 9), (12, 14)], [(10, 11)]),
-#     ],
-# )
-# def test_groupby(sf: SheetFrame, by, one, two):
-#     g = groupby(sf, by)
-#     assert len(g) == 2
-#     assert g[(1,)] == one
-#     assert g[(2,)] == two
+@pytest.mark.parametrize(
+    ("by", "one", "two"),
+    [
+        ("x", [(7, 10)], [(11, 14)]),
+        ("y", [(7, 8), (11, 12)], [(9, 10), (13, 14)]),
+        ("z", [(7, 9), (12, 14)], [(10, 11)]),
+    ],
+)
+def test_groupby(sf: SheetFrame, by, one, two):
+    g = groupby(sf, by)
+    assert len(g) == 2
+    assert g[(1,)] == one
+    assert g[(2,)] == two
 
 
-# @pytest.mark.parametrize(
-#     ("by", "v11", "v12", "v21", "v22"),
-#     [
-#         (["x", "y"], [(7, 8)], [(9, 10)], [(11, 12)], [(13, 14)]),
-#         (["x", "z"], [(7, 9)], [(10, 10)], [(12, 14)], [(11, 11)]),
-#         (["y", "z"], [(7, 8), (12, 12)], [(11, 11)], [(9, 9), (13, 14)], [(10, 10)]),
-#     ],
-# )
-# def test_groupby_list(sf: SheetFrame, by, v11, v12, v21, v22):
-#     g = groupby(sf, by)
-#     assert len(g) == 4
-#     assert g[(1, 1)] == v11
-#     assert g[(1, 2)] == v12
-#     assert g[(2, 1)] == v21
-#     assert g[(2, 2)] == v22
+@pytest.mark.parametrize(
+    ("by", "v11", "v12", "v21", "v22"),
+    [
+        (["x", "y"], [(7, 8)], [(9, 10)], [(11, 12)], [(13, 14)]),
+        (["x", "z"], [(7, 9)], [(10, 10)], [(12, 14)], [(11, 11)]),
+        (["y", "z"], [(7, 8), (12, 12)], [(11, 11)], [(9, 9), (13, 14)], [(10, 10)]),
+    ],
+)
+def test_groupby_list(sf: SheetFrame, by, v11, v12, v21, v22):
+    g = groupby(sf, by)
+    assert len(g) == 4
+    assert g[(1, 1)] == v11
+    assert g[(1, 2)] == v12
+    assert g[(2, 1)] == v21
+    assert g[(2, 2)] == v22
