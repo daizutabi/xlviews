@@ -49,7 +49,7 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 def _aggregate(
     func: str | Range | RangeImpl | None,
-    ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
+    ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int,
     **kwargs,
 ) -> str:
@@ -61,7 +61,10 @@ def _aggregate(
     if isinstance(ranges, Range | RangeCollection):
         ranges = [ranges]
 
-    column = ",".join(r.get_address(**kwargs) for r in ranges)
+    if isinstance(ranges, str):
+        column = ranges
+    else:
+        column = ",".join(r.get_address(**kwargs) for r in ranges)
 
     if func is None:
         return column
@@ -80,7 +83,7 @@ def _aggregate(
 
 def aggregate(
     func: str | Range | RangeImpl | None,
-    ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
+    ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int = 7,  # ignore hidden rows and error values
     row_absolute: bool = True,
     column_absolute: bool = True,

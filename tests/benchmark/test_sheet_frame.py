@@ -100,3 +100,9 @@ def test_groupby(benchmark, sf: SheetFrame, columns):
     x = benchmark(lambda: sf.groupby(columns))
     assert isinstance(x, GroupBy)
     assert len(x) == len(sf)
+
+
+def test_groupby_agg(benchmark, sf: SheetFrame, columns, shape):
+    x = benchmark(lambda: sf.groupby(columns).agg(["sum", "count"]))
+    assert isinstance(x, DataFrame)
+    assert x.shape == (len(sf), 2 * shape[1])

@@ -693,7 +693,7 @@ class SheetFrame:
         func: Func | dict | Sequence[Func],
         columns: str | list[str] | None = None,
         **kwargs,
-    ) -> str | Series | DataFrame:
+    ) -> Series | DataFrame:
         if self.columns_level != 1:
             raise NotImplementedError
 

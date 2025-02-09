@@ -148,117 +148,117 @@ def test_sf_first_none(sf: SheetFrame):
     assert s["b"] == "=$E$3:$E$10"
 
 
-# def test_df_group_str_str(df: DataFrame):
-#     a = df.groupby("x").agg("sum")
-#     assert a.columns.to_list() == ["a", "b"]
-#     assert a.index.to_list() == [1, 2]
-#     assert a.index.name == "x"
-#     np.testing.assert_array_equal(a, [[10, 50], [26, 66]])
+def test_df_group_str_str(df: DataFrame):
+    a = df.groupby("x").agg("sum")
+    assert a.columns.to_list() == ["a", "b"]
+    assert a.index.to_list() == [1, 2]
+    assert a.index.name == "x"
+    np.testing.assert_array_equal(a, [[10, 50], [26, 66]])
 
 
-# @pytest.mark.filterwarnings("ignore::FutureWarning")
-# def test_df_group_str_str_as_index_false(df: DataFrame):
-#     a = df.groupby("x", as_index=False).agg("sum")
-#     assert a.columns.to_list() == ["a", "b"]
-#     assert a.index.to_list() == [0, 1]
-#     assert a.index.name is None
-#     np.testing.assert_array_equal(a, [[10, 50], [26, 66]])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_df_group_str_str_as_index_false(df: DataFrame):
+    a = df.groupby("x", as_index=False).agg("sum")
+    assert a.columns.to_list() == ["a", "b"]
+    assert a.index.to_list() == [0, 1]
+    assert a.index.name is None
+    np.testing.assert_array_equal(a, [[10, 50], [26, 66]])
 
 
-# def test_df_group_list_str(df: DataFrame):
-#     a = df.groupby(["x", "y"]).agg("sum")
-#     assert a.columns.to_list() == ["a", "b"]
-#     assert a.index.to_list() == [(1, 1), (1, 2), (2, 1), (2, 2)]
-#     assert a.index.names == ["x", "y"]
-#     np.testing.assert_array_equal(a, [[3, 23], [7, 27], [11, 31], [15, 35]])
+def test_df_group_list_str(df: DataFrame):
+    a = df.groupby(["x", "y"]).agg("sum")
+    assert a.columns.to_list() == ["a", "b"]
+    assert a.index.to_list() == [(1, 1), (1, 2), (2, 1), (2, 2)]
+    assert a.index.names == ["x", "y"]
+    np.testing.assert_array_equal(a, [[3, 23], [7, 27], [11, 31], [15, 35]])
 
 
-# def test_df_group_list_list(df: DataFrame):
-#     a = df.groupby(["x", "y"]).agg(["min", "max"])
-#     c = [("a", "min"), ("a", "max"), ("b", "min"), ("b", "max")]
-#     assert a.columns.to_list() == c
-#     assert a.index.to_list() == [(1, 1), (1, 2), (2, 1), (2, 2)]
-#     assert a.index.names == ["x", "y"]
-#     v = [[1, 2, 11, 12], [3, 4, 13, 14], [5, 6, 15, 16], [7, 8, 17, 18]]
-#     np.testing.assert_array_equal(a, v)
+def test_df_group_list_list(df: DataFrame):
+    a = df.groupby(["x", "y"]).agg(["min", "max"])
+    c = [("a", "min"), ("a", "max"), ("b", "min"), ("b", "max")]
+    assert a.columns.to_list() == c
+    assert a.index.to_list() == [(1, 1), (1, 2), (2, 1), (2, 2)]
+    assert a.index.names == ["x", "y"]
+    v = [[1, 2, 11, 12], [3, 4, 13, 14], [5, 6, 15, 16], [7, 8, 17, 18]]
+    np.testing.assert_array_equal(a, v)
 
 
-# def test_df_group_list_dict(df: DataFrame):
-#     a = df.groupby(["x", "y"]).agg({"a": "min", "b": "max"})
-#     assert a.columns.to_list() == ["a", "b"]
-#     assert a.index.to_list() == [(1, 1), (1, 2), (2, 1), (2, 2)]
-#     assert a.index.names == ["x", "y"]
-#     np.testing.assert_array_equal(a, [[1, 12], [3, 14], [5, 16], [7, 18]])
+def test_df_group_list_dict(df: DataFrame):
+    a = df.groupby(["x", "y"]).agg({"a": "min", "b": "max"})
+    assert a.columns.to_list() == ["a", "b"]
+    assert a.index.to_list() == [(1, 1), (1, 2), (2, 1), (2, 2)]
+    assert a.index.names == ["x", "y"]
+    np.testing.assert_array_equal(a, [[1, 12], [3, 14], [5, 16], [7, 18]])
 
 
-# def test_index_str(sf: SheetFrame):
-#     a = sf.groupby("x").index()
-#     df = DataFrame([1.0, 2.0], columns=["x"])
-#     assert a.equals(df)
+def test_index_str(sf: SheetFrame):
+    a = sf.groupby("x").index()
+    df = DataFrame([1.0, 2.0], columns=["x"])
+    assert a.equals(df)
 
 
-# def test_index_list(sf: SheetFrame):
-#     a = sf.groupby(["x", "y"]).index()
-#     df = DataFrame([(1, 1), (1, 2), (2, 1), (2, 2)], columns=["x", "y"])
-#     assert a.equals(df.astype(float))
+def test_index_list(sf: SheetFrame):
+    a = sf.groupby(["x", "y"]).index()
+    df = DataFrame([(1, 1), (1, 2), (2, 1), (2, 2)], columns=["x", "y"])
+    assert a.equals(df.astype(float))
 
 
-# def test_index_str_as_address(sf: SheetFrame):
-#     a = sf.groupby("x").index(as_address=True)
-#     assert a.equals(DataFrame(["$B$3", "$B$7"], columns=["x"]))
+def test_index_str_as_address(sf: SheetFrame):
+    a = sf.groupby("x").index(as_address=True)
+    assert a.equals(DataFrame(["$B$3", "$B$7"], columns=["x"]))
 
 
-# def test_index_list_as_address(sf: SheetFrame):
-#     a = sf.groupby(["x", "y"]).index(as_address=True, formula=True)
-#     values = [[f"=$B${r}", f"=$C${r}"] for r in [3, 5, 7, 9]]
-#     assert a.equals(DataFrame(values, columns=["x", "y"]))
+def test_index_list_as_address(sf: SheetFrame):
+    a = sf.groupby(["x", "y"]).index(as_address=True, formula=True)
+    values = [[f"=$B${r}", f"=$C${r}"] for r in [3, 5, 7, 9]]
+    assert a.equals(DataFrame(values, columns=["x", "y"]))
 
 
-# @pytest.mark.parametrize("func", ["sum", "median", "mean"])
-# @pytest.mark.parametrize("by", ["x", "y"])
-# def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
-#     a = sf.groupby(by).agg(func, as_address=True, formula=True)
-#     b = df.groupby(by).agg(func).astype(float)
-#     sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
-#     assert sf.data.equals(b)
+@pytest.mark.parametrize("func", ["sum", "median", "mean"])
+@pytest.mark.parametrize("by", ["x", "y"])
+def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
+    a = sf.groupby(by).agg(func, as_address=True, formula=True)
+    b = df.groupby(by).agg(func).astype(float)
+    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)
 
 
-# @pytest.mark.parametrize("func", ["sum", "min", "max"])
-# @pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
-# def test_sf_group_list_str(sf: SheetFrame, df: DataFrame, func, by):
-#     a = sf.groupby(by).agg(func, as_address=True, formula=True)
-#     b = df.groupby(by).agg(func).astype(float)
-#     sf = SheetFrame(50, 10, data=a, sheet=sf.sheet, style=False)
-#     assert sf.data.equals(b)
+@pytest.mark.parametrize("func", ["sum", "min", "max"])
+@pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
+def test_sf_group_list_str(sf: SheetFrame, df: DataFrame, func, by):
+    a = sf.groupby(by).agg(func, as_address=True, formula=True)
+    b = df.groupby(by).agg(func).astype(float)
+    sf = SheetFrame(50, 10, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)
 
 
-# @pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
-# @pytest.mark.parametrize("sort", [True, False])
-# def test_sf_group_list_str_sort(sf: SheetFrame, df: DataFrame, by, sort):
-#     a = sf.groupby(by, sort=sort).agg("sum", as_address=True, formula=True)
-#     b = df.groupby(by, sort=sort).agg("sum").astype(float)
-#     sf = SheetFrame(50, 20, data=a, sheet=sf.sheet, style=False)
-#     assert sf.data.equals(b)
+@pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
+@pytest.mark.parametrize("sort", [True, False])
+def test_sf_group_list_str_sort(sf: SheetFrame, df: DataFrame, by, sort):
+    a = sf.groupby(by, sort=sort).agg("sum", as_address=True, formula=True)
+    b = df.groupby(by, sort=sort).agg("sum").astype(float)
+    sf = SheetFrame(50, 20, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)
 
 
-# @pytest.mark.parametrize(
-#     "func",
-#     [{"a": "min", "b": "max"}, {"a": "median", "b": "mean"}],
-# )
-# @pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
-# @pytest.mark.parametrize("sort", [True, False])
-# def test_sf_group_list_dict(sf: SheetFrame, df: DataFrame, func, by, sort):
-#     a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
-#     b = df.groupby(by, sort=sort).agg(func).astype(float)
-#     sf = SheetFrame(50, 30, data=a, sheet=sf.sheet, style=False)
-#     assert sf.data.equals(b)
+@pytest.mark.parametrize(
+    "func",
+    [{"a": "min", "b": "max"}, {"a": "median", "b": "mean"}],
+)
+@pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
+@pytest.mark.parametrize("sort", [True, False])
+def test_sf_group_list_dict(sf: SheetFrame, df: DataFrame, func, by, sort):
+    a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
+    b = df.groupby(by, sort=sort).agg(func).astype(float)
+    sf = SheetFrame(50, 30, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)
 
 
-# @pytest.mark.parametrize("func", [["sum", "mean"], ["min", "max"]])
-# @pytest.mark.parametrize("sort", [True, False])
-# def test_sf_group_list_list(sf: SheetFrame, df: DataFrame, func, sort):
-#     by = ["y", "x"]
-#     a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
-#     b = df.groupby(by, sort=sort).agg(func).astype(float)
-#     sf = SheetFrame(50, 40, data=a, sheet=sf.sheet, style=False)
-#     assert sf.data.equals(b)
+@pytest.mark.parametrize("func", [["sum", "mean"], ["min", "max"]])
+@pytest.mark.parametrize("sort", [True, False])
+def test_sf_group_list_list(sf: SheetFrame, df: DataFrame, func, sort):
+    by = ["y", "x"]
+    a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
+    b = df.groupby(by, sort=sort).agg(func).astype(float)
+    sf = SheetFrame(50, 40, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)

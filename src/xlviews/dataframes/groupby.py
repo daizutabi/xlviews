@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, TypeAlias, TypeVar, overload
 
 import numpy as np
 from pandas import DataFrame, MultiIndex, Series
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 H = TypeVar("H")
 T = TypeVar("T")
+
+Func: TypeAlias = str | Range | None
 
 
 def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
@@ -183,7 +185,11 @@ class GroupBy:
         **kwargs,
     ) -> DataFrame:
         if as_address:
-            values = {c: self._agg_column("first", c, **kwargs) for c in self.by}
+            cs = self.sf.columns
+            column = self.sf.column
+            idx = [cs.index(c) + column for c in self.by]
+            it = zip(self.by, idx, strict=True)
+            values = {c: self._agg_column("first", i, **kwargs) for c, i in it}
             return DataFrame(values)
 
         values = self.keys()
@@ -191,41 +197,53 @@ class GroupBy:
 
     def agg(
         self,
-        func: str | Range | None | dict | Sequence[str | Range | None],
-        columns: str | Sequence[str] | None = None,
+        func: Func | dict | Sequence[Func],
+        columns: str | list[str] | None = None,
         as_address: bool = False,
-        formula: bool = False,
         **kwargs,
     ) -> DataFrame:
-        agg = partial(self._agg_column, formula=formula, **kwargs)
-
-        index_df = self.index(as_address=as_address, formula=formula, **kwargs)
-        index = MultiIndex.from_frame(index_df)
+        if self.sf.columns_level != 1:
+            raise NotImplementedError
 
         if isinstance(func, dict):
-            return DataFrame({c: agg(f, c) for c, f in func.items()}, index=index)
-
-        if columns is None:
-            columns = self.sf.value_columns
+            columns = list(func.keys())
         elif isinstance(columns, str):
             columns = [columns]
 
-        if func is None or isinstance(func, str | Range):
-            return DataFrame({c: agg(func, c) for c in columns}, index=index)
+        idx = self.sf.column_index(columns)
 
-        values = {(c, f): agg(f, c) for c in columns for f in func}
+        if columns is None:
+            columns = self.sf.value_columns
+
+        index_df = self.index(as_address=as_address, **kwargs)
+        index = MultiIndex.from_frame(index_df)
+
+        agg = partial(self._agg_column, **kwargs)
+
+        if isinstance(func, dict):
+            it = zip(columns, idx, func.values(), strict=True)
+            return DataFrame({c: agg(f, i) for c, i, f in it}, index=index)
+
+        if func is None or isinstance(func, str | Range):
+            it = zip(columns, idx, strict=True)
+            return DataFrame({c: agg(func, i) for c, i in it}, index=index)
+
+        it = zip(columns, idx, strict=True)
+        values = {(c, f): agg(f, i) for c, i in it for f in func}
         return DataFrame(values, index=index)
 
     def _agg_column(
         self,
         func: str | Range | None,
-        column: str,
+        column: int,
         **kwargs,
-    ) -> list[str]:
+    ) -> Iterator[str]:
         if func == "first":
-            ranges = self.first_ranges(column)
             func = None
+            for row in self.values():
+                rng = Range((row[0][0], column), sheet=self.sf.sheet)
+                yield aggregate(func, rng, **kwargs)
         else:
-            ranges = self.ranges(column)
-
-        return [aggregate(func, rng, **kwargs) for rng in ranges]
+            for row in self.values():
+                rng = RangeCollection.from_index(row, column, self.sf.sheet)
+                yield aggregate(func, rng, **kwargs)
