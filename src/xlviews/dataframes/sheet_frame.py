@@ -589,33 +589,34 @@ class SheetFrame:
         if self.columns_names is None:
             start = self.column + self.index_level
             end = start + len(self.value_columns) - 1
-            o = self.row + self.columns_level
+            offset = self.row + self.columns_level
             for index in range(len(self)):
-                yield Range((index + o, start), (index + o, end), sheet=self.sheet)
+                yield Range(
+                    (index + offset, start),
+                    (index + offset, end),
+                    sheet=self.sheet,
+                )
 
         else:
             start = self.row + self.columns_level
             end = start + len(self) - 1
-            o = self.column + self.index_level
+            offset = self.column + self.index_level
 
             for index in range(len(self.value_columns)):
-                yield Range((start, index + o), (end, index + o), sheet=self.sheet)
+                yield Range(
+                    (start, index + offset),
+                    (end, index + offset),
+                    sheet=self.sheet,
+                )
 
-    def melt(
-        self,
-        func: Func = None,
-        *,
-        formula: bool = False,
-        value_name: str = "value",
-        **kwargs,
-    ) -> DataFrame:
+    def melt(self, func: Func = None, value_name: str = "value", **kwargs) -> DataFrame:
         """Unpivot a SheetFrame from wide to long format."""
         if self.columns_names is None:
             raise NotImplementedError
 
         columns = self.value_columns
         df = DataFrame(columns, columns=self.columns_names)
-        values = [aggregate(func, r, formula=formula, **kwargs) for r in self.ranges()]
+        values = [aggregate(func, r, **kwargs) for r in self.ranges()]
         df[value_name] = values
         return df
 
@@ -629,10 +630,9 @@ class SheetFrame:
         self,
         func: Func | dict | Sequence[Func],
         columns: str | tuple | Sequence[str | tuple] | None = None,
-        formula: bool = False,
         **kwargs,
     ) -> str | Series | DataFrame:
-        agg = partial(self._agg_column, formula=formula, **kwargs)
+        agg = partial(self._agg_column, **kwargs)
 
         if isinstance(func, dict):
             return Series({c: agg(f, c) for c, f in func.items()})
@@ -652,7 +652,6 @@ class SheetFrame:
         self,
         func: str | Range | None,
         column: str | tuple,
-        formula: bool = False,
         **kwargs,
     ) -> str:
         if func == "first":
@@ -661,7 +660,7 @@ class SheetFrame:
         else:
             rng = self.range(column)
 
-        return aggregate(func, rng, formula=formula, **kwargs)
+        return aggregate(func, rng, **kwargs)
 
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)

@@ -23,11 +23,14 @@ class Range:
 
     def __init__(
         self,
-        cell1: str | Range | RangeImpl | tuple[int, int] | None = None,
+        cell1: str | Range | RangeImpl | tuple[int, int],
         cell2: str | Range | RangeImpl | tuple[int, int] | None = None,
         sheet: Sheet | None = None,
     ) -> None:
-        if cell1 is None:
+        if isinstance(cell1, tuple) and (isinstance(cell2, tuple) or cell2 is None):
+            self.sheet = sheet or xlwings.sheets.active
+            self.row, self.column = cell1
+            self.row_end, self.column_end = cell2 or cell1
             return
 
         t1 = to_tuple(cell1, sheet)
@@ -49,26 +52,13 @@ class Range:
         self.row_end = max(self.row, self.row_end)
         self.column_end = max(self.column, self.column_end)
 
-    @classmethod
-    def from_index(
-        cls,
-        start: tuple[int, int],
-        end: tuple[int, int] | None = None,
-        sheet: Sheet | None = None,
-    ) -> Self:
-        rng = cls()
-        rng.sheet = sheet or xlwings.sheets.active
-        rng.row, rng.column = start
-        rng.row_end, rng.column_end = end or start
-        return rng
-
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)
 
     def __iter__(self) -> Iterator[Self]:
         for row in range(self.row, self.row_end + 1):
             for column in range(self.column, self.column_end + 1):
-                yield self.__class__.from_index((row, column), sheet=self.sheet)
+                yield self.__class__((row, column), sheet=self.sheet)
 
     def __getitem__(self, key: int) -> Self:
         if key < 0:
@@ -79,7 +69,7 @@ class Range:
 
         row = self.row + key // (self.column_end - self.column + 1)
         column = self.column + key % (self.column_end - self.column + 1)
-        return self.__class__.from_index((row, column), sheet=self.sheet)
+        return self.__class__((row, column), sheet=self.sheet)
 
     @property
     def last_cell(self) -> Self:
@@ -90,7 +80,7 @@ class Range:
         return f"<{self.__class__.__name__} {addr}>"
 
     def offset(self, row_offset: int = 0, column_offset: int = 0) -> Self:
-        return self.__class__.from_index(
+        return self.__class__(
             (self.row + row_offset, self.column + column_offset),
             (self.row_end + row_offset, self.column_end + column_offset),
             sheet=self.sheet,
