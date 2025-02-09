@@ -294,12 +294,12 @@ class SheetFrame:
     @overload
     def index(
         self,
-        columns: list[str | tuple],
+        columns: Sequence[str | tuple],
     ) -> list[int] | list[tuple[int, int]]: ...
 
     def index(
         self,
-        columns: str | tuple | list[str | tuple],
+        columns: str | tuple | Sequence[str | tuple],
     ) -> int | tuple[int, int] | list[int] | list[tuple[int, int]]:
         """Return the column index (1-indexed)."""
         if isinstance(columns, str | tuple):
@@ -624,7 +624,7 @@ class SheetFrame:
     def agg(
         self,
         func: Func | dict,
-        columns: str | tuple | Sequence[str | tuple] | None = None,
+        columns: str | list[str] | None = None,
         **kwargs,
     ) -> Series: ...
 
@@ -632,52 +632,55 @@ class SheetFrame:
     def agg(
         self,
         func: Sequence[Func],
-        columns: str | tuple | Sequence[str | tuple] | None = None,
+        columns: str | list[str] | None = None,
         **kwargs,
     ) -> DataFrame: ...
 
     def agg(
         self,
         func: Func | dict | Sequence[Func],
-        columns: str | tuple | Sequence[str | tuple] | None = None,
+        columns: str | list[str] | None = None,
         **kwargs,
     ) -> str | Series | DataFrame:
         if self.columns_level != 1:
             raise NotImplementedError
 
-        column = self.column
         if isinstance(func, dict):
             columns = list(func.keys())
-            idx = [self.index(c) for c in func]
-        elif columns is None:
+        elif isinstance(columns, str):
+            columns = [columns]
+
+        rngs = self._column_ranges(columns)
+
+        if columns is None:
+            columns = self.value_columns
+
+        agg = partial(self._agg_column, **kwargs)
+
+        if isinstance(func, dict):
+            it = zip(rngs, func.values(), strict=True)
+            return Series([agg(f, r) for r, f in it], index=columns)
+
+        if func is None or isinstance(func, str | Range):
+            return Series([agg(func, r) for r in rngs], index=columns)
+
+        values = [[agg(f, r) for r in rngs] for f in func]
+        return DataFrame(values, index=list(func), columns=columns)
+
+    def _column_ranges(self, columns: list[str] | None) -> list[Range]:
+        column = self.column
+        if columns is None:
             columns = self.value_columns
             start = column + self.index_level
             end = start + len(columns)
             idx = list(range(start, end))
-        elif isinstance(columns, str | tuple):
-            idx = [self.columns.index(columns) + column]
-            columns = [columns]
         else:
             cs = self.columns
             idx = [cs.index(c) + column for c in columns]
 
         start = self.row + self.columns_level
         end = start + len(self) - 1
-        rngs = [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
-
-        agg = partial(self._agg_column, **kwargs)
-
-        if isinstance(func, dict):
-            it = zip(columns, rngs, func.values(), strict=True)
-            return Series({c: agg(f, r) for c, r, f in it})
-
-        if func is None or isinstance(func, str | Range):
-            it = zip(columns, rngs, strict=True)
-            return Series({c: agg(func, r) for c, r in it})
-
-        cr = list(zip(columns, rngs, strict=True))
-        values = [{c: agg(f, r) for c, r in cr} for f in func]
-        return DataFrame(values, index=list(func))
+        return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
 
     def _agg_column(
         self,
