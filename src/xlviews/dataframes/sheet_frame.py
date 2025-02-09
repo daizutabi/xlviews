@@ -388,8 +388,6 @@ class SheetFrame:
     def visible_data(self) -> DataFrame:
         """Return the visible data as a DataFrame."""
         self._update_cell()
-        # start = self.cell.offset(1, 0)
-        # end = start.offset(len(self) - 1, len(self.columns) - 1)
         start = self.row + 1, self.column
         end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
         range_ = self.sheet.range(start, end)

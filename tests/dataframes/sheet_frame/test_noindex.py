@@ -122,36 +122,36 @@ def test_range_error(sf: SheetFrame):
         sf.range("a", 1)  # type: ignore
 
 
-# def test_getitem_str(sf: SheetFrame):
-#     s = sf["a"]
-#     assert isinstance(s, Series)
-#     assert s.name == "a"
-#     np.testing.assert_array_equal(s, [1, 2, 3, 4])
+def test_getitem_str(sf: SheetFrame):
+    s = sf["a"]
+    assert isinstance(s, Series)
+    assert s.name == "a"
+    np.testing.assert_array_equal(s, [1, 2, 3, 4])
 
 
-# def test_getitem_list(sf: SheetFrame):
-#     df = sf[["a", "b"]]
-#     assert isinstance(df, DataFrame)
-#     assert df.columns.to_list() == ["a", "b"]
-#     x = [[1, 5], [2, 6], [3, 7], [4, 8]]
-#     np.testing.assert_array_equal(df, x)
+def test_getitem_list(sf: SheetFrame):
+    df = sf[["a", "b"]]
+    assert isinstance(df, DataFrame)
+    assert df.columns.to_list() == ["a", "b"]
+    x = [[1, 5], [2, 6], [3, 7], [4, 8]]
+    np.testing.assert_array_equal(df, x)
 
 
-# def test_setitem(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
-#     x = [10, 20, 30]
-#     sf["a"] = x
-#     np.testing.assert_array_equal(sf["a"], x)
+def test_setitem(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    x = [10, 20, 30]
+    sf["a"] = x
+    np.testing.assert_array_equal(sf["a"], x)
 
 
-# def test_setitem_new_column(sheet: Sheet):
-#     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-#     sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
-#     x = [10, 20, 30]
-#     sf["c"] = x
-#     assert sf.columns == [None, "a", "b", "c"]
-#     np.testing.assert_array_equal(sf["c"], x)
+def test_setitem_new_column(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    x = [10, 20, 30]
+    sf["c"] = x
+    assert sf.columns == [None, "a", "b", "c"]
+    np.testing.assert_array_equal(sf["c"], x)
 
 
 # @pytest.mark.parametrize(
