@@ -30,7 +30,7 @@ def test_value_style(sf: SheetFrame, func, color):
     sf = sf.stats_frame(func, by="x", table=True)
     sf.set_value_style("func")
     for c in ["a", "b", "c"]:
-        rng = sf.range(c)
+        rng = sf.range(c).impl
         assert rgb(rng.font.color) == rgb(color)
         if func in ["soa", "sum"]:
             assert rng.font.italic
