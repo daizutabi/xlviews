@@ -25,9 +25,6 @@ class NoIndex(FrameContainer):
         kwargs["index"] = False
         return kwargs
 
-    def init(self) -> None:
-        self.sf.add_column("c", [9, 10, 11, 12], style=True, number_format="0.0")
-
 
 class Index(FrameContainer):
     row: int = 8
@@ -41,13 +38,10 @@ class Index(FrameContainer):
         df.index.name = "name"
         return df
 
-    def init(self) -> None:
-        self.sf.add_formula_column("c", "={a}+{b}", autofit=True, style=True)
-
 
 class MultiIndex(FrameContainer):
     row: int = 2
-    column: int = 7
+    column: int = 6
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -64,7 +58,7 @@ class MultiIndex(FrameContainer):
 
 class MultiColumn(FrameContainer):
     row: int = 2
-    column: int = 12
+    column: int = 11
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -79,7 +73,7 @@ class MultiColumn(FrameContainer):
 
 class MultiIndexColumn(FrameContainer):
     row: int = 13
-    column: int = 22
+    column: int = 21
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -102,7 +96,7 @@ class MultiIndexColumn(FrameContainer):
 
 class WideColumn(FrameContainer):
     row: int = 3
-    column: int = 30
+    column: int = 29
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -111,9 +105,7 @@ class WideColumn(FrameContainer):
 
     def init(self) -> None:
         self.sf.add_wide_column("u", range(3))
-        self.sf.add_wide_column("v", range(4))
-        self.sf.add_formula_column("u", "={u}+{a}")
-        self.sf.add_formula_column("v", "={b}-{v}", autofit=True, style=True)
+        self.sf.add_wide_column("v", range(4), style=True)
 
 
 def create(sheet: Sheet) -> list[FrameContainer]:

@@ -22,7 +22,7 @@ from xlviews.grid import FacetGrid
 from xlviews.range.formula import aggregate
 from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
-from xlviews.range.style import set_alignment, set_number_format
+from xlviews.range.style import set_alignment
 
 from . import modify
 from .groupby import GroupBy
@@ -626,31 +626,6 @@ class SheetFrame:
         else:
             rng.options(transpose=True).value = value
 
-    def as_table(
-        self,
-        *,
-        const_header: bool = True,
-        autofit: bool = True,
-        style: bool = True,
-    ) -> Table:
-        if self.columns_level != 1:
-            raise NotImplementedError
-
-        self.set_alignment("left")
-
-        end = self.cell.offset(len(self), len(self.columns) - 1)
-        rng = self.sheet.range(self.cell, end)
-
-        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
-        self.table = table
-
-        return table
-
-    def unlist(self) -> None:
-        if self.table:
-            self.table.unlist()
-            self.table = None
-
     @overload
     def get_address(
         self,
@@ -830,7 +805,7 @@ class SheetFrame:
     ) -> None:
         if isinstance(number_format, str):
             start = self.cell.offset(self.columns_level, self.index_level)
-            rng = self.sheet.range(start, self.range()[-1])
+            rng = self.sheet.range(start, self.expand().last_cell)
             rng.number_format = number_format
             if autofit:
                 rng.autofit()
@@ -891,6 +866,31 @@ class SheetFrame:
 
     def delete(self, direction: str = "up", *, entire: bool = False) -> None:
         return modify.delete(self, direction, entire=entire)
+
+    def as_table(
+        self,
+        *,
+        const_header: bool = True,
+        autofit: bool = True,
+        style: bool = True,
+    ) -> Table:
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        self.set_alignment("left")
+
+        end = self.cell.offset(len(self), len(self.columns) - 1)
+        rng = self.sheet.range(self.cell, end)
+
+        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
+        self.table = table
+
+        return table
+
+    def unlist(self) -> None:
+        if self.table:
+            self.table.unlist()
+            self.table = None
 
     def dist_frame(self, *args, **kwargs) -> DistFrame:
         from .dist_frame import DistFrame
