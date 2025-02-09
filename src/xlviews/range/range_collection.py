@@ -118,12 +118,12 @@ def _iter_ranges_from_index(
     elif isinstance(row, int) and not isinstance(column, int):
         for c in column:
             start, end = (c, c) if isinstance(c, int) else c
-            yield Range((row, start), (row, end), sheet=sheet)
+            yield Range((row, start), (row, end), sheet)
 
     elif isinstance(column, int) and not isinstance(row, int):
         for r in row:
             start, end = (r, r) if isinstance(r, int) else r
-            yield Range((start, column), (end, column), sheet=sheet)
+            yield Range((start, column), (end, column), sheet)
 
     else:
         msg = f"Either row or column must be an integer: {row=}, {column=}"
