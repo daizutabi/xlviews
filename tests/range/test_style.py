@@ -87,7 +87,7 @@ def test_font_collection(sheet: Sheet):
     from xlviews.range.range_collection import RangeCollection
     from xlviews.range.style import set_font
 
-    rc = RangeCollection.from_index([(2, 3), (6, 7)], 2, sheet)
+    rc = RangeCollection([(2, 3), (6, 7)], 2, sheet)
     set_font(rc, "Times", size=24, bold=True, italic=True, color="green")
 
     for row in [2, 3, 6, 7]:
@@ -150,7 +150,7 @@ def test_number_format_collection(sheet: Sheet):
     from xlviews.range.range_collection import RangeCollection
     from xlviews.range.style import set_number_format
 
-    rc = RangeCollection.from_index([(2, 3), (6, 7)], 3, sheet)
+    rc = RangeCollection([(2, 3), (6, 7)], 3, sheet)
     set_number_format(rc, "0.0%")
 
     for row in [2, 3, 6, 7]:

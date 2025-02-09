@@ -209,7 +209,7 @@ class StatsFrame(SheetFrame):
         for key, rows in group.items():
             func = key[0]
             for column, fmt in zip(columns, formats, strict=True):
-                rc = RangeCollection.from_index(rows, column, self.sheet)
+                rc = RangeCollection(rows, column, self.sheet)
 
                 if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
                     set_number_format(rc, fmt)

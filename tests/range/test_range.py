@@ -73,6 +73,13 @@ def test_range_tuple_tuple(rng_impl: RangeImpl, addr_impl, include_sheetname, ex
     assert x == addr_impl
 
 
+def test_range_str_tuple(rng_impl: RangeImpl, addr_impl, include_sheetname, external):
+    cell2 = (rng_impl.last_cell.row, rng_impl.last_cell.column)
+    rng = Range(rng_impl, cell2)
+    x = rng.get_address(include_sheetname=include_sheetname, external=external)
+    assert x == addr_impl
+
+
 def test_range_error(sheet: Sheet, sheet_module: Sheet):
     with pytest.raises(ValueError, match="Cells are not in the same sheet"):
         Range(sheet.range("A1"), sheet_module.range("B2"))
@@ -86,6 +93,11 @@ def test_range_book_error(sheet_module: Sheet):
 def test_range_sheet_error(sheet_module: Sheet):
     with pytest.raises(ValueError, match="Sheet not found"):
         Range("b!A1")
+
+
+def test_range_tuple_type_error(sheet_module: Sheet):
+    with pytest.raises(TypeError, match="cell2 must be a tuple or None"):
+        Range((1, 2), "A1")
 
 
 def test_range_type_error(sheet_module: Sheet):
@@ -130,6 +142,10 @@ def test_getitem_error(rng: Range):
 
 def test_repr(rng: Range, rng_impl: RangeImpl):
     assert repr(rng) == repr(rng_impl)
+
+
+def test_last_cell(rng: Range, rng_impl: RangeImpl):
+    assert rng.last_cell.get_address() == rng_impl.last_cell.get_address()
 
 
 @pytest.mark.parametrize("row_offset", [2, 0, -2])

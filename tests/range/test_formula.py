@@ -78,7 +78,11 @@ def test_ranges(ranges: list[Range]):
     assert ranges[1].get_address() == "$C$100:$C$110"
 
 
-@pytest.fixture(scope="module", params=[list, RangeCollection], ids=["list", "rc"])
+@pytest.fixture(
+    scope="module",
+    params=[list, RangeCollection.from_iterable],
+    ids=["list", "rc"],
+)
 def cls(request: pytest.FixtureRequest):
     return request.param
 

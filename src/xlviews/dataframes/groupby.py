@@ -140,7 +140,7 @@ class GroupBy:
         idx = self.sf.column_index(columns)
         row = self[key]
 
-        return [RangeCollection.from_index(row, i, self.sf.sheet) for i in idx]
+        return [RangeCollection(row, i, self.sf.sheet) for i in idx]
 
     @overload
     def first_range(self, columns: str, key: tuple) -> Range: ...
@@ -245,5 +245,5 @@ class GroupBy:
                 yield aggregate(func, rng, **kwargs)
         else:
             for row in self.values():
-                rng = RangeCollection.from_index(row, column, self.sf.sheet)
+                rng = RangeCollection(row, column, self.sf.sheet)
                 yield aggregate(func, rng, **kwargs)

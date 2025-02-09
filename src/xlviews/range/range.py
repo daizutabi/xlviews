@@ -27,30 +27,38 @@ class Range:
         cell2: str | Range | RangeImpl | tuple[int, int] | None = None,
         sheet: Sheet | None = None,
     ) -> None:
-        if isinstance(cell1, tuple) and (isinstance(cell2, tuple) or cell2 is None):
+        if isinstance(cell1, tuple):
+            if not isinstance(cell2, tuple) and cell2 is not None:
+                msg = "cell2 must be a tuple or None"
+                raise TypeError(msg)
+
             self.sheet = sheet or xlwings.sheets.active
             self.row, self.column = cell1
             self.row_end, self.column_end = cell2 or cell1
-            return
 
-        t1 = to_tuple(cell1, sheet)
-        self.sheet, self.row, self.column = t1[:3]
-
-        if cell2 is None:
-            self.row_end, self.column_end = t1[3:]
         else:
-            t2 = to_tuple(cell2, sheet)
+            t1 = to_tuple(cell1, sheet)
+            self.sheet, self.row, self.column = t1[:3]
 
-            if t1[0] != t2[0]:
-                msg = f"Cells are not in the same sheet: {t1[0]} != {t2[0]}"
-                raise ValueError(msg)
+            if cell2 is None:
+                self.row_end, self.column_end = t1[3:]
+            else:
+                t2 = to_tuple(cell2, sheet)
 
-            self.row_end, self.column_end = t2[3:]
+                if self.sheet != t2[0]:
+                    msg = f"Cells are not in the same sheet: {self.sheet} != {t2[0]}"
+                    raise ValueError(msg)
 
-        self.row = min(self.row, self.row_end)
-        self.column = min(self.column, self.column_end)
-        self.row_end = max(self.row, self.row_end)
-        self.column_end = max(self.column, self.column_end)
+                self.row_end, self.column_end = t2[3:]
+
+        self.row, self.row_end = (
+            min(self.row, self.row_end),
+            max(self.row, self.row_end),
+        )
+        self.column, self.column_end = (
+            min(self.column, self.column_end),
+            max(self.column, self.column_end),
+        )
 
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)

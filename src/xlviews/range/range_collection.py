@@ -16,22 +16,27 @@ if TYPE_CHECKING:
 class RangeCollection:
     ranges: list[Range]
 
-    def __init__(self, ranges: Iterable) -> None:
-        self.ranges = list(chain.from_iterable(_iter_ranges(r) for r in ranges))
+    def __init__(
+        self,
+        row: int | Sequence[int | tuple[int, int]],
+        column: int | Sequence[int | tuple[int, int]],
+        sheet: Sheet | None = None,
+    ) -> None:
+        self.ranges = list(_iter_ranges_from_index(row, column, sheet))
+
+    @classmethod
+    def from_iterable(
+        cls,
+        ranges: Iterable[str | Range | RangeImpl | tuple[int, int]],
+    ) -> Self:
+        instance = cls.__new__(cls)
+        instance.ranges = list(chain.from_iterable(_iter_ranges(r) for r in ranges))
+        return instance
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
         addr = self.get_address(row_absolute=True, column_absolute=True)
         return f"<{cls} {addr}>"
-
-    @classmethod
-    def from_index(
-        cls,
-        row: int | Sequence[int | tuple[int, int]],
-        column: int | Sequence[int | tuple[int, int]],
-        sheet: Sheet | None = None,
-    ) -> Self:
-        return cls(_iter_ranges_from_index(row, column, sheet))
 
     def __len__(self) -> int:
         return len(self.ranges)
