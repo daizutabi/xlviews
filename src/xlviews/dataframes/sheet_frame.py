@@ -620,6 +620,27 @@ class SheetFrame:
         df[value_name] = values
         return df
 
+    def column_index(self, columns: list[str] | None) -> list[int]:
+        if self.columns_level != 1:
+            raise NotImplementedError
+
+        column = self.column
+        if columns is None:
+            columns = self.value_columns
+            start = column + self.index_level
+            end = start + len(columns)
+            return list(range(start, end))
+
+        cs = self.columns
+        return [cs.index(c) + column for c in columns]
+
+    def column_range(self, columns: list[str] | None) -> list[Range]:
+        idx = self.column_index(columns)
+
+        start = self.row + self.columns_level
+        end = start + len(self) - 1
+        return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
+
     @overload
     def agg(
         self,
@@ -650,7 +671,7 @@ class SheetFrame:
         elif isinstance(columns, str):
             columns = [columns]
 
-        rngs = self._column_ranges(columns)
+        rngs = self.column_range(columns)
 
         if columns is None:
             columns = self.value_columns
@@ -666,21 +687,6 @@ class SheetFrame:
 
         values = [[agg(f, r) for r in rngs] for f in func]
         return DataFrame(values, index=list(func), columns=columns)
-
-    def _column_ranges(self, columns: list[str] | None) -> list[Range]:
-        column = self.column
-        if columns is None:
-            columns = self.value_columns
-            start = column + self.index_level
-            end = start + len(columns)
-            idx = list(range(start, end))
-        else:
-            cs = self.columns
-            idx = [cs.index(c) + column for c in columns]
-
-        start = self.row + self.columns_level
-        end = start + len(self) - 1
-        return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
 
     def _agg_column(
         self,
