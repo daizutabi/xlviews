@@ -823,7 +823,13 @@ class SheetFrame:
         end = self.cell.offset(len(self), len(self.columns) - 1)
         rng = self.sheet.range(self.cell, end)
 
-        table = Table(rng, autofit=autofit, const_header=const_header, style=style)
+        table = Table(
+            rng,
+            autofit=autofit,
+            const_header=const_header,
+            style=style,
+            index_level=self.index_level,
+        )
         self.table = table
 
         return table
