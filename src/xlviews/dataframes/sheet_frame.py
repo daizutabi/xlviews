@@ -7,9 +7,8 @@ from functools import partial
 from itertools import chain, takewhile
 from typing import TYPE_CHECKING, TypeAlias, overload
 
-import numpy as np
 import xlwings as xw
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
@@ -17,11 +16,8 @@ from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
-
-# from xlviews.range.address import iter_addresses
 from xlviews.range.formula import aggregate
 from xlviews.range.range import Range
-from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_alignment
 
 from . import modify
@@ -32,8 +28,6 @@ from .table import Table
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
     from typing import Any, Literal
-
-    from numpy.typing import ArrayLike, NDArray
 
     from .dist_frame import DistFrame
     from .stats_frame import StatsFrame
@@ -578,7 +572,7 @@ class SheetFrame:
 
         return rng[0].offset(1)
 
-    def __setitem__(self, column: str | tuple, value: ArrayLike) -> None:
+    def __setitem__(self, column: str | tuple, value: Any) -> None:
         if column in self:
             rng = self.range(column).impl
         elif isinstance(column, str):
