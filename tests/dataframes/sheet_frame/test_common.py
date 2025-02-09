@@ -40,14 +40,14 @@ def test_column_one(sheet: Sheet):
 @pytest.mark.parametrize("number_format", ["0", "0.00", "0.00%"])
 def test_number_format(sf: SheetFrame, number_format: str):
     sf.set_number_format(number_format, autofit=True)
-    assert sf.range("a").number_format == number_format
-    assert sf.range("b").number_format == number_format
+    assert sf.range("a").impl.number_format == number_format
+    assert sf.range("b").impl.number_format == number_format
 
 
 def test_number_format_kwargs(sf: SheetFrame):
     sf.set_number_format(autofit=False, a="0", b="0.0")
-    assert sf.range("a").number_format == "0"
-    assert sf.range("b").number_format == "0.0"
+    assert sf.range("a").impl.number_format == "0"
+    assert sf.range("b").impl.number_format == "0.0"
 
 
 def test_number_format_dict(sf: SheetFrame):

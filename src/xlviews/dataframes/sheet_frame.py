@@ -404,7 +404,7 @@ class SheetFrame:
         self,
         column: str | tuple,
         offset: Literal[0, -1] | None = None,
-    ) -> RangeImpl:
+    ) -> Range:
         """Return the range of the column.
 
         Args:
@@ -423,7 +423,7 @@ class SheetFrame:
             case 0:  # first data row
                 start = end = self.row + self.columns_level
                 if not isinstance(index, tuple):
-                    return self.sheet.range(start, index)
+                    return Range((start, index), sheet=self.sheet)
 
             case -1:  # column row
                 start = end = self.row
@@ -447,7 +447,7 @@ class SheetFrame:
         else:
             column_start = column_end = index
 
-        return self.sheet.range((start, column_start), (end, column_end))
+        return Range((start, column_start), (end, column_end), sheet=self.sheet)
 
     def add_column(
         self,
@@ -461,7 +461,7 @@ class SheetFrame:
         column_int = self.column + len(self.columns)
         self.sheet.range(self.row, column_int).value = column
 
-        rng = self.range(column)
+        rng = self.range(column).impl
 
         if value is not None:
             rng.options(transpose=True).value = value
@@ -501,7 +501,8 @@ class SheetFrame:
                 rng = self.add_column(rng)
             else:
                 rng = self.range(rng)
-        elif isinstance(rng, Range):
+
+        if isinstance(rng, Range):
             rng = rng.impl
 
         refs = {}
@@ -565,12 +566,12 @@ class SheetFrame:
 
         set_alignment(header, horizontal_alignment="left")
 
-        rng = rng.sheet.range(rng, rng.offset(0, len(values_list)))
+        rng = self.sheet.range(rng, rng.offset(0, len(values_list)))
         if number_format:
             rng.number_format = number_format
 
         if autofit:
-            self.range(column, -1).autofit()
+            self.range(column, -1).impl.autofit()
 
         if style:
             self.set_style()
@@ -613,7 +614,7 @@ class SheetFrame:
 
     def __setitem__(self, column: str | tuple, value: ArrayLike) -> None:
         if column in self:
-            rng = self.range(column)
+            rng = self.range(column).impl
         elif isinstance(column, str):
             rng = self.add_column(column)
         else:
@@ -792,7 +793,7 @@ class SheetFrame:
         return GroupBy(self, by, sort=sort)
 
     def get_number_format(self, column: str | tuple) -> str:
-        return self.range(column, 0).number_format
+        return self.range(column, 0).impl.number_format
 
     def set_number_format(
         self,
@@ -820,7 +821,7 @@ class SheetFrame:
                 column_name = column if isinstance(column, str) else column[0]
 
                 if re.match(pattern, column_name):
-                    rng = self.range(column)
+                    rng = self.range(column).impl
                     rng.number_format = number_format
                     if autofit:
                         rng.autofit()
