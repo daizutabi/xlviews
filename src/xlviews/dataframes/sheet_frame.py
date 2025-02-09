@@ -8,7 +8,7 @@ from itertools import chain, takewhile
 from typing import TYPE_CHECKING, TypeAlias, overload
 
 import xlwings as xw
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
@@ -640,6 +640,37 @@ class SheetFrame:
         start = self.row + self.columns_level
         end = start + len(self) - 1
         return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
+
+    def get_address(
+        self,
+        columns: str | list[str] | None = None,
+        **kwargs,
+    ) -> Series | DataFrame:
+        if isinstance(columns, str):
+            return self.get_address([columns], **kwargs)[columns]
+
+        rngs = self.column_range(columns)
+
+        if columns is None:
+            columns = self.value_columns
+
+        values = [list(r.iter_addresses(**kwargs)) for r in rngs]
+        df = DataFrame(values, index=columns).T
+
+        if self.has_index and self.index_columns[0]:
+            index = self._index_frame()
+            if len(index.columns) == 1:
+                df.index = Index(index[index.columns[0]])
+            else:
+                df.index = MultiIndex.from_frame(index)
+
+        return df
+
+    def _index_frame(self) -> DataFrame:
+        start = self.cell.offset(self.columns_level - 1)
+        end = start.offset(len(self), self.index_level - 1)
+        rng = self.sheet.range(start, end)
+        return rng.options(DataFrame).value.reset_index()  # type: ignore
 
     @overload
     def agg(

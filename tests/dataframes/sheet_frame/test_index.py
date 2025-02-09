@@ -109,3 +109,11 @@ def test_data(sf: SheetFrame, df: DataFrame):
 )
 def test_range(sf: SheetFrame, column, offset, address):
     assert sf.range(column, offset).get_address() == address
+
+
+def test_get_address(sf: SheetFrame):
+    df = sf.get_address(row_absolute=False, column_absolute=False, formula=True)
+    assert df.columns.to_list() == ["a", "b"]
+    assert df.index.name == "name"
+    assert df.index.to_list() == ["x", "x", "y", "y"]
+    assert df.to_numpy()[0, 0] == "=D3"

@@ -136,3 +136,17 @@ def test_setitem_new_column(sheet: Sheet):
     sf["c"] = x
     assert sf.columns == [None, "a", "b", "c"]
     np.testing.assert_array_equal(sf.data["c"], x)
+
+
+def test_get_address(sf: SheetFrame):
+    df = sf.get_address()
+    assert df.columns.to_list() == ["a", "b"]
+    assert df.index.to_list() == [0, 1, 2, 3]
+    assert df.loc[0, "a"] == "$C$3"
+    assert df.loc[0, "b"] == "$D$3"
+    assert df.loc[1, "a"] == "$C$4"
+    assert df.loc[1, "b"] == "$D$4"
+    assert df.loc[2, "a"] == "$C$5"
+    assert df.loc[2, "b"] == "$D$5"
+    assert df.loc[3, "a"] == "$C$6"
+    assert df.loc[3, "a"] == "$C$6"

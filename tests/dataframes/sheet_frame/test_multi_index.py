@@ -149,3 +149,10 @@ def test_groupby_list(sf: SheetFrame):
     assert g[(1, 2)] == [(13, 14)]
     assert g[(2, 1)] == [(15, 16)]
     assert g[(2, 2)] == [(17, 18)]
+
+
+def test_get_address(sf: SheetFrame):
+    df = sf.get_address(row_absolute=False, column_absolute=False, formula=True)
+    assert df.columns.to_list() == ["a", "b"]
+    assert df.index.names == ["x", "y"]
+    assert df.to_numpy()[0, 0] == "=H11"

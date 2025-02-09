@@ -86,7 +86,7 @@ class DistFrame(SheetFrame):
                 set_formula(cell.offset(0, 2), length, formula)
 
         for column in columns:
-            fmt = self.parent.range(column).number_format
+            fmt = self.parent.range(column).impl.number_format
             self.set_number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
 
         if style:
