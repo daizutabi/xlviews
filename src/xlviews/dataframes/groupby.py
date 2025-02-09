@@ -5,15 +5,14 @@ from typing import TYPE_CHECKING, TypeVar, overload
 
 import numpy as np
 from pandas import DataFrame, MultiIndex, Series
-from xlwings import Range
 
 from xlviews.range.formula import aggregate
+from xlviews.range.range import Range
+from xlviews.range.range_collection import RangeCollection
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-
-    from xlviews.range.range_collection import RangeCollection
 
     from .sheet_frame import SheetFrame
 
@@ -122,35 +121,56 @@ class GroupBy:
     def __getitem__(self, key: tuple) -> list[tuple[int, int]]:
         return self.group[key]
 
-    def range(self, column: str, key: tuple) -> RangeCollection:
-        return self.sf.range(column, self[key])
-
-    def first_range(self, column: str, key: tuple) -> Range:
-        return self.sf.range(column, self[key][0][0])
+    @overload
+    def range(self, columns: str, key: tuple) -> RangeCollection: ...
 
     @overload
-    def ranges(self, column: str) -> Iterator[RangeCollection]: ...
+    def range(self, columns: list[str] | None, key: tuple) -> list[RangeCollection]: ...
+
+    def range(
+        self,
+        columns: str | list[str] | None,
+        key: tuple,
+    ) -> RangeCollection | list[RangeCollection]:
+        if isinstance(columns, str):
+            return self.range([columns], key)[0]
+
+        idx = self.sf.column_index(columns)
+        row = self[key]
+
+        return [RangeCollection.from_index(row, i, self.sf.sheet) for i in idx]
 
     @overload
-    def ranges(self, column: tuple) -> Iterator[Range]: ...
+    def first_range(self, columns: str, key: tuple) -> Range: ...
 
     @overload
-    def ranges(self, column: None = None, **kwargs) -> Iterator[Iterator[Range]]: ...
+    def first_range(self, columns: list[str] | None, key: tuple) -> list[Range]: ...
+
+    def first_range(
+        self,
+        columns: str | list[str] | None,
+        key: tuple,
+    ) -> Range | list[Range]:
+        if isinstance(columns, str):
+            return self.first_range([columns], key)[0]
+
+        idx = self.sf.column_index(columns)
+        row = self[key][0][0]
+
+        return [Range((row, i), sheet=self.sf.sheet) for i in idx]
+
+    @overload
+    def ranges(self, columns: str) -> Iterator[RangeCollection]: ...
+
+    @overload
+    def ranges(self, columns: list[str] | None) -> Iterator[list[RangeCollection]]: ...
 
     def ranges(
         self,
-        column: str | tuple | None = None,
-        **kwargs,
-    ) -> Iterator[RangeCollection | Range | Iterator[Range]]:
-        if isinstance(column, str):
-            for key in self:
-                yield self.range(column, key)
-        elif column is None:
-            for column in self:
-                yield self.ranges(column, **kwargs)
-        else:
-            kwargs.update(dict(zip(self.by, column, strict=True)))
-            yield from self.sf.ranges(**kwargs)
+        columns: str | list[str] | None = None,
+    ) -> Iterator[RangeCollection | list[RangeCollection]]:
+        for key in self:
+            yield self.range(columns, key)
 
     def first_ranges(self, column: str) -> Iterator[Range]:
         for key in self:
