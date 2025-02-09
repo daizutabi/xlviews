@@ -74,7 +74,7 @@ def delete(sf: SheetFrame, direction: str = "up", *, entire: bool = False) -> No
         direction (str): 'up' or 'left'
         entire (bool): Whether to delete the entire row/column.
     """
-    rng = sf.range()
+    rng = sf.expand()
     start = rng[0].offset(-1, -1)
     end = rng[-1].offset(1, 1)
 
