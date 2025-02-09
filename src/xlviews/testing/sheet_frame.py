@@ -100,7 +100,11 @@ class WideColumn(FrameContainer):
 
     @classmethod
     def dataframe(cls) -> DataFrame:
-        df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
+        x = ["i", "i", "j", "j", "i"]
+        y = ["k", "l", "k", "l", "k"]
+        a = list(range(5))
+        b = list(range(10, 15))
+        df = DataFrame({"x": x, "y": y, "a": a, "b": b})
         return df.set_index(["x", "y"])
 
     def init(self) -> None:

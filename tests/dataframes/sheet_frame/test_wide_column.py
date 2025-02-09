@@ -36,17 +36,17 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
 def test_expand(sf: SheetFrame):
     v = sf.expand().options(ndim=2).value
     assert v
-    assert len(v) == 3
+    assert len(v) == 6
     assert v[0] == ["x", "y", "a", "b", *range(3), *range(4)]
-    assert v[1] == ["i", "k", 1, 3, *([None] * 7)]
-    assert v[2] == ["j", "l", 2, 4, *([None] * 7)]
+    assert v[1] == ["i", "k", 0, 10, *([None] * 7)]
+    assert v[2] == ["i", "l", 1, 11, *([None] * 7)]
 
     assert sf.cell.offset(-1, 4).value == "u"
     assert sf.cell.offset(-1, 7).value == "v"
 
 
 def test_len(sf: SheetFrame):
-    assert len(sf) == 2
+    assert len(sf) == 5
 
 
 def test_columns(sf: SheetFrame):
@@ -116,13 +116,13 @@ def test_data(sf: SheetFrame, df: DataFrame):
     [
         ("x", -1, "$B$4"),
         ("y", 0, "$C$5"),
-        ("a", None, "$D$5:$D$6"),
+        ("a", None, "$D$5:$D$9"),
         (("u", 0), -1, "$F$3:$F$4"),
         (("u", 2), 0, "$H$5"),
-        (("v", 0), None, "$I$5:$I$6"),
+        (("v", 0), None, "$I$5:$I$9"),
         ("u", -1, "$F$3:$H$4"),
         ("u", 0, "$F$5:$H$5"),
-        ("v", None, "$I$5:$L$6"),
+        ("v", None, "$I$5:$L$9"),
     ],
 )
 def test_range_column(sf: SheetFrame, column, offset, address):
@@ -131,7 +131,7 @@ def test_range_column(sf: SheetFrame, column, offset, address):
 
 @pytest.mark.parametrize(
     ("column", "value"),
-    [("a", [1, 2]), (("u", 1), [np.nan, np.nan])],
+    [("a", [0, 1, 2, 3, 4]), (("u", 1), [np.nan] * 5)],
 )
 def test_getitem_str(sf: SheetFrame, column, value):
     s = sf[column]
@@ -144,5 +144,5 @@ def test_getitem_list(sf: SheetFrame):
     df = sf[["b", ("v", 3)]]
     assert isinstance(df, DataFrame)
     assert df.columns.to_list() == ["b", ("v", 3)]
-    x = [[3, np.nan], [4, np.nan]]
+    x = [[10, np.nan], [11, np.nan], [12, np.nan], [13, np.nan], [14, np.nan]]
     np.testing.assert_array_equal(df, x)
