@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
@@ -24,22 +24,6 @@ def df(fc: FrameContainer):
 @pytest.fixture(scope="module")
 def sf(fc: FrameContainer):
     return fc.sf
-
-
-def test_df(df: DataFrame):
-    assert len(df) == 8
-    assert df.shape == (8, 4)
-
-    x = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-    assert df.columns.to_list() == x
-    assert df.columns.names == ["a", "b"]
-    assert isinstance(df.columns, MultiIndex)
-
-    x = [(1, 1, 1), (1, 1, 1), (1, 2, 1), (1, 2, 2), (2, 1, 2), (2, 1, 1)]
-    x += [(2, 2, 1), (2, 2, 1)]
-    assert df.index.to_list() == x
-    assert df.index.names == ["x", "y", "z"]
-    assert isinstance(df.index, MultiIndex)
 
 
 def test_value_column(sf: SheetFrame):
@@ -84,6 +68,15 @@ def test_set_data_from_sheet(sf: SheetFrame):
     assert sf.value_columns == c
 
 
+def test_expand(sf: SheetFrame):
+    v = sf.expand().options(ndim=2).value
+    assert v
+    assert len(v) == 10
+    assert v[0] == [None, None, None, "a1", "a1", "a2", "a2"]
+    assert v[1] == ["x", "y", "z", "b1", "b2", "b1", "b2"]
+    assert v[-1] == [2, 2, 1, 8, 18, 28, 38]
+
+
 def test_len(sf: SheetFrame):
     assert len(sf) == 8
 
@@ -103,14 +96,6 @@ def test_index_columns(sf: SheetFrame):
     assert sf.index_columns == ["x", "y", "z"]
 
 
-def test_init_index_false(df: DataFrame, sheet: Sheet):
-    sf = SheetFrame(2, 3, data=df, index=False, style=False, sheet=sheet)
-
-    assert sf.index_level == 0
-    c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-    assert sf.columns == c
-
-
 def test_contains(sf: SheetFrame):
     assert "x" in sf
     assert "z" in sf
@@ -125,18 +110,15 @@ def test_iter(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(
-    ("column", "relative", "index"),
+    ("column", "index"),
     [
-        ("x", True, 1),
-        ("z", False, 5),
-        (("a1", "b1"), True, 4),
-        (("a1", "b1"), False, 6),
-        (["y", ("a2", "b1")], True, [2, 6]),
-        (["x", ("a2", "b2")], False, [3, 9]),
+        ("z", 5),
+        (("a1", "b1"), 6),
+        (["x", ("a2", "b2")], [3, 9]),
     ],
 )
-def test_index(sf: SheetFrame, column, relative, index):
-    assert sf.index(column, relative=relative) == index
+def test_index(sf: SheetFrame, column, index):
+    assert sf.index(column) == index
 
 
 def test_index_error(sf: SheetFrame):
@@ -153,64 +135,19 @@ def test_data(sf: SheetFrame, df: DataFrame):
     assert df_.index.name == df.index.name
 
 
-def test_range_all(sf: SheetFrame):
-    assert sf._range_all(True).get_address() == "$C$5:$I$14"
-    assert sf.range().get_address() == "$C$5:$I$14"
-
-
-def test_range_all_index_false(sf: SheetFrame):
-    assert sf._range_all(False).get_address() == "$F$7:$I$14"
-    assert sf.range(index=False).get_address() == "$F$7:$I$14"
-
-
 @pytest.mark.parametrize(
-    ("start", "end", "address"),
+    ("column", "offset", "address"),
     [
-        (False, None, "$C$5:$E$14"),
-        (-1, None, "$C$5:$E$6"),
-        (0, None, "$C$7:$E$7"),
-        (None, None, "$C$7:$E$14"),
-        (20, None, "$C$20:$E$20"),
-        (20, 100, "$C$20:$E$100"),
+        ("x", -1, "$C$5:$C$6"),
+        ("y", 0, "$D$7"),
+        ("z", None, "$E$7:$E$14"),
+        (("a1", "b1"), -1, "$F$5:$F$6"),
+        (("a1", "b2"), 0, "$G$7"),
+        (("a2", "b1"), None, "$H$7:$H$14"),
     ],
 )
-def test_range_index(sf: SheetFrame, start, end, address):
-    assert sf._range_index(start, end).get_address() == address
-    assert sf.range("index", start, end).get_address() == address
-
-
-@pytest.mark.parametrize(
-    ("column", "start", "end", "address"),
-    [
-        ("x", -1, None, "$C$5:$C$6"),
-        ("y", 0, None, "$D$7"),
-        ("z", None, None, "$E$7:$E$14"),
-        (("a2", "b2"), False, None, "$I$5:$I$14"),
-        (("a1", "b1"), -1, None, "$F$5:$F$6"),
-        (("a1", "b2"), 0, None, "$G$7"),
-        (("a2", "b1"), None, None, "$H$7:$H$14"),
-        ("y", 30, None, "$D$30"),
-        (("a1", "b2"), 30, 40, "$G$30:$G$40"),
-    ],
-)
-def test_range_column(sf: SheetFrame, column, start, end, address):
-    assert sf._range_column(column, start, end).get_address() == address
-    assert sf.range(column, start, end).get_address() == address
-
-
-def test_getitem_str(sf: SheetFrame):
-    s = sf["x"]
-    assert isinstance(s, Series)
-    assert s.name == "x"
-    np.testing.assert_array_equal(s, [1, 1, 1, 1, 2, 2, 2, 2])
-
-
-def test_getitem_list(sf: SheetFrame):
-    df = sf[["z", ("a1", "b1")]]
-    assert isinstance(df, DataFrame)
-    assert df.columns.to_list() == ["z", ("a1", "b1")]
-    x = np.array([[1, 1, 1, 2, 2, 1, 1, 1], range(1, 9)]).T
-    np.testing.assert_array_equal(df, x)
+def test_range_column(sf: SheetFrame, column, offset, address):
+    assert sf.range(column, offset).get_address() == address
 
 
 @pytest.mark.parametrize(

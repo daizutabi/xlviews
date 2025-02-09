@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from xlwings.constants import Direction
 
-from xlviews.utils import int_to_column_name
+from xlviews.range.address import index_to_column_name
 
 if TYPE_CHECKING:
     from xlwings import Range
@@ -31,8 +31,8 @@ def _move_right(sf: SheetFrame, count: int, width: int) -> Range:
     start = sf.column - 1
     end = start + count - 1
 
-    start_name = int_to_column_name(start)
-    end_name = int_to_column_name(end)
+    start_name = index_to_column_name(start)
+    end_name = index_to_column_name(end)
     columns_name = f"{start_name}:{end_name}"
 
     columns = sf.sheet.api.Columns(columns_name)
@@ -74,7 +74,7 @@ def delete(sf: SheetFrame, direction: str = "up", *, entire: bool = False) -> No
         direction (str): 'up' or 'left'
         entire (bool): Whether to delete the entire row/column.
     """
-    rng = sf.range()
+    rng = sf.expand()
     start = rng[0].offset(-1, -1)
     end = rng[-1].offset(1, 1)
 

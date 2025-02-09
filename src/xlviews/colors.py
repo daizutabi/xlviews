@@ -1,3 +1,51 @@
+from __future__ import annotations
+
+
+def rgb(
+    color: int | tuple[int, int, int] | str,
+    green: int | None = None,
+    blue: int | None = None,
+) -> int:
+    """Return the RGB color integer.
+
+    Args:
+        color (int, tuple[int, int, int], or str): The color or red value.
+        green (int): The green value.
+        blue (int): The blue value.
+
+    Examples:
+        >>> rgb(4)
+        4
+
+        >>> rgb((100, 200, 40))
+        2672740
+
+        >>> rgb("pink")
+        13353215
+
+        >>> rgb("#123456")
+        5649426
+    """
+    if isinstance(color, int) and green is None and blue is None:
+        return color
+
+    if all(isinstance(x, int) for x in [color, green, blue]):
+        return color + green * 256 + blue * 256 * 256  # type: ignore
+
+    if isinstance(color, str):
+        color = cnames.get(color, color)
+
+        if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
+            raise ValueError("Invalid color format. Expected #xxxxxx.")
+
+        return rgb(int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16))
+
+    if isinstance(color, tuple):
+        return rgb(*color)
+
+    raise ValueError("Invalid color format. Expected #xxxxxx.")
+
+
 cnames = {
     "aliceblue": "#F0F8FF",
     "antiquewhite": "#FAEBD7",

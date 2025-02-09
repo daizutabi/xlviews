@@ -6,7 +6,7 @@ import xlwings as xw
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
-from xlviews.colors import cnames
+from xlviews.colors import rgb
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -40,72 +40,6 @@ def constant(type_: str, name: str | None = None) -> int:
     type_ = getattr(xw.constants, type_)
 
     return getattr(type_, name)
-
-
-def int_to_column_name(n: int) -> str:
-    """Return the Excel column name from an integer.
-
-    Examples:
-        >>> int_to_column_name(1)
-        'A'
-        >>> int_to_column_name(26)
-        'Z'
-        >>> int_to_column_name(27)
-        'AA'
-    """
-    name = ""
-
-    while n > 0:
-        n -= 1
-        name = chr(n % 26 + 65) + name
-        n //= 26
-
-    return name
-
-
-def rgb(
-    color: int | tuple[int, int, int] | str,
-    green: int | None = None,
-    blue: int | None = None,
-) -> int:
-    """Return the RGB color integer.
-
-    Args:
-        color (int, tuple[int, int, int], or str): The color or red value.
-        green (int): The green value.
-        blue (int): The blue value.
-
-    Examples:
-        >>> rgb(4)
-        4
-
-        >>> rgb((100, 200, 40))
-        2672740
-
-        >>> rgb("pink")
-        13353215
-
-        >>> rgb("#123456")
-        5649426
-    """
-    if isinstance(color, int) and green is None and blue is None:
-        return color
-
-    if all(isinstance(x, int) for x in [color, green, blue]):
-        return color + green * 256 + blue * 256 * 256  # type: ignore
-
-    if isinstance(color, str):
-        color = cnames.get(color, color)
-
-        if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
-            raise ValueError("Invalid color format. Expected #xxxxxx.")
-
-        return rgb(int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16))
-
-    if isinstance(color, tuple):
-        return rgb(*color)
-
-    raise ValueError("Invalid color format. Expected #xxxxxx.")
 
 
 def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterator[str]:

@@ -4,7 +4,6 @@ from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import xlwings as xw
-from xlwings import Range
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
@@ -28,8 +27,10 @@ if TYPE_CHECKING:
     from typing import Any
 
     from xlwings import Chart, Sheet
+    from xlwings import Range as RangeImpl
 
     from xlviews.dataframes.sheet_frame import SheetFrame
+    from xlviews.range.range import Range
 
 FIRST_POSITION = {"left": 50, "top": 50}
 
@@ -156,7 +157,7 @@ class Axes:
         self,
         x: Any,
         y: Any | None = None,
-        label: str | tuple[int, int] | Range = "",
+        label: str | tuple[int, int] | Range | RangeImpl = "",
         chart_type: int | None = None,
         sheet: Sheet | None = None,
     ) -> Series:
@@ -180,12 +181,12 @@ class Axes:
         return None
 
     @title.setter
-    def title(self, value: str | tuple[int, int] | Range | None) -> None:
+    def title(self, value: str | tuple[int, int] | Range | RangeImpl | None) -> None:
         self.set_title(value)
 
     def set_title(
         self,
-        title: str | tuple[int, int] | Range | None = None,
+        title: str | tuple[int, int] | Range | RangeImpl | None = None,
         *,
         name: str | None = None,
         size: int | None = None,
@@ -210,7 +211,7 @@ class Axes:
         return get_axis_label(self.xaxis)
 
     @xlabel.setter
-    def xlabel(self, value: str | tuple[int, int] | Range | None) -> None:
+    def xlabel(self, value: str | tuple[int, int] | Range | RangeImpl | None) -> None:
         self.set_xlabel(value)
 
     @property
@@ -218,12 +219,12 @@ class Axes:
         return get_axis_label(self.yaxis)
 
     @ylabel.setter
-    def ylabel(self, value: str | tuple[int, int] | Range | None) -> None:
+    def ylabel(self, value: str | tuple[int, int] | Range | RangeImpl | None) -> None:
         self.set_ylabel(value)
 
     def set_xlabel(
         self,
-        label: str | tuple[int, int] | Range | None = None,
+        label: str | tuple[int, int] | Range | RangeImpl | None = None,
         sheet: Sheet | None = None,
         **kwargs,
     ) -> None:
@@ -232,7 +233,7 @@ class Axes:
 
     def set_ylabel(
         self,
-        label: str | tuple[int, int] | Range | None = None,
+        label: str | tuple[int, int] | Range | RangeImpl | None = None,
         sheet: Sheet | None = None,
         **kwargs,
     ) -> None:
@@ -285,8 +286,8 @@ class Axes:
 
     def set(
         self,
-        xlabel: str | tuple[int, int] | Range | None = "",
-        ylabel: str | tuple[int, int] | Range | None = "",
+        xlabel: str | tuple[int, int] | Range | RangeImpl | None = "",
+        ylabel: str | tuple[int, int] | Range | RangeImpl | None = "",
         xticks: tuple[float, ...] | None = None,
         yticks: tuple[float, ...] | None = None,
         xscale: str | None = None,

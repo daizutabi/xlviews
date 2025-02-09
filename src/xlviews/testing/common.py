@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import xlwings as xw
 from pywintypes import com_error
@@ -73,9 +73,12 @@ class FrameContainer:
             self.row,
             self.column,
             style=style,
-            **kwargs,
+            **self.kwargs(**kwargs),
         )
         self.init()
+
+    def kwargs(self, **kwargs) -> dict[str, Any]:
+        return kwargs
 
     def init(self) -> None:
         pass

@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from pandas import DataFrame
 from xlwings import Sheet
@@ -14,17 +15,39 @@ def sf(sheet: Sheet):
     return SheetFrame(3, 3, data=df, style=False, sheet=sheet)
 
 
+def test_index_false(sheet: Sheet):
+    df = DataFrame({"a": [1, 2], "b": [2, 4]})
+    sf = SheetFrame(2, 3, data=df, index=False, style=False, sheet=sheet)
+    assert sf.columns == ["a", "b"]
+    assert sf.index_level == 0
+
+
+def test_row_one(sheet: Sheet):
+    df = DataFrame({"a": [1], "b": [2]})
+    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    assert len(sf) == 1
+    np.testing.assert_array_equal(sf.data["a"], [1])
+
+
+def test_column_one(sheet: Sheet):
+    df = DataFrame({"a": [1, 2, 3]})
+    sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
+    assert len(sf) == 3
+    assert sf.columns == ["a"]
+    np.testing.assert_array_equal(sf.data["a"], [1, 2, 3])
+
+
 @pytest.mark.parametrize("number_format", ["0", "0.00", "0.00%"])
 def test_number_format(sf: SheetFrame, number_format: str):
     sf.set_number_format(number_format, autofit=True)
-    assert sf.range("a").number_format == number_format
-    assert sf.range("b").number_format == number_format
+    assert sf.range("a").impl.number_format == number_format
+    assert sf.range("b").impl.number_format == number_format
 
 
 def test_number_format_kwargs(sf: SheetFrame):
     sf.set_number_format(autofit=False, a="0", b="0.0")
-    assert sf.range("a").number_format == "0"
-    assert sf.range("b").number_format == "0.0"
+    assert sf.range("a").impl.number_format == "0"
+    assert sf.range("b").impl.number_format == "0.0"
 
 
 def test_number_format_dict(sf: SheetFrame):

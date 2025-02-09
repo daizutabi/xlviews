@@ -2,20 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlwings import Range
+from xlwings import Range as RangeImpl
 
-from .address import iter_addresses
+from .range import Range
+from .range_collection import RangeCollection
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-    from .range_collection import RangeCollection
 
 
 NONCONST_VALUE = "*"
 
 
-def const(rng: Range, prefix: str = "") -> str:
+def const(rng: Range | RangeImpl, prefix: str = "") -> str:
     """Return a formula to check if the values in the range are unique."""
     column = rng.get_address(column_absolute=False)
     ref = rng[0].offset(-1).get_address(column_absolute=False)
@@ -49,7 +48,7 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 
 def _aggregate(
-    func: str | Range | None,
+    func: str | Range | RangeImpl | None,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
     option: int,
     **kwargs,
@@ -59,7 +58,10 @@ def _aggregate(
         median = aggregate("median", ranges, option, **kwargs)
         return f"{std}/{median}"
 
-    column = ",".join(iter_addresses(ranges, **kwargs))
+    if isinstance(ranges, Range | RangeCollection):
+        ranges = [ranges]
+
+    column = ",".join(r.get_address(**kwargs) for r in ranges)
 
     if func is None:
         return column
@@ -67,7 +69,7 @@ def _aggregate(
     if func in AGG_FUNCS:
         return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"
 
-    if isinstance(func, Range):
+    if isinstance(func, Range | RangeImpl):
         ref = func.get_address(column_absolute=False, row_absolute=False)
         func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
         soa = aggregate("soa", ranges, option=option, **kwargs)
@@ -77,13 +79,24 @@ def _aggregate(
 
 
 def aggregate(
-    func: str | Range | None,
+    func: str | Range | RangeImpl | None,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection],
     option: int = 7,  # ignore hidden rows and error values
+    row_absolute: bool = True,
+    column_absolute: bool = True,
+    include_sheetname: bool = False,
+    external: bool = False,
     formula: bool = False,
-    **kwargs,
 ) -> str:
-    value = _aggregate(func, ranges, option, **kwargs)
+    value = _aggregate(
+        func,
+        ranges,
+        option,
+        row_absolute=row_absolute,
+        column_absolute=column_absolute,
+        include_sheetname=include_sheetname,
+        external=external,
+    )
 
     if formula:
         return f"={value}"

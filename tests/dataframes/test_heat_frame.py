@@ -96,5 +96,3 @@ if __name__ == "__main__":
 
     data = sf.get_address(["v"], formula=True)
     hf = HeatFrame(2, 6, data=data, x="x", y="y", value="v")
-
-    hf.range(index=False)

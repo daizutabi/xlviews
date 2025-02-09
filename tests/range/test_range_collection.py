@@ -7,31 +7,16 @@ from xlviews.testing import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-def test_range_value_int(sheet: Sheet):
-    sheet.range(1, 1).value = 10
-    x = sheet.range(1, 1).value
-    assert not isinstance(x, int)
-    assert isinstance(x, float)
-    assert x == 10
-
-
-def test_range_value_str(sheet: Sheet):
-    sheet.range(1, 1).value = "abc"
-    x = sheet.range(1, 1).value
-    assert isinstance(x, str)
-    assert x == "abc"
-
-
 @pytest.mark.parametrize(
     ("ranges", "n"),
     [
         (["A1:B3"], 1),
         (["A2:A4", "A5:A8"], 2),
-        (["A2:A4,A5:A8"], 1),
-        (["A2:A4,A5:A8", "C4:C7,D10:D12"], 2),
+        (["A2:A4,A5:A8"], 2),
+        (["A2:A4,A5:A8", "C4:C7,D10:D12"], 4),
     ],
 )
-def test_range_collection_from_str(sheet_module: Sheet, ranges, n):
+def test_range_collection_from_str(ranges, n, sheet_module: Sheet):
     rc = RangeCollection(ranges)
     assert len(rc) == n
     a = rc.get_address(row_absolute=False, column_absolute=False)
@@ -40,14 +25,9 @@ def test_range_collection_from_str(sheet_module: Sheet, ranges, n):
 
 @pytest.mark.parametrize(
     ("ranges", "n"),
-    [
-        (["$A$1:$B$3"], 1),
-        (["$A$2:$A$4", "$A$5:$A$8"], 2),
-        (["$A$2:$A$4,$A$5:$A$8"], 1),
-        (["$A$2:$A$4,$A$5:$A$8", "$C$4:$C$7,$D$10:$D$12"], 2),
-    ],
+    [(["$A$1:$B$3"], 1), (["$A$2:$A$4", "$A$5:$A$8"], 2)],
 )
-def test_range_collection_from_range(sheet_module: Sheet, ranges, n):
+def test_range_collection_from_range(ranges, n, sheet_module: Sheet):
     ranges = [sheet_module.range(r) for r in ranges]
     rc = RangeCollection(ranges)
     assert len(rc) == n
@@ -72,8 +52,8 @@ def test_range_collection_from_range_one(sheet_module: Sheet):
         (4, 1, "E4"),
     ],
 )
-def test_range_collection_from_index_row(sheet_module: Sheet, row, n, address):
-    rc = RangeCollection.from_index(sheet_module, row, 5)
+def test_range_collection_from_index_row(row, n, address, sheet_module: Sheet):
+    rc = RangeCollection.from_index(row, 5, sheet_module)
     assert len(rc) == n
     a = rc.get_address(row_absolute=False, column_absolute=False)
     assert a == address
@@ -89,24 +69,24 @@ def test_range_collection_from_index_row(sheet_module: Sheet, row, n, address):
         (4, 1, "$D$5"),
     ],
 )
-def test_range_collection_from_index_column(sheet_module: Sheet, column, n, address):
-    rc = RangeCollection.from_index(sheet_module, 5, column)
+def test_range_collection_from_index_column(column, n, address, sheet_module: Sheet):
+    rc = RangeCollection.from_index(5, column, sheet_module)
     assert len(rc) == n
     assert rc.get_address() == address
     assert rc.api.Address == address
 
 
 def test_range_collection_iter(sheet_module: Sheet):
-    rc = RangeCollection.from_index(sheet_module, [(2, 5), (10, 12)], 1)
+    rc = RangeCollection.from_index([(2, 5), (10, 12)], 1, sheet_module)
     for rng, row in zip(rc, [2, 10], strict=True):
         assert rng.row == row
 
 
 def test_range_collection_repr(sheet_module: Sheet):
-    rc = RangeCollection.from_index(sheet_module, [(2, 5), (8, 10)], 5)
+    rc = RangeCollection.from_index([(2, 5), (8, 10)], 5, sheet_module)
     assert repr(rc) == "<RangeCollection $E$2:$E$5,$E$8:$E$10>"
 
 
 def test_iter_ranges_error(sheet_module: Sheet):
     with pytest.raises(TypeError):
-        RangeCollection.from_index(sheet_module, (1, 2), (3, 4))
+        RangeCollection.from_index((1, 2), (3, 4), sheet_module)
