@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from xlwings.constants import Direction
 
@@ -37,13 +38,9 @@ class StatsGroupBy(GroupBy):
     def iter_formulas(
         self,
         column: str,
-        funcs: list[str] | dict[str, str],
-        default: str = "median",
+        funcs: list[str],
     ) -> Iterator[str]:
         for ranges in self.ranges(column):
-            if isinstance(funcs, dict):
-                funcs = [funcs.get(column, default)]
-
             for func in funcs:
                 yield get_formula(func, ranges)
 
@@ -52,7 +49,7 @@ class StatsGroupBy(GroupBy):
 
     def get_columns(
         self,
-        funcs: list[str] | dict[str, str],
+        funcs: list[str],
         func_column_name: str = "func",
     ) -> list[str]:
         columns = self.sf.columns
@@ -64,27 +61,43 @@ class StatsGroupBy(GroupBy):
 
     def get_values(
         self,
-        funcs: list[str] | dict[str, str],
-        default: str = "median",
+        funcs: list[str],
     ) -> NDArray[np.str_]:
         values = [self.get_index(funcs)] if isinstance(funcs, list) else []
 
         for column in self.sf.columns:
-            it = self.iter_formulas(column, funcs, default)
+            it = self.iter_formulas(column, funcs)
             values.append(list(it))
 
         return np.array(values).T
 
     def get_frame(
         self,
-        funcs: list[str] | dict[str, str],
-        default: str = "median",
+        funcs: list[str],
         func_column_name: str = "func",
     ) -> DataFrame:
-        values = self.get_values(funcs, default)
+        values = self.get_values(funcs)
         columns = self.get_columns(funcs, func_column_name)
         df = DataFrame(values, columns=columns)
         return df.set_index(columns[: -len(self.sf.value_columns)])
+
+    def get_frame2(
+        self,
+        funcs: list[str],
+        func_column_name: str = "func",
+    ) -> DataFrame:
+        df = self.agg(funcs, self.sf.value_columns, formula=True, as_address=True)
+        df = df.stack(level=1, future_stack=True)  # noqa: PD013
+
+        index = df.index.to_frame()
+        index = index.rename(columns={index.columns[-1]: func_column_name})
+
+        for c in self.sf.index_columns:
+            if c not in self.by:
+                index[c] = ""
+
+        df = pd.concat([index, df], axis=1)
+        return df.set_index([func_column_name, *self.sf.index_columns])
 
 
 def get_formula(
@@ -109,7 +122,7 @@ class StatsFrame(SheetFrame):
     def __init__(
         self,
         parent: SheetFrame,
-        funcs: str | list[str] | dict[str, str] | None = None,
+        funcs: str | list[str] | None = None,
         *,
         by: str | list[str] | None = None,
         table: bool = True,
@@ -123,15 +136,17 @@ class StatsFrame(SheetFrame):
 
         Args:
             parent (SheetFrame): The sheetframe to be aggregated.
-            funcs (str, list of str, dict, optional): The aggregation
+            funcs (str, list of str, optional): The aggregation
                 functions to be used. The following functions are supported:
                     'count', 'sum', 'min', 'max', 'mean', 'median', 'std', 'soa%'
                 None to use the default functions.
             by (str, list of str, optional): The column names to be grouped by.
-            autofilter (bool): If True, the displayed functions are limited to
-                the default ones.
             table (bool): If True, the frame is displayed in table format.
+            default (str, optional): The default function to be displayed.
+            func_column_name (str, optional): The name of the function column.
             succession (bool, optional): If True, the continuous index is hidden.
+            auto_filter (bool): If True, the displayed functions are limited to
+                the default ones.
             **kwargs: Passed to SheetFrame.__init__.
         """
         funcs = get_func(funcs)
@@ -147,7 +162,8 @@ class StatsFrame(SheetFrame):
         move_down(parent, offset)
 
         gr = StatsGroupBy(parent, by)
-        df = gr.get_frame(funcs, default, func_column_name)
+        # df = gr.get_frame(funcs, func_column_name)
+        df = gr.get_frame2(funcs, func_column_name)
 
         super().__init__(
             row,
@@ -173,7 +189,7 @@ class StatsFrame(SheetFrame):
             self.set_alignment("left")
 
         if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
-            func = "median" if "median" in funcs else funcs[0]
+            func = default if default in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
 
     def set_value_style(self, func_column_name: str) -> None:
@@ -207,9 +223,7 @@ class StatsFrame(SheetFrame):
         set_font(self.range(func_column_name), italic=True)
 
 
-def get_func(
-    func: str | list[str] | dict[str, str] | None,
-) -> list[str] | dict[str, str]:
+def get_func(func: str | list[str] | None) -> list[str]:
     if func is None:
         func = list(AGG_FUNCS.keys())
         func.remove("sum")
