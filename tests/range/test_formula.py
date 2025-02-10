@@ -54,7 +54,7 @@ def test_header(const_header: Range | RangeImpl):
 def test_const(column: Range | RangeImpl, const_header: Range | RangeImpl, k, value):
     from xlviews.range.formula import const
 
-    const_header.value = const(column, "=")
+    const_header.value = "=" + const(column)
     assert const_header.value[k] == value
 
 

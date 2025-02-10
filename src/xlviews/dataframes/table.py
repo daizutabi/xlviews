@@ -99,7 +99,7 @@ class Table:
         else:
             const_header = self.const_header[:columns]
             if const_header:
-                const_header.value = const(self.column, "=")
+                const_header.value = "=" + const(self.column)
                 set_font(const_header, size=8, italic=True, color="blue")
                 set_alignment(const_header, "center")
 
