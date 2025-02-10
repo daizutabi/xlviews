@@ -1,23 +1,32 @@
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
+from xlviews.dataframes.dist_frame import DistFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.testing import FrameContainer
+from xlviews.testing.dist_frame import Parent
 
 
 @pytest.fixture(scope="module")
-def df():
-    df = DataFrame(
-        {
-            "x": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
-            "y": [3, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 4, 4],
-            "a": [5, 4, 3, 2, 1, 4, 3, 2, 1, 3, 2, 1, 2, 1],
-            "b": [1, 2, 3, 4, 5, 1, 2, 3, 4, 1, 2, 3, 1, 2],
-        },
-    )
-    return df.set_index(["x", "y"])
+def fc(sheet_module: Sheet):
+    return Parent(sheet_module, 3, 2, style=True)
 
 
 @pytest.fixture(scope="module")
-def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(3, 2, data=df, style=False, sheet=sheet_module)
+def df_parent(fc: FrameContainer):
+    return fc.df
+
+
+@pytest.fixture(scope="module")
+def sf_parent(fc: FrameContainer):
+    return fc.sf
+
+
+@pytest.fixture(scope="module")
+def sf(sf_parent: SheetFrame):
+    return DistFrame(sf_parent, ["a", "b"], by=["x", "y"])
+
+
+@pytest.fixture(scope="module")
+def df(sf: DistFrame):
+    return sf.data

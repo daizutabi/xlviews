@@ -6,6 +6,7 @@ from xlviews.dataframes.dist_frame import DistFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.range.formula import NONCONST_VALUE
 from xlviews.testing import is_excel_installed
+from xlviews.testing.dist_frame import Parent
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
@@ -18,9 +19,9 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
         ("b", ["x", "y", "b_n", "b_v", "b_s"]),
     ],
 )
-def test_columns(df: DataFrame, sheet: Sheet, columns, values):
-    sf = SheetFrame(3, 2, data=df, style=False, sheet=sheet)
-    sf = DistFrame(sf, columns, by=["x", "y"])
+def test_columns(columns, values, sheet: Sheet):
+    fc = Parent(sheet, 3, 2)
+    sf = DistFrame(fc.sf, columns, by=["x", "y"])
     assert sf.columns == values
 
 
@@ -34,7 +35,6 @@ def test_group_error(sheet: Sheet):
         },
     )
     df = df.set_index(["x", "y"])
-
     sf = SheetFrame(3, 2, data=df, style=False, sheet=sheet)
     with pytest.raises(ValueError, match="group must be continuous"):
         sf = DistFrame(sf, None, by=["x", "y"])
@@ -53,6 +53,5 @@ def test_group_const(sheet: Sheet):
 
     sf = SheetFrame(3, 2, data=df, style=False, sheet=sheet)
     sf = sf.dist_frame(by=["x", "y"])
-
     assert sf.sheet["H20"].value == 1
     assert sf.sheet["H21"].value == NONCONST_VALUE

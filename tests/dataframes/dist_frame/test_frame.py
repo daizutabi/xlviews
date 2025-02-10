@@ -9,21 +9,14 @@ from xlviews.testing import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-def test_init_data(sf: SheetFrame):
+def test_init_data(sf_parent: SheetFrame):
     from xlviews.dataframes.dist_frame import get_init_data
 
-    df = get_init_data(sf, ["a", "b"], ["x", "y"])
+    df = get_init_data(sf_parent, ["a", "b"], ["x", "y"])
     c = ["a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]
     assert df.columns.to_list() == c
     assert df.index.names == ["x", "y"]
     assert len(df) == 14
-
-
-@pytest.fixture(scope="module")
-def sfd(sf: SheetFrame):
-    from xlviews.dataframes.dist_frame import DistFrame
-
-    return DistFrame(sf, ["a", "b"], by=["x", "y"])
 
 
 @pytest.mark.parametrize(
@@ -45,7 +38,7 @@ def sfd(sf: SheetFrame):
         ("K17", norm.ppf(2 / 3)),
     ],
 )
-def test_distframe(sfd: DistFrame, cell: str, value: float):
-    v = sfd.sheet[cell].value
+def test_value(sf: DistFrame, cell: str, value: float):
+    v = sf.sheet[cell].value
     assert v is not None
     np.testing.assert_allclose(v, value)

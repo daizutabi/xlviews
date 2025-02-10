@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 from xlwings import Range as RangeImpl
 
@@ -10,11 +10,12 @@ from .range_collection import RangeCollection
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+Func: TypeAlias = str | Range | RangeImpl | None
 
 NONCONST_VALUE = "*"
 
 
-def const(rng: Range | RangeImpl, prefix: str = "") -> str:
+def const(rng: Range | RangeImpl) -> str:
     """Return a formula to check if the values in the range are unique."""
     column = rng.get_address(column_absolute=False)
     ref = rng[0].offset(-1).get_address(column_absolute=False)
@@ -28,7 +29,7 @@ def const(rng: Range | RangeImpl, prefix: str = "") -> str:
     prod_second = f"({column}={value})"
     sumproduct = f"SUMPRODUCT({prod_first}*{prod_second})"
 
-    return f'{prefix}IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}")'
+    return f'IFNA(IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}"),"")'
 
 
 AGG_FUNCS = {
@@ -48,7 +49,7 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 
 def _aggregate(
-    func: str | Range | RangeImpl | None,
+    func: Func,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int,
     **kwargs,
@@ -74,15 +75,16 @@ def _aggregate(
 
     if isinstance(func, Range | RangeImpl):
         ref = func.get_address(column_absolute=False, row_absolute=False)
-        func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
-        soa = aggregate("soa", ranges, option=option, **kwargs)
-        return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
+    else:
+        ref = func
 
-    raise NotImplementedError
+    func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
+    soa = aggregate("soa", ranges, option=option, **kwargs)
+    return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
 
 
 def aggregate(
-    func: str | Range | RangeImpl | None,
+    func: Func,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int = 7,  # ignore hidden rows and error values
     row_absolute: bool = True,

@@ -6,39 +6,6 @@ from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_excel_installed
 
 
-def test_wrap_wrap():
-    from xlviews.dataframes.stats_frame import get_wrap
-
-    assert get_wrap(wrap="wrap") == "wrap"
-    assert get_wrap(wrap={"a": "wrap"}) == {"a": "wrap"}
-
-
-@pytest.mark.parametrize(
-    ("kwarg", "value"),
-    [("na", "IFERROR({},NA())"), ("null", 'IFERROR({},"")')],
-)
-def test_wrap_true(kwarg, value):
-    from xlviews.dataframes.stats_frame import get_wrap
-
-    assert get_wrap(**{kwarg: True}) == value  # type: ignore
-
-
-def test_wrap_list():
-    from xlviews.dataframes.stats_frame import get_wrap
-
-    x = get_wrap(na=["a", "b"], null="c")
-    assert isinstance(x, dict)
-    assert x["a"] == "IFERROR({},NA())"
-    assert x["b"] == "IFERROR({},NA())"
-    assert x["c"] == 'IFERROR({},"")'
-
-
-def test_wrap_none():
-    from xlviews.dataframes.stats_frame import get_wrap
-
-    assert get_wrap() is None
-
-
 def test_func_none():
     from xlviews.dataframes.stats_frame import get_func
 
@@ -62,7 +29,7 @@ def test_func_else(func):
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 @pytest.mark.parametrize(
     ("funcs", "n"),
-    [(["mean"], 4), (["min", "max", "median"], 12), ({"a": "count"}, 4)],
+    [(["mean"], 4), (["min", "max", "median"], 12)],
 )
 def test_length(sf_parent: SheetFrame, funcs, n):
     from xlviews.dataframes.stats_frame import get_length
@@ -75,13 +42,6 @@ def test_length_none_list(sf_parent: SheetFrame):
     from xlviews.dataframes.stats_frame import get_length
 
     assert get_length(sf_parent, [], ["min", "max"]) == 2
-
-
-@pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
-def test_length_none_dict(sf_parent: SheetFrame):
-    from xlviews.dataframes.stats_frame import get_length
-
-    assert get_length(sf_parent, [], {"a": "mean"}) == 1
 
 
 @pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

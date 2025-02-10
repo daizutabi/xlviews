@@ -1,37 +1,38 @@
-from itertools import product
-
 import numpy as np
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.heat_frame import HeatFrame
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_excel_installed
+from xlviews.testing.heat_frame.base import Base
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def sf(sheet_module: Sheet):
-    values = list(product(range(1, 5), range(1, 7)))
-    df = DataFrame(values, columns=["x", "y"])
-    df["v"] = list(range(len(df)))
-    df = df[(df["x"] + df["y"]) % 4 != 0]
-    df = df.set_index(["x", "y"])
+def fc(sheet_module: Sheet):
+    return Base(sheet_module)
 
-    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
-    data = sf.get_address(["v"], formula=True)
 
-    return HeatFrame(2, 6, data=data, x="x", y="y", value="v", sheet=sheet_module)
+@pytest.fixture(scope="module")
+def sf(fc: Base):
+    return HeatFrame(2, 6, data=fc.sf, x="x", y="y", value="v", sheet=fc.sf.sheet)
 
 
 def test_index(sf: HeatFrame):
     assert sf.sheet.range("F3:F8").value == [1, 2, 3, 4, 5, 6]
 
 
+def test_index_from_df(sf: HeatFrame):
+    assert sf.df.index.to_list() == [1, 2, 3, 4, 5, 6]
+
+
 def test_columns(sf: HeatFrame):
     assert sf.sheet.range("G2:J2").value == [1, 2, 3, 4]
+
+
+def test_columns_from_df(sf: HeatFrame):
+    assert sf.df.columns.to_list() == [1, 2, 3, 4]
 
 
 @pytest.mark.parametrize(
@@ -80,19 +81,3 @@ def test_colorbar(sf: HeatFrame, i: int, value: int):
     v = sf.sheet.range(f"L{i}").value
     assert isinstance(v, float)
     np.testing.assert_allclose(v, value)
-
-
-if __name__ == "__main__":
-    from xlviews.testing import create_sheet
-
-    sheet = create_sheet()
-
-    values = list(product(range(1, 5), range(1, 7)))
-    df = DataFrame(values, columns=["x", "y"])
-    df["v"] = list(range(len(df)))
-    df = df[(df["x"] + df["y"]) % 4 != 0]
-    df = df.set_index(["x", "y"])
-    sf = SheetFrame(2, 2, data=df, index=True)  # type: ignore
-
-    data = sf.get_address(["v"], formula=True)
-    hf = HeatFrame(2, 6, data=data, x="x", y="y", value="v")

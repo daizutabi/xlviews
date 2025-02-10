@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 import numpy as np
 from pandas import DataFrame, MultiIndex, Series
+from xlwings import Range as RangeImpl
 
-from xlviews.range.formula import aggregate
+from xlviews.range.formula import Func, aggregate
 from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
 from xlviews.utils import iter_columns
@@ -18,8 +19,6 @@ if TYPE_CHECKING:
 
 H = TypeVar("H")
 T = TypeVar("T")
-
-Func: TypeAlias = str | Range | None
 
 
 def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
@@ -182,25 +181,43 @@ class GroupBy:
         self,
         *,
         as_address: bool = False,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> DataFrame:
-        if as_address:
-            cs = self.sf.columns
-            column = self.sf.column
-            idx = [cs.index(c) + column for c in self.by]
-            it = zip(self.by, idx, strict=True)
-            values = {c: self._agg_column("first", i, **kwargs) for c, i in it}
-            return DataFrame(values)
+        if not as_address:
+            values = self.keys()
+            return DataFrame(values, columns=self.by)
 
-        values = self.keys()
-        return DataFrame(values, columns=self.by)
+        cs = self.sf.columns
+        column = self.sf.column
+        idx = [cs.index(c) + column for c in self.by]
+
+        agg = partial(
+            self._agg_column,
+            "first",
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
+
+        values = {c: agg(i) for c, i in zip(self.by, idx, strict=True)}
+        return DataFrame(values)
 
     def agg(
         self,
         func: Func | dict | Sequence[Func],
         columns: str | list[str] | None = None,
         as_address: bool = False,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> DataFrame:
         if self.sf.columns_level != 1:
             raise NotImplementedError
@@ -215,26 +232,41 @@ class GroupBy:
         if columns is None:
             columns = self.sf.value_columns
 
-        index_df = self.index(as_address=as_address, **kwargs)
+        index_df = self.index(
+            as_address=as_address,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
         index = MultiIndex.from_frame(index_df)
 
-        agg = partial(self._agg_column, **kwargs)
+        agg = partial(
+            self._agg_column,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
 
         if isinstance(func, dict):
-            it = zip(columns, idx, func.values(), strict=True)
-            return DataFrame({c: agg(f, i) for c, i, f in it}, index=index)
+            it = zip(func.values(), idx, strict=True)
+            values = np.array([list(agg(f, i)) for f, i in it]).T
+            return DataFrame(values, index=index, columns=columns)
 
-        if func is None or isinstance(func, str | Range):
-            it = zip(columns, idx, strict=True)
-            return DataFrame({c: agg(func, i) for c, i in it}, index=index)
+        if func is None or isinstance(func, str | Range | RangeImpl):
+            values = np.array([list(agg(func, i)) for i in idx]).T
+            return DataFrame(values, index=index, columns=columns)
 
-        it = zip(columns, idx, strict=True)
-        values = {(c, f): agg(f, i) for c, i in it for f in func}
-        return DataFrame(values, index=index)
+        values = np.array([list(agg(f, i)) for i in idx for f in func]).T
+        m_columns = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
+        return DataFrame(values, index=index, columns=m_columns)
 
     def _agg_column(
         self,
-        func: str | Range | None,
+        func: Func,
         column: int,
         **kwargs,
     ) -> Iterator[str]:

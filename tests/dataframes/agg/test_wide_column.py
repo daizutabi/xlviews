@@ -3,7 +3,6 @@ import pytest
 from pandas import DataFrame, Series
 from xlwings import Sheet
 
-from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
 from xlviews.testing.sheet_frame import WideColumn
@@ -48,3 +47,26 @@ def test_list(sf: SheetFrame, df: DataFrame):
     assert a.columns.to_list() == b.columns.to_list()
     sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
     np.testing.assert_array_equal(sf.data, b)
+
+
+def test_sf_none(sf: SheetFrame):
+    s = sf.agg(None)
+    assert isinstance(s, Series)
+    assert s["a"] == "$D$5:$D$9"
+    assert s["b"] == "$E$5:$E$9"
+
+
+def test_sf_first(sf: SheetFrame):
+    s = sf.agg("first", formula=True)
+    assert isinstance(s, Series)
+    assert s["a"] == "=$D$5"
+    assert s["b"] == "=$E$5"
+
+
+@pytest.mark.parametrize("func", ["sum", "median", "mean"])
+@pytest.mark.parametrize("by", ["x", "y"])
+def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
+    a = sf.groupby(by).agg(func, as_address=True, formula=True)
+    b = df.groupby(by).agg(func).astype(float)
+    sf = SheetFrame(50, 30, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)

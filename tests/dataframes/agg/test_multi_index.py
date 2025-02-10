@@ -223,6 +223,17 @@ def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
     assert sf.data.equals(b)
 
 
+@pytest.mark.parametrize("func", ["sum", "median", "mean"])
+@pytest.mark.parametrize("by", ["x", "y"])
+def test_sf_group_str_range(sf: SheetFrame, df: DataFrame, func, by):
+    rng = Range((50, 1), sheet=sf.sheet)
+    rng.value = func
+    a = sf.groupby(by).agg(rng, as_address=True, formula=True)
+    b = df.groupby(by).agg(func).astype(float)
+    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
+    assert sf.data.equals(b)
+
+
 @pytest.mark.parametrize("func", ["sum", "min", "max"])
 @pytest.mark.parametrize("by", [["x", "y"], ["y", "x"]])
 def test_sf_group_list_str(sf: SheetFrame, df: DataFrame, func, by):

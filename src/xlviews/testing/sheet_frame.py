@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
 from xlviews.testing.common import FrameContainer, create_sheet
-
-if TYPE_CHECKING:
-    from xlwings import Sheet
 
 
 class NoIndex(FrameContainer):
@@ -112,8 +109,10 @@ class WideColumn(FrameContainer):
         self.sf.add_wide_column("v", range(4), style=True)
 
 
-def create(sheet: Sheet) -> list[FrameContainer]:
-    classes = [
+if __name__ == "__main__":
+    sheet = create_sheet()
+
+    classes: list[type[FrameContainer]] = [
         NoIndex,
         Index,
         MultiIndex,
@@ -121,9 +120,7 @@ def create(sheet: Sheet) -> list[FrameContainer]:
         MultiIndexColumn,
         WideColumn,
     ]
-    return FrameContainer.from_classes(classes, sheet, style=True)
 
-
-if __name__ == "__main__":
-    sheet = create_sheet()
-    create(sheet)
+    fcs = [cls(sheet, style=True) for cls in classes]
+    for fc in fcs:
+        fc.sf.set_adjacent_column_width(1)

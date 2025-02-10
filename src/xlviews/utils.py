@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import xlwings as xw
+from pandas import Series
 from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
@@ -11,7 +12,8 @@ from xlviews.colors import rgb
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from pandas import DataFrame
+    from numpy.typing import NDArray
+    from pandas import DataFrame, Index
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.dataframes.sheet_frame import SheetFrame
@@ -67,6 +69,34 @@ def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterat
             yield from cs[: cs.index(c[1:]) + 1]
         else:
             yield c
+
+
+def iter_group_ranges(
+    index: list | NDArray | Index | Series,
+    padding: int = 0,
+) -> Iterator[tuple[int, int]]:
+    """Yield the group ranges of the index.
+
+    The padding is added to the start and end of each group.
+    The end is inclusive.
+
+    Args:
+        index: The index to iterate over.
+        padding: The padding to add to the start and end of each group.
+
+    Examples:
+        >>> list(iter_group_ranges([1, 1, 1, 2, 2, 3, 3, 3]))
+        [(0, 2), (3, 4), (5, 7)]
+
+        >>> list(iter_group_ranges([1, 1, 1, 2, 2, 3, 3, 3], padding=3))
+        [(0, 2), (6, 7), (11, 13)]
+    """
+    s = Series(index)
+    idx = s[~s.duplicated()].index
+
+    it = zip(idx, [*idx[1:], len(s)], strict=True)
+    for k, (start, end) in enumerate(it):
+        yield (start + padding * k, end + padding * k - 1)
 
 
 def set_font_api(

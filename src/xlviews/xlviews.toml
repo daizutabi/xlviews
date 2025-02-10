@@ -47,11 +47,15 @@ soa.color = "#5555FF"
 soa.italic = true
 min.color = "#7777FF"
 mean.color = "#33aa33"
+median.color = "#111151"
 max.color = "#FF7777"
 sum.color = "purple"
 sum.italic = true
 std.color = "#aaaaaa"
 count.color = "gray"
+
+[heat]
+border.color = "#555555"
 
 [chart]
 width = 200
