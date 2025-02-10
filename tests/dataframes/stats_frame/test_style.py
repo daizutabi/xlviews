@@ -1,40 +1,73 @@
+import numpy as np
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.dataframes.stats_frame import StatsFrame
 from xlviews.testing import is_excel_installed
 from xlviews.utils import rgb
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-@pytest.fixture
-def sf(df: DataFrame, sheet: Sheet):
-    return SheetFrame(3, 3, data=df, table=True, sheet=sheet)
+@pytest.fixture(scope="module")
+def funcs():
+    return ["count", "mean", "median", "min", "max", "soa", "sum", "std"]
+
+
+@pytest.fixture(scope="module")
+def sf(sf_parent: SheetFrame, funcs: list[str]):
+    return sf_parent.stats_frame(funcs, by=":y", succession=True)
+
+
+def test_func(sf: StatsFrame, funcs: list[str]):
+    assert sf.range("func").value == np.tile(funcs, 4).tolist()
 
 
 @pytest.mark.parametrize(
     ("func", "color"),
     [
         ("count", "gray"),
-        ("max", "#FF7777"),
         ("mean", "#33aa33"),
+        ("median", "#111151"),
         ("min", "#7777FF"),
+        ("max", "#FF7777"),
         ("soa", "#5555FF"),
-        ("std", "#aaaaaa"),
         ("sum", "purple"),
+        ("std", "#aaaaaa"),
     ],
 )
-def test_value_style(sf: SheetFrame, func, color):
-    sf = sf.stats_frame(func, by="x", table=True)
-    sf.set_value_style("func")
-    for c in ["a", "b", "c"]:
-        rng = sf.range(c).impl
-        assert rgb(rng.font.color) == rgb(color)
-        if func in ["soa", "sum"]:
-            assert rng.font.italic
-        else:
-            assert not rng.font.italic
-        if func == "soa":
-            assert rng.number_format == "0.0%"
+@pytest.mark.parametrize("c", ["func", "c"])
+@pytest.mark.parametrize("o", [0, 8])
+def test_color(sf: StatsFrame, funcs: list[str], func: str, color, c, o):
+    row = funcs.index(func) + sf.row + o + 1
+    column = sf.index(c)
+    rng = sf.sheet.range(row, column)
+    assert rgb(rng.font.color) == rgb(color)
+
+
+@pytest.mark.parametrize("func", ["soa", "sum"])
+@pytest.mark.parametrize("c", ["func", "a"])
+@pytest.mark.parametrize("o", [16, 24])
+def test_italic(sf: StatsFrame, funcs: list[str], func: str, c, o):
+    row = funcs.index(func) + sf.row + o + 1
+    column = sf.index(c)
+    rng = sf.sheet.range(row, column)
+    assert rng.font.italic
+
+
+@pytest.mark.parametrize("c", ["a", "b"])
+def test_soa(sf: StatsFrame, funcs: list[str], c):
+    row = funcs.index("soa") + sf.row + 1
+    column = sf.index(c)
+    rng = sf.sheet.range(row, column)
+    assert rng.number_format == "0.0%"
+
+
+@pytest.mark.parametrize("func", ["median", "min", "mean", "max", "std", "sum"])
+@pytest.mark.parametrize("o", [0, 16])
+def test_number_format(sf: StatsFrame, funcs: list[str], func, o):
+    row = funcs.index(func) + sf.row + o + 1
+    column = sf.index("c")
+    rng = sf.sheet.range(row, column)
+    assert rng.number_format == "0.00"

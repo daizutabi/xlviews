@@ -82,7 +82,7 @@ class StatsFrame(SheetFrame):
         self.set_style(autofit=False, succession=succession)
 
         if isinstance(funcs, list):
-            self.set_value_style(func_column_name)
+            self.set_stats_style(func_column_name)
 
         if table:
             self.set_alignment("left")
@@ -91,23 +91,20 @@ class StatsFrame(SheetFrame):
             func = default if default in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
 
-    def set_value_style(self, func_column_name: str) -> None:
+    def set_stats_style(self, func_column_name: str) -> None:
         func_index = self.index(func_column_name)
 
         start = self.column + self.index_level
         end = self.column + len(self.columns)
-        columns = [func_index, *range(start, end)]
+        idx = [func_index, *range(start, end)]
 
         get_fmt = self.parent.get_number_format
         formats = [get_fmt(column) for column in self.value_columns]
         formats = [None, *formats]
 
-        group = self.groupby(func_column_name).group
-
-        for key, rows in group.items():
-            func = key[0]
-            for column, fmt in zip(columns, formats, strict=True):
-                rc = RangeCollection(rows, column, self.sheet)
+        for (func,), rows in self.groupby(func_column_name).items():
+            for col, fmt in zip(idx, formats, strict=True):
+                rc = RangeCollection(rows, col, self.sheet)
 
                 if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
                     set_number_format(rc, fmt)
@@ -116,7 +113,7 @@ class StatsFrame(SheetFrame):
                 italic = rcParams.get(f"stats.{func}.italic")
                 set_font(rc, color=color, italic=italic)
 
-                if func == "soa" and column != func_index:
+                if func == "soa" and col != func_index:
                     set_number_format(rc, "0.0%")
 
         set_font(self.range(func_column_name), italic=True)
