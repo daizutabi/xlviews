@@ -19,6 +19,8 @@ def fc(sheet_module: Sheet):
 def df(fc: Facet):
     return fc.df
 
+    HeatFrame.facet(data, "X", "Y").map()
+
 
 # def test_group(df: DataFrame):
 #     df = df.pivot_table("v", ["Y", "y"], ["X", "x"], aggfunc=lambda x: x)

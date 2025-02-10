@@ -30,9 +30,6 @@ if TYPE_CHECKING:
 
 
 class HeatFrame(SheetFrame):
-    x: str | list[str]
-    y: str | list[str]
-    value: str
     df: DataFrame
 
     @turn_off_screen_updating
@@ -41,9 +38,9 @@ class HeatFrame(SheetFrame):
         row: int,
         column: int,
         data: DataFrame | SheetFrame,
-        value: str,
-        x: str | list[str],
-        y: str | list[str],
+        value: str | None,
+        x: str | list[str] | None,
+        y: str | list[str] | None,
         aggfunc: Func = None,
         vmin: float | None = None,
         vmax: float | None = None,
@@ -59,12 +56,12 @@ class HeatFrame(SheetFrame):
             include_sheetname = sheet.name != data.sheet.name
             data = _to_dataframe(data, value, x, y, aggfunc, include_sheetname)
 
-        df = pivot_table(data, value, y, x)
+        if value and x and y:
+            df = pivot_table(data, value, x, y)
+        else:
+            df = data
 
         self.df = df
-        self.value = value
-        self.x = x
-        self.y = y
 
         super().__init__(row, column, data=df, index=True, sheet=sheet, style=False)
 
@@ -154,7 +151,7 @@ class HeatFrame(SheetFrame):
             set_font(rng, size=4)
             set_number_format(rng, "0")
 
-    def set_label(self, label: str) -> None:
+    def set_label(self, label: str | None) -> None:
         rng = self.label
         rng.value = label
         set_font(rng, bold=True, size=rcParams["frame.font.size"])
@@ -166,30 +163,34 @@ class HeatFrame(SheetFrame):
         self.sheet.range(1, column).column_width = width
 
     def set_heat_style(self) -> None:
-        if isinstance(self.x, list):
-            _merge_index(self.df.columns, self.row, self.column, 1, self.sheet)
+        _merge_index(self.df.columns, self.row, self.column, 1, self.sheet)
+        _merge_index(self.df.index, self.row, self.column, 0, self.sheet)
+        _set_border(self)
 
-        if isinstance(self.y, list):
-            _merge_index(self.df.index, self.row, self.column, 0, self.sheet)
-
-        if isinstance(self.x, list) and isinstance(self.y, list):
-            _set_border(self)
+    @classmethod
+    def facet(
+        cls,
+        data: DataFrame | SheetFrame,
+        col: str | list[str],
+        row: str | list[str],
+    ) -> list[Self]:
+        pass
 
 
 def pivot_table(
     data: DataFrame,
     value: str,
-    y: str | list[str],
     x: str | list[str],
+    y: str | list[str],
     # aggfunc: Callable = lambda x: x,
 ) -> DataFrame:
     df = data.pivot_table(value, y, x, aggfunc=lambda x: x)
 
-    if isinstance(y, list):
-        df.index = df.index.droplevel(list(range(1, len(y))))
-
     if isinstance(x, list):
         df.columns = df.columns.droplevel(list(range(1, len(x))))
+
+    if isinstance(y, list):
+        df.index = df.index.droplevel(list(range(1, len(y))))
 
     df.index.name = None
 
@@ -198,9 +199,9 @@ def pivot_table(
 
 def _to_dataframe(
     sf: SheetFrame,
-    value: str,
-    x: str | list[str],
-    y: str | list[str],
+    value: str | None,
+    x: str | list[str] | None,
+    y: str | list[str] | None,
     aggfunc: Func = None,
     include_sheetname: bool = False,
 ) -> DataFrame:
@@ -221,13 +222,18 @@ def _to_dataframe(
     )
 
 
-def _to_list(*args: str | list[str]) -> list[str]:
+def _to_list(*args: str | list[str] | None) -> list[str]:
     results = []
+
     for arg in args:
+        if arg is None:
+            continue
+
         if isinstance(arg, list):
             results.extend(arg)
         else:
             results.append(arg)
+
     return results
 
 
@@ -238,7 +244,13 @@ def _set_border(sf: HeatFrame) -> None:
     ec = rcParams["heat.border.color"]
 
     for row in iter_group_ranges(sf.df.index):
+        if row[0] == row[1]:
+            continue
+
         for col in iter_group_ranges(sf.df.columns):
+            if col[0] == col[1]:
+                continue
+
             start = (r + row[0], c + col[0])
             end = (r + row[1], c + col[1])
             rng = sf.sheet.range(start, end)
@@ -247,6 +259,8 @@ def _set_border(sf: HeatFrame) -> None:
 
 def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
     for start, end in iter_group_ranges(index):
+        if start == end:
+            continue
         if axis == 0:
             sheet.range((row + start + 1, column), (row + end + 1, column)).merge()
         else:
