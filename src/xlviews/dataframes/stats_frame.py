@@ -1,118 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from xlwings.constants import Direction
 
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
-from xlviews.range.formula import AGG_FUNCS, aggregate
-from xlviews.range.range import Range
+from xlviews.range.formula import AGG_FUNCS
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_font, set_number_format
 from xlviews.utils import iter_columns
 
 from .groupby import GroupBy
 from .sheet_frame import SheetFrame
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from numpy.typing import NDArray
-
-
-class StatsGroupBy(GroupBy):
-    def ranges(self, column: str) -> Iterator[Range | RangeCollection | None]:
-        if column in self.by:
-            yield from super().first_ranges(column)
-
-        elif column in self.sf.index_columns:
-            yield from [None] * len(self.group)
-
-        else:
-            yield from super().ranges(column)
-
-    def iter_formulas(
-        self,
-        column: str,
-        funcs: list[str],
-    ) -> Iterator[str]:
-        for ranges in self.ranges(column):
-            for func in funcs:
-                yield get_formula(func, ranges)
-
-    def get_index(self, funcs: list[str]) -> list[str]:
-        return funcs * len(self.group)
-
-    def get_columns(
-        self,
-        funcs: list[str],
-        func_column_name: str = "func",
-    ) -> list[str]:
-        columns = self.sf.columns
-
-        if isinstance(funcs, list):
-            columns = [func_column_name, *columns]
-
-        return columns
-
-    def get_values(
-        self,
-        funcs: list[str],
-    ) -> NDArray[np.str_]:
-        values = [self.get_index(funcs)] if isinstance(funcs, list) else []
-
-        for column in self.sf.columns:
-            it = self.iter_formulas(column, funcs)
-            values.append(list(it))
-
-        return np.array(values).T
-
-    def get_frame(
-        self,
-        funcs: list[str],
-        func_column_name: str = "func",
-    ) -> DataFrame:
-        values = self.get_values(funcs)
-        columns = self.get_columns(funcs, func_column_name)
-        df = DataFrame(values, columns=columns)
-        return df.set_index(columns[: -len(self.sf.value_columns)])
-
-    def get_frame2(
-        self,
-        funcs: list[str],
-        func_column_name: str = "func",
-    ) -> DataFrame:
-        df = self.agg(funcs, self.sf.value_columns, formula=True, as_address=True)
-        df = df.stack(level=1, future_stack=True)  # noqa: PD013
-
-        index = df.index.to_frame()
-        index = index.rename(columns={index.columns[-1]: func_column_name})
-
-        for c in self.sf.index_columns:
-            if c not in self.by:
-                index[c] = ""
-
-        df = pd.concat([index, df], axis=1)
-        return df.set_index([func_column_name, *self.sf.index_columns])
-
-
-def get_formula(
-    func: str | Range,
-    ranges: Range | RangeCollection | None,
-) -> str:
-    if not ranges:
-        return ""
-
-    if isinstance(ranges, Range):
-        return "=" + ranges.get_address()
-
-    formula = aggregate(func, ranges)
-
-    return f"={formula}"
 
 
 class StatsFrame(SheetFrame):
@@ -161,9 +61,8 @@ class StatsFrame(SheetFrame):
 
         move_down(parent, offset)
 
-        gr = StatsGroupBy(parent, by)
-        # df = gr.get_frame(funcs, func_column_name)
-        df = gr.get_frame2(funcs, func_column_name)
+        gr = GroupBy(parent, by)
+        df = get_frame(gr, funcs, func_column_name)
 
         super().__init__(
             row,
@@ -247,6 +146,25 @@ def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
         return n
 
     return len(sf.data.reset_index()[by].drop_duplicates()) * n
+
+
+def get_frame(
+    gr: GroupBy,
+    funcs: list[str],
+    func_column_name: str = "func",
+) -> DataFrame:
+    df = gr.agg(funcs, gr.sf.value_columns, formula=True, as_address=True)
+    df = df.stack(level=1, future_stack=True)  # noqa: PD013
+
+    index = df.index.to_frame()
+    index = index.rename(columns={index.columns[-1]: func_column_name})
+
+    for c in gr.sf.index_columns:
+        if c not in gr.by:
+            index[c] = ""
+
+    df = pd.concat([index, df], axis=1)
+    return df.set_index([func_column_name, *gr.sf.index_columns])
 
 
 def has_header(sf: SheetFrame) -> bool:
