@@ -77,12 +77,12 @@ class HeatFrame(SheetFrame):
         if style:
             self.set_heat_style()
 
-    def __len__(self) -> int:
-        return len(self.df)
-
     @property
-    def columns(self) -> list:
-        return [None, *self.df.columns.to_list()]
+    def shape(self) -> tuple[int, int]:
+        return self.df.shape
+
+    def __len__(self) -> int:
+        return self.shape[0]
 
     @property
     def index(self) -> Index:
@@ -90,20 +90,20 @@ class HeatFrame(SheetFrame):
 
     def heat_range(self) -> Range:
         start = self.row + 1, self.column + 1
-        end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
+        end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
         return Range(start, end, self.sheet)
 
     @property
     def vmin(self) -> RangeImpl:
-        return self.cell.offset(len(self), len(self.columns) + 1)
+        return self.cell.offset(self.shape[0], self.shape[1] + 2)
 
     @property
     def vmax(self) -> RangeImpl:
-        return self.cell.offset(1, len(self.columns) + 1)
+        return self.cell.offset(1, self.shape[1] + 2)
 
     @property
     def label(self) -> RangeImpl:
-        return self.cell.offset(0, len(self.columns) + 1)
+        return self.cell.offset(0, self.shape[1] + 2)
 
     def set_extrema(
         self,
@@ -153,7 +153,7 @@ class HeatFrame(SheetFrame):
 
     def set_adjacent_column_width(self, width: float, offset: int = 1) -> None:
         """Set the width of the adjacent empty column."""
-        column = self.label.column + offset
+        column = self.vmax.column + offset
         self.sheet.range(1, column).column_width = width
 
     def set_heat_style(self) -> None:

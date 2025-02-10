@@ -74,11 +74,12 @@ def _aggregate(
 
     if isinstance(func, Range | RangeImpl):
         ref = func.get_address(column_absolute=False, row_absolute=False)
-        func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
-        soa = aggregate("soa", ranges, option=option, **kwargs)
-        return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
+    else:
+        ref = func
 
-    raise NotImplementedError
+    func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
+    soa = aggregate("soa", ranges, option=option, **kwargs)
+    return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
 
 
 def aggregate(
