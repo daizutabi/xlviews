@@ -22,8 +22,6 @@ class Parent(FrameContainer):
         return df.set_index(["x", "y"])
 
 
-class Normal()
-
 if __name__ == "__main__":
     sheet = create_sheet()
     fc = Parent(sheet, 3, 2, style=True)

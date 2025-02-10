@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.stats_frame import StatsFrame
