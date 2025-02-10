@@ -182,25 +182,43 @@ class GroupBy:
         self,
         *,
         as_address: bool = False,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> DataFrame:
-        if as_address:
-            cs = self.sf.columns
-            column = self.sf.column
-            idx = [cs.index(c) + column for c in self.by]
-            it = zip(self.by, idx, strict=True)
-            values = {c: self._agg_column("first", i, **kwargs) for c, i in it}
-            return DataFrame(values)
+        if not as_address:
+            values = self.keys()
+            return DataFrame(values, columns=self.by)
 
-        values = self.keys()
-        return DataFrame(values, columns=self.by)
+        cs = self.sf.columns
+        column = self.sf.column
+        idx = [cs.index(c) + column for c in self.by]
+
+        agg = partial(
+            self._agg_column,
+            "first",
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
+
+        values = {c: agg(i) for c, i in zip(self.by, idx, strict=True)}
+        return DataFrame(values)
 
     def agg(
         self,
         func: Func | dict | Sequence[Func],
         columns: str | list[str] | None = None,
         as_address: bool = False,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> DataFrame:
         if self.sf.columns_level != 1:
             raise NotImplementedError
@@ -215,10 +233,24 @@ class GroupBy:
         if columns is None:
             columns = self.sf.value_columns
 
-        index_df = self.index(as_address=as_address, **kwargs)
+        index_df = self.index(
+            as_address=as_address,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
         index = MultiIndex.from_frame(index_df)
 
-        agg = partial(self._agg_column, **kwargs)
+        agg = partial(
+            self._agg_column,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
 
         if isinstance(func, dict):
             it = zip(func.values(), idx, strict=True)

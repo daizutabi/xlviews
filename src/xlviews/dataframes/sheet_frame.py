@@ -17,7 +17,7 @@ from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.range.formula import aggregate
-from xlviews.range.range import Range
+from xlviews.range.range import Range, iter_addresses
 from xlviews.range.style import set_alignment
 
 from . import modify
@@ -609,15 +609,34 @@ class SheetFrame:
                     sheet=self.sheet,
                 )
 
-    def melt(self, func: Func = None, value_name: str = "value", **kwargs) -> DataFrame:
+    def melt(
+        self,
+        func: Func = None,
+        value_name: str = "value",
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
+    ) -> DataFrame:
         """Unpivot a SheetFrame from wide to long format."""
         if self.columns_names is None:
             raise NotImplementedError
 
         columns = self.value_columns
         df = DataFrame(columns, columns=self.columns_names)
-        values = [aggregate(func, r, **kwargs) for r in self.ranges()]
-        df[value_name] = values
+
+        agg = partial(
+            aggregate,
+            func,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
+
+        df[value_name] = list(map(agg, self.ranges()))
         return df
 
     def column_index(self, columns: list[str] | None) -> list[int]:
@@ -641,20 +660,59 @@ class SheetFrame:
         end = start + len(self) - 1
         return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
 
+    @overload
+    def get_address(
+        self,
+        columns: str,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
+    ) -> Series: ...
+
+    @overload
+    def get_address(
+        self,
+        columns: list[str] | None = None,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
+    ) -> DataFrame: ...
+
     def get_address(
         self,
         columns: str | list[str] | None = None,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> Series | DataFrame:
         if isinstance(columns, str):
-            return self.get_address([columns], **kwargs)[columns]
+            columns = [columns]
+            is_str = True
+        else:
+            is_str = False
 
         rngs = self.column_range(columns)
 
         if columns is None:
             columns = self.value_columns
 
-        values = [list(r.iter_addresses(**kwargs)) for r in rngs]
+        agg = partial(
+            iter_addresses,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            cellwise=True,
+            formula=formula,
+        )
+
+        values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
         if self.has_index and self.index_columns[0]:
@@ -664,7 +722,7 @@ class SheetFrame:
             else:
                 df.index = MultiIndex.from_frame(index)
 
-        return df
+        return df[columns[0]] if is_str else df
 
     def _index_frame(self) -> DataFrame:
         start = self.cell.offset(self.columns_level - 1)
@@ -677,7 +735,11 @@ class SheetFrame:
         self,
         func: Func | dict,
         columns: str | list[str] | None = None,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> Series: ...
 
     @overload
@@ -685,14 +747,22 @@ class SheetFrame:
         self,
         func: Sequence[Func],
         columns: str | list[str] | None = None,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> DataFrame: ...
 
     def agg(
         self,
         func: Func | dict | Sequence[Func],
         columns: str | list[str] | None = None,
-        **kwargs,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
     ) -> Series | DataFrame:
         if self.columns_level != 1:
             raise NotImplementedError
@@ -707,7 +777,14 @@ class SheetFrame:
         if columns is None:
             columns = self.value_columns
 
-        agg = partial(self._agg_column, **kwargs)
+        agg = partial(
+            self._agg_column,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
 
         if isinstance(func, dict):
             it = zip(rngs, func.values(), strict=True)
