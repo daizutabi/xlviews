@@ -39,4 +39,4 @@ if __name__ == "__main__":
 
     x = ["X", "x"]
     y = ["Y", "y"]
-    sf = HeatFrame(2, 8, data=sf, x=x, y=y, value="v")
+    sf = HeatFrame(2, 8, sf, "v", x, y)

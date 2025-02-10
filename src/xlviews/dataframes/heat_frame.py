@@ -22,6 +22,8 @@ from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from pandas import DataFrame, Index
     from xlwings import Range as RangeImpl
     from xlwings import Sheet
@@ -36,7 +38,8 @@ class HeatFrame(SheetFrame):
     @turn_off_screen_updating
     def __init__(
         self,
-        *args,
+        row: int,
+        column: int,
         data: DataFrame | SheetFrame,
         value: str,
         x: str | list[str],
@@ -63,7 +66,7 @@ class HeatFrame(SheetFrame):
         self.x = x
         self.y = y
 
-        super().__init__(*args, data=df, index=True, sheet=sheet, style=False)
+        super().__init__(row, column, data=df, index=True, sheet=sheet, style=False)
 
         if style:
             set_heat_frame_style(self, autofit=autofit, font_size=font_size, **kwargs)

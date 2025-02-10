@@ -16,10 +16,10 @@ if __name__ == "__main__":
     fc = Agg(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    sf = HeatFrame(2, 8, data=fc.sf, x="X", y="Y", value="v", aggfunc="mean")
+    sf = HeatFrame(2, 8, fc.sf, "v", "X", "Y", aggfunc="mean")
     sf.set_adjacent_column_width(1)
 
     rng = sf.sheet.range("$M$13")
     add_validate_list(rng, ["min", "max", "mean", "median", "soa"], "mean")
     sf.sheet.range("$M$13").value = "max"
-    sf = HeatFrame(8, 8, data=fc.sf, x="X", y="Y", value="v", aggfunc=rng)
+    sf = HeatFrame(8, 8, fc.sf, "v", "X", "Y", aggfunc=rng)

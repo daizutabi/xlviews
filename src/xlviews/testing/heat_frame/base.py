@@ -45,12 +45,10 @@ if __name__ == "__main__":
     fc = Base(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    sf = HeatFrame(2, 6, data=sf, x="x", y="y", value="v", sheet=sheet)
+    sf = HeatFrame(2, 6, sf, "v", "x", "y")
     sf.set_adjacent_column_width(1)
 
     fc = MultiIndex(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    x = ["X", "x"]
-    y = ["Y", "y"]
-    sf = HeatFrame(2, 20, data=sf, x=x, y=y, value="v", sheet=sheet)
+    sf = HeatFrame(2, 20, sf, "v", ["X", "x"], ["Y", "y"])
