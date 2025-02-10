@@ -18,7 +18,7 @@ def fc(sheet_module: Sheet):
 def sf(fc: MultiIndex):
     x = ["X", "x"]
     y = ["Y", "y"]
-    return HeatFrame(2, 20, data=fc.src, x=x, y=y, value="v", sheet=fc.sf.sheet)
+    return HeatFrame(2, 20, data=fc.sf, x=x, y=y, value="v", sheet=fc.sf.sheet)
 
 
 def test_index(sf: HeatFrame):

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import random
-
-from pandas import DataFrame
+from typing import TYPE_CHECKING
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.base import MultiIndex
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
 class Facet(MultiIndex):
@@ -15,22 +16,27 @@ class Facet(MultiIndex):
     @classmethod
     def dataframe(cls) -> DataFrame:
         df = super().dataframe()
-        return df.sample(frac=0.8, random_state=0)
 
-    def init(self) -> None:
-        self.src = self.sf.get_address(formula=True)
+        for a, b in [(1, 3), (2, 2), (2, 4)]:
+            ac = df.index.get_level_values("X") == a
+            bc = df.index.get_level_values("x") == b
+            df = df[~(ac & bc)]
+
+        for a, b in [(2, 1), (2, 2), (3, 3), (4, 1), (4, 2), (4, 3)]:
+            ac = df.index.get_level_values("Y") == a
+            bc = df.index.get_level_values("y") == b
+            df = df[~(ac & bc)]
+
+        return df
 
 
 if __name__ == "__main__":
     sheet = create_sheet()
 
     fc = Facet(sheet, style=True)
-    df = fc.src
-    gr = df.groupby(["X", "Y"])
-    print([x.shape for (x, _), x in gr])
-    print(gr.get_group((1, 1)))
+    sf = fc.sf
+    sf.set_adjacent_column_width(1)
 
-    # sf = fc.sf
-    # sf.set_adjacent_column_width(1)
-    # sf = HeatFrame(2, 8, data=fc.src, x="X", y="Y", value="v", sheet=sheet)
-    # sf.set_adjacent_column_width(1)
+    x = ["X", "x"]
+    y = ["Y", "y"]
+    sf = HeatFrame(2, 8, data=sf, x=x, y=y, value="v")

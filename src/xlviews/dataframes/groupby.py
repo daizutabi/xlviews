@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, TypeAlias, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 import numpy as np
 from pandas import DataFrame, MultiIndex, Series
+from xlwings import Range as RangeImpl
 
-from xlviews.range.formula import aggregate
+from xlviews.range.formula import Func, aggregate
 from xlviews.range.range import Range
 from xlviews.range.range_collection import RangeCollection
 from xlviews.utils import iter_columns
@@ -18,8 +19,6 @@ if TYPE_CHECKING:
 
 H = TypeVar("H")
 T = TypeVar("T")
-
-Func: TypeAlias = str | Range | None
 
 
 def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
@@ -257,7 +256,7 @@ class GroupBy:
             values = np.array([list(agg(f, i)) for f, i in it]).T
             return DataFrame(values, index=index, columns=columns)
 
-        if func is None or isinstance(func, str | Range):
+        if func is None or isinstance(func, str | Range | RangeImpl):
             values = np.array([list(agg(func, i)) for i in idx]).T
             return DataFrame(values, index=index, columns=columns)
 
@@ -267,7 +266,7 @@ class GroupBy:
 
     def _agg_column(
         self,
-        func: str | Range | None,
+        func: Func,
         column: int,
         **kwargs,
     ) -> Iterator[str]:

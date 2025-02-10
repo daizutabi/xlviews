@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from functools import partial
 from itertools import chain, takewhile
-from typing import TYPE_CHECKING, TypeAlias, overload
+from typing import TYPE_CHECKING, overload
 
 import xlwings as xw
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -16,7 +16,7 @@ from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
-from xlviews.range.formula import aggregate
+from xlviews.range.formula import Func, aggregate
 from xlviews.range.range import Range, iter_addresses
 from xlviews.range.style import set_alignment
 
@@ -31,8 +31,6 @@ if TYPE_CHECKING:
 
     from .dist_frame import DistFrame
     from .stats_frame import StatsFrame
-
-Func: TypeAlias = str | Range | None
 
 
 class SheetFrame:
@@ -790,7 +788,7 @@ class SheetFrame:
             it = zip(rngs, func.values(), strict=True)
             return Series([agg(f, r) for r, f in it], index=columns)
 
-        if func is None or isinstance(func, str | Range):
+        if func is None or isinstance(func, str | Range | RangeImpl):
             return Series([agg(func, r) for r in rngs], index=columns)
 
         values = [[agg(f, r) for r in rngs] for f in func]
@@ -798,7 +796,7 @@ class SheetFrame:
 
     def _agg_column(
         self,
-        func: str | Range | None,
+        func: Func,
         rng: Range,
         **kwargs,
     ) -> str:

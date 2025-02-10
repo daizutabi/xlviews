@@ -18,7 +18,7 @@ from .sheet_frame import SheetFrame
 class StatsFrame(SheetFrame):
     parent: SheetFrame
 
-    # @turn_off_screen_updating
+    @turn_off_screen_updating
     def __init__(
         self,
         parent: SheetFrame,

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pandas import Index, Series
+import xlwings
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
-from xlviews.range.formula import aggregate
+from xlviews.range.formula import Func, aggregate
 from xlviews.range.range import Range
 from xlviews.range.style import (
     set_alignment,
@@ -16,14 +16,13 @@ from xlviews.range.style import (
     set_font,
     set_number_format,
 )
+from xlviews.utils import iter_group_ranges
 
 from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from pandas import DataFrame
+    from pandas import DataFrame, Index
     from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
@@ -38,10 +37,11 @@ class HeatFrame(SheetFrame):
     def __init__(
         self,
         *args,
-        data: DataFrame,
+        data: DataFrame | SheetFrame,
         value: str,
         x: str | list[str],
         y: str | list[str],
+        aggfunc: Func = None,
         vmin: float | None = None,
         vmax: float | None = None,
         sheet: Sheet | None = None,
@@ -50,6 +50,12 @@ class HeatFrame(SheetFrame):
         font_size: int | None = None,
         **kwargs,
     ) -> None:
+        sheet = sheet or xlwings.sheets.active
+
+        if isinstance(data, SheetFrame):
+            include_sheetname = sheet.name != data.sheet.name
+            data = _to_dataframe(data, value, x, y, aggfunc, include_sheetname)
+
         df = pivot_table(data, value, y, x)
 
         self.df = df
@@ -137,7 +143,7 @@ class HeatFrame(SheetFrame):
         set_color_scale(rng, self.vmin, self.vmax)
         set_font(rng, color=rgb("white"), size=rcParams["frame.font.size"])
         set_alignment(rng, horizontal_alignment="center")
-        ec = rcParams["frame.gray.border.color"]
+        ec = rcParams["heat.border.color"]
         set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)
 
         if n > 0:
@@ -187,27 +193,58 @@ def pivot_table(
     return df
 
 
+def _to_dataframe(
+    sf: SheetFrame,
+    value: str,
+    x: str | list[str],
+    y: str | list[str],
+    aggfunc: Func = None,
+    include_sheetname: bool = False,
+) -> DataFrame:
+    columns = [value] if isinstance(value, str) else value
+
+    if aggfunc is None:
+        return sf.get_address(
+            columns,
+            include_sheetname=include_sheetname,
+            formula=True,
+        )
+
+    return sf.groupby(_to_list(x, y)).agg(
+        aggfunc,
+        columns,
+        include_sheetname=include_sheetname,
+        formula=True,
+    )
+
+
+def _to_list(*args: str | list[str]) -> list[str]:
+    results = []
+    for arg in args:
+        if isinstance(arg, list):
+            results.extend(arg)
+        else:
+            results.append(arg)
+    return results
+
+
 def _set_border(sf: HeatFrame) -> None:
     r = sf.row + 1
     c = sf.column + 1
 
-    for row in _iter_merge_ranges(sf.df.index):
-        for col in _iter_merge_ranges(sf.df.columns):
+    ec = rcParams["heat.border.color"]
+
+    for row in iter_group_ranges(sf.df.index):
+        for col in iter_group_ranges(sf.df.columns):
             start = (r + row[0], c + col[0])
-            end = (r + row[1] - 1, c + col[1] - 1)
+            end = (r + row[1], c + col[1])
             rng = sf.sheet.range(start, end)
-            set_border(rng, edge_weight=2, edge_color=rgb("#333333"), inside_weight=0)
+            set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)
 
 
 def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
-    for start, end in _iter_merge_ranges(index):
+    for start, end in iter_group_ranges(index):
         if axis == 0:
-            sheet.range((row + start + 1, column), (row + end, column)).merge()
+            sheet.range((row + start + 1, column), (row + end + 1, column)).merge()
         else:
-            sheet.range((row, column + start + 1), (row, column + end)).merge()
-
-
-def _iter_merge_ranges(index: Index) -> Iterator[tuple[int, int]]:
-    s = Series(index)
-    idx = s[~s.duplicated()].index.to_list()
-    return zip(idx, [*idx[1:], len(s)], strict=True)
+            sheet.range((row, column + start + 1), (row, column + end + 1)).merge()

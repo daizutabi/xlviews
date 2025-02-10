@@ -54,6 +54,9 @@ sum.italic = true
 std.color = "#aaaaaa"
 count.color = "gray"
 
+[heat]
+border.color = "#555555"
+
 [chart]
 width = 200
 height = 200

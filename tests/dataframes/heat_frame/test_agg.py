@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 from xlwings import Sheet
 
@@ -14,9 +13,26 @@ def fc(sheet_module: Sheet):
     return Agg(sheet_module)
 
 
-@pytest.fixture(scope="module")
-def sf(fc: Agg):
-    return HeatFrame(2, 8, data=fc.src, x="X", y="Y", value="v", sheet=fc.sf.sheet)
+@pytest.fixture(
+    scope="module",
+    params=["mean", "A1", (1, 1)],
+    ids=["mean", "A1", "Range"],
+)
+def sf(fc: Agg, request: pytest.FixtureRequest):
+    fc.sf.sheet.range("A1").value = "mean"
+    aggfunc = request.param
+    if isinstance(aggfunc, tuple):
+        aggfunc = fc.sf.sheet.range(aggfunc)
+    return HeatFrame(
+        2,
+        8,
+        data=fc.sf,
+        x="X",
+        y="Y",
+        value="v",
+        aggfunc=aggfunc,
+        sheet=fc.sf.sheet,
+    )
 
 
 def test_index(sf: HeatFrame):

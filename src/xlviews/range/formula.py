@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 from xlwings import Range as RangeImpl
 
@@ -10,6 +10,7 @@ from .range_collection import RangeCollection
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+Func: TypeAlias = str | Range | RangeImpl | None
 
 NONCONST_VALUE = "*"
 
@@ -48,7 +49,7 @@ AGG_FUNC_INTS = ",".join(f'"{value}"' for value in AGG_FUNCS_SORTED.values())
 
 
 def _aggregate(
-    func: str | Range | RangeImpl | None,
+    func: Func,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int,
     **kwargs,
@@ -83,7 +84,7 @@ def _aggregate(
 
 
 def aggregate(
-    func: str | Range | RangeImpl | None,
+    func: Func,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int = 7,  # ignore hidden rows and error values
     row_absolute: bool = True,

@@ -9,14 +9,7 @@ from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import FrameContainer, create_sheet
 
 
-class HeatContainer(FrameContainer):
-    src: DataFrame
-
-    def init(self) -> None:
-        self.src = self.sf.get_address(self.sf.value_columns, formula=True)
-
-
-class Base(HeatContainer):
+class Base(FrameContainer):
     @classmethod
     def dataframe(cls) -> DataFrame:
         values = list(product(range(1, 5), range(1, 7)))
@@ -27,7 +20,7 @@ class Base(HeatContainer):
         return df.set_index(["x", "y"])
 
 
-class MultiIndex(HeatContainer):
+class MultiIndex(FrameContainer):
     column: int = 14
 
     @classmethod
@@ -52,7 +45,7 @@ if __name__ == "__main__":
     fc = Base(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    sf = HeatFrame(2, 6, data=fc.src, x="x", y="y", value="v", sheet=sheet)
+    sf = HeatFrame(2, 6, data=sf, x="x", y="y", value="v", sheet=sheet)
     sf.set_adjacent_column_width(1)
 
     fc = MultiIndex(sheet, style=True)
@@ -60,4 +53,4 @@ if __name__ == "__main__":
     sf.set_adjacent_column_width(1)
     x = ["X", "x"]
     y = ["Y", "y"]
-    sf = HeatFrame(2, 20, data=fc.src, x=x, y=y, value="v", sheet=sheet)
+    sf = HeatFrame(2, 20, data=sf, x=x, y=y, value="v", sheet=sheet)
