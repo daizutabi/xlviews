@@ -77,6 +77,17 @@ class HeatFrame(SheetFrame):
         if style:
             self.set_heat_style()
 
+    def __len__(self) -> int:
+        return len(self.df)
+
+    @property
+    def columns(self) -> list:
+        return [None, *self.df.columns.to_list()]
+
+    @property
+    def index(self) -> Index:
+        return self.df.index
+
     def heat_range(self) -> Range:
         start = self.row + 1, self.column + 1
         end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
