@@ -221,16 +221,17 @@ class GroupBy:
         agg = partial(self._agg_column, **kwargs)
 
         if isinstance(func, dict):
-            it = zip(columns, idx, func.values(), strict=True)
-            return DataFrame({c: agg(f, i) for c, i, f in it}, index=index)
+            it = zip(func.values(), idx, strict=True)
+            values = np.array([list(agg(f, i)) for f, i in it]).T
+            return DataFrame(values, index=index, columns=columns)
 
         if func is None or isinstance(func, str | Range):
-            it = zip(columns, idx, strict=True)
-            return DataFrame({c: agg(func, i) for c, i in it}, index=index)
+            values = np.array([list(agg(func, i)) for i in idx]).T
+            return DataFrame(values, index=index, columns=columns)
 
-        it = zip(columns, idx, strict=True)
-        values = {(c, f): agg(f, i) for c, i in it for f in func}
-        return DataFrame(values, index=index)
+        values = np.array([list(agg(f, i)) for i in idx for f in func]).T
+        m_columns = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
+        return DataFrame(values, index=index, columns=m_columns)
 
     def _agg_column(
         self,
