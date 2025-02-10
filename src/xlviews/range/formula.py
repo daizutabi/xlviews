@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 NONCONST_VALUE = "*"
 
 
-def const(rng: Range | RangeImpl, prefix: str = "") -> str:
+def const(rng: Range | RangeImpl) -> str:
     """Return a formula to check if the values in the range are unique."""
     column = rng.get_address(column_absolute=False)
     ref = rng[0].offset(-1).get_address(column_absolute=False)
@@ -28,7 +28,7 @@ def const(rng: Range | RangeImpl, prefix: str = "") -> str:
     prod_second = f"({column}={value})"
     sumproduct = f"SUMPRODUCT({prod_first}*{prod_second})"
 
-    return f'{prefix}IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}")'
+    return f'IFNA(IF({subtotal}={sumproduct},{value},"{NONCONST_VALUE}"),"")'
 
 
 AGG_FUNCS = {
