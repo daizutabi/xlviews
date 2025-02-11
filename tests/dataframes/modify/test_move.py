@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 @pytest.fixture
 def sf(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    return SheetFrame(2, 3, data=df, style=False, sheet=sheet)
+    return SheetFrame(2, 3, data=df, sheet=sheet)
 
 
 def test_range_original(sf: SheetFrame):

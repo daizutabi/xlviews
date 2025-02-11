@@ -7,10 +7,11 @@ from functools import partial
 from itertools import chain, takewhile
 from typing import TYPE_CHECKING, overload
 
-import xlwings as xw
+import xlwings
 from pandas import DataFrame, Index, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
+from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
@@ -27,7 +28,7 @@ from .table import Table
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
-    from typing import Any, Literal
+    from typing import Any, Literal, Self
 
     from .dist_frame import DistFrame
     from .stats_frame import StatsFrame
@@ -38,8 +39,6 @@ class SheetFrame:
 
     sheet: Sheet
     cell: RangeImpl
-    name: str | None
-    has_index: bool
     index_level: int
     columns_level: int
     columns_names: list[str] | None = None
@@ -50,26 +49,18 @@ class SheetFrame:
     tail: SheetFrame | None = None
     stats: StatsFrame | None = None
     dist: DistFrame | None = None
+    name: str | None
 
     @turn_off_screen_updating
     def __init__(
         self,
         *args,
-        name: str | None = None,
+        data: DataFrame | Series | None = None,
+        index: bool = True,
         sheet: Sheet | None = None,
         parent: SheetFrame | None = None,
         head: SheetFrame | None = None,
-        data: DataFrame | Series | None = None,
-        index: bool = True,
-        index_level: int = 1,
-        columns_level: int = 1,
-        style: bool = True,
-        gray: bool = False,
-        autofit: bool = True,
-        number_format: str | None = None,
-        font_size: int | None = None,
-        table: bool = False,
-        **kwargs,
+        name: str | None = None,
     ) -> None:
         """Create a DataFrame on an Excel sheet.
 
@@ -78,24 +69,16 @@ class SheetFrame:
             row, column (int): The position of the top-left cell.
             cell (Range): The Range of the top-left cell.
             data (DataFrame, optional): The DataFrame to write to the sheet.
-            index (bool): Whether to output the index of the DataFrame.
-            index_level (int): The depth of the index when importing data
-                from the sheet.
-            column_level (int): The depth of the columns when importing data
-                from the sheet.
-            parent (SheetFrame): The parent SheetFrame.
+            index (bool, optional): Whether to output the index of the DataFrame.
+            sheet (Sheet, optional): The sheet object.
+            parent (SheetFrame, optional): The parent SheetFrame.
                 The child SheetFrame is placed to the right of the parent SheetFrame.
                 The parent SheetFrame represents the information extracted
                 from the parent.
-            head (SheetFrame): The upper SheetFrame.
+            head (SheetFrame, optional): The upper SheetFrame.
                 The child SheetFrame is placed below the upper SheetFrame.
                 The upper SheetFrame represents the additional information
                 of the parent.
-            style (bool): Whether to decorate the SheetFrame.
-            gray (bool): Whether to decorate the SheetFrame in gray.
-            autofit (bool): Whether to autofit the SheetFrame.
-            number_format (str): The number format of the SheetFrame.
-            font_size (int): The font size of the SheetFrame.
         """
         self.name = name
         self.parent = parent
@@ -112,48 +95,24 @@ class SheetFrame:
             self.head.tail = self
 
         else:
-            sheet = sheet or xw.sheets.active
+            sheet = sheet or xlwings.sheets.active
             self.cell = sheet.range(*args)
 
         self.sheet = self.cell.sheet
 
         if data is not None:
-            self.set_data(
-                data,
-                index=index,
-                number_format=number_format,
-                style=style,
-                gray=gray,
-                autofit=autofit,
-                font_size=font_size,
-                **kwargs,
-            )
-        else:
-            self.set_data_from_sheet(
-                index_level=index_level,
-                columns_level=columns_level,
-                number_format=number_format,
-            )
+            self.set_data(data, index=index)
 
-        if table and not self.table:
-            self.table = self.as_table()
+    def set_data(self, data: DataFrame | Series, index: bool = True) -> None:
+        """Set the data of the SheetFrame.
 
-    def set_data(
-        self,
-        data: DataFrame | Series,
-        *,
-        index: bool = True,
-        number_format: str | None = None,
-        style: bool = True,
-        gray: bool = False,
-        autofit: bool = True,
-        font_size: int | None = None,
-        **kwargs,
-    ) -> None:
+        Args:
+            data (DataFrame, optional): The DataFrame to write to the sheet.
+            index (bool): Whether to output the index of the DataFrame.
+        """
         if isinstance(data, Series):
             data = data.to_frame()
 
-        self.has_index = index
         self.index_level = len(data.index.names) if index else 0
         self.columns_level = len(data.columns.names)
 
@@ -163,30 +122,23 @@ class SheetFrame:
             self.columns_names = list(data.columns.names)
             self.cell.options(transpose=True).value = self.columns_names
 
-        if number_format:
-            self.set_number_format(number_format)
+        # if self.name:
+        #     book = self.sheet.book
+        #     refers_to = "=" + self.cell.get_address(include_sheetname=True)
+        #     book.names.add(self.name, refers_to)
 
-        if style:
-            self.set_style(gray=gray, autofit=autofit, font_size=font_size, **kwargs)
+    def set(self, index_level: int = 1, columns_level: int = 1) -> Self:
+        """Set the data of the SheetFrame from Excel sheet.
 
-        if self.name:
-            book = self.sheet.book
-            refers_to = "=" + self.cell.get_address(include_sheetname=True)
-            book.names.add(self.name, refers_to)
-
-    def set_data_from_sheet(
-        self,
-        *,
-        index_level: int = 1,
-        columns_level: int = 1,
-        number_format: str | None = None,
-    ) -> None:
+        Args:
+            index_level (int): The depth of the index.
+            columns_level (int): The depth of the columns.
+        """
         if self.name:
             book = self.sheet.book
             self.cell = book.names[self.name].refers_to_range
             self.sheet = self.cell.sheet
 
-        self.has_index = bool(index_level)
         self.index_level = index_level
         self.columns_level = columns_level
 
@@ -195,13 +147,12 @@ class SheetFrame:
             end = start.offset(self.columns_level - 1)
             self.columns_names = self.sheet.range(start, end).value
 
-        if number_format:
-            self.set_number_format(number_format)
-
         for api in self.sheet.api.ListObjects:
             if api.Range.Row == self.row and api.Range.Column == self.column:
                 self.table = Table(api=api, sheet=self.sheet)
                 break
+
+        return self
 
     def _update_cell(self) -> None:  # important
         self.cell = self.cell.offset(0, 0)
@@ -250,7 +201,7 @@ class SheetFrame:
 
         if self.columns_names:
             idx = [tuple(self.columns_names)]
-        elif self.has_index:
+        elif self.index_level:
             start = self.row + self.columns_level - 1, self.column
             end = start[0], start[1] + self.index_level - 1
             idx = self.sheet.range(start, end).value or []
@@ -383,11 +334,11 @@ class SheetFrame:
         start = self.row + 1, self.column
         end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
         range_ = self.sheet.range(start, end)
-        data = range_.api.SpecialCells(xw.constants.CellType.xlCellTypeVisible)
+        data = range_.api.SpecialCells(CellType.xlCellTypeVisible)
         value = [row.Value[0] for row in data.Rows]
         df = DataFrame(value, columns=self.columns)
 
-        if self.has_index and self.index_level:
+        if self.index_level:
             df = df.set_index(list(df.columns[: self.index_level]))
 
         return df
@@ -464,7 +415,7 @@ class SheetFrame:
             self.sheet.range(rng.offset(-1), rng.last_cell).autofit()
 
         if style:
-            self.set_style()
+            self.style()
 
         return rng
 
@@ -524,7 +475,7 @@ class SheetFrame:
             self.sheet.range(rng[0].offset(-1), rng[-1]).autofit()
 
         if style:
-            self.set_style()
+            self.style()
 
         return rng
 
@@ -566,11 +517,11 @@ class SheetFrame:
             self.range(column, -1).impl.autofit()
 
         if style:
-            self.set_style()
+            self.style()
 
         return rng[0].offset(1)
 
-    def __setitem__(self, column: str | tuple, value: Any) -> None:
+    def __setitem__(self, column: str | tuple, value: Any) -> RangeImpl:
         if column in self:
             rng = self.range(column).impl
         elif isinstance(column, str):
@@ -579,9 +530,10 @@ class SheetFrame:
             raise NotImplementedError
 
         if isinstance(value, str) and value.startswith("="):
-            self.add_formula_column(rng, value)
-        else:
-            rng.options(transpose=True).value = value
+            return self.add_formula_column(rng, value)
+
+        rng.options(transpose=True).value = value
+        return rng
 
     def ranges(self) -> Iterator[Range]:
         if self.columns_names is None:
@@ -713,7 +665,7 @@ class SheetFrame:
         values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
-        if self.has_index and self.index_columns[0]:
+        if self.index_level and self.index_columns[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
                 df.index = Index(index[index.columns[0]])
@@ -812,20 +764,20 @@ class SheetFrame:
     def get_number_format(self, column: str | tuple) -> str:
         return self.range(column, 0).impl.number_format
 
-    def set_number_format(
+    def number_format(
         self,
         number_format: str | dict | None = None,
         *,
         autofit: bool = False,
         **columns_format,
-    ) -> None:
+    ) -> Self:
         if isinstance(number_format, str):
             start = self.cell.offset(self.columns_level, self.index_level)
             rng = self.sheet.range(start, self.expand().last_cell)
             rng.number_format = number_format
             if autofit:
                 rng.autofit()
-            return
+            return self
 
         if isinstance(number_format, dict):
             columns_format.update(number_format)
@@ -844,15 +796,25 @@ class SheetFrame:
                         rng.autofit()
                     break
 
-    def set_style(self, *, gray: bool = False, **kwargs) -> None:
+        return self
+
+    def style(self, *, gray: bool = False, **kwargs) -> Self:
         set_frame_style(self, gray=gray, **kwargs)
         set_wide_column_style(self, gray=gray)
+        return self
 
-    def set_alignment(self, alignment: str) -> None:
+    def autofit(self) -> Self:
+        start = self.cell
+        end = start.offset(self.columns_level + len(self), len(self.columns) - 1)
+        self.sheet.range(start, end).autofit()
+        return self
+
+    def alignment(self, alignment: str) -> Self:
         start = self.cell
         end = start.offset(0, len(self.columns) - 1)
         rng = self.sheet.range(start, end)
         set_alignment(rng, alignment)
+        return self
 
     def set_adjacent_column_width(self, width: float) -> None:
         """Set the width of the adjacent empty column."""
@@ -889,11 +851,14 @@ class SheetFrame:
         const_header: bool = True,
         autofit: bool = True,
         style: bool = True,
-    ) -> Table:
+    ) -> Self:
+        if self.table:
+            return self
+
         if self.columns_level != 1:
             raise NotImplementedError
 
-        self.set_alignment("left")
+        self.alignment("left")
 
         end = self.cell.offset(len(self), len(self.columns) - 1)
         rng = self.sheet.range(self.cell, end)
@@ -907,7 +872,7 @@ class SheetFrame:
         )
         self.table = table
 
-        return table
+        return self
 
     def unlist(self) -> None:
         if self.table:

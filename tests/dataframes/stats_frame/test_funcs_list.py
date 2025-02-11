@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 @pytest.fixture(scope="module")
 def sf(sf_parent: SheetFrame):
     funcs = ["count", "max", "median", "soa"]
-    return StatsFrame(sf_parent, funcs, by=":y", table=True)
+    return StatsFrame(sf_parent, funcs, by=":y").as_table()
 
 
 def test_len(sf: StatsFrame):

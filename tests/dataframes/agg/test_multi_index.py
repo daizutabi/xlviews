@@ -25,7 +25,7 @@ def df():
 
 @pytest.fixture
 def sf(df: DataFrame, sheet: Sheet):
-    return SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    return SheetFrame(2, 2, data=df, sheet=sheet)
 
 
 @pytest.mark.parametrize(
@@ -67,7 +67,7 @@ def test_sf_str(sf: SheetFrame, df: DataFrame, func: str):
     b = df.agg(func)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data[0], b)
 
 
@@ -78,7 +78,7 @@ def test_sf_range(sf: SheetFrame, df: DataFrame, name: str):
     b = df.agg(name)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     func.value = name
     np.testing.assert_array_equal(sf.data[0], b)
 
@@ -86,14 +86,14 @@ def test_sf_range(sf: SheetFrame, df: DataFrame, name: str):
 def test_sf_str_columns(sf: SheetFrame):
     a = sf.agg("mean", columns="a", formula=True)
     assert len(a) == 1
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data, [[4.5]])
 
 
 def test_sf_str_columns_list(sf: SheetFrame):
     a = sf.agg("mean", columns=["a", "b"], formula=True)
     assert len(a) == 2
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     df = DataFrame([[4.5], [14.5]], index=["a", "b"], columns=[0.0])
     assert df.equals(sf.data)
 
@@ -104,7 +104,7 @@ def test_sf_dict(sf: SheetFrame, df: DataFrame):
     b = df.agg(func)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data[0], b)
 
 
@@ -115,14 +115,14 @@ def test_sf_list(sf: SheetFrame, df: DataFrame):
     assert isinstance(a, DataFrame)
     assert a.index.to_list() == b.index.to_list()
     assert a.columns.to_list() == b.columns.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data, b)
 
 
 def test_sf_list_columns(sf: SheetFrame, df: DataFrame):
     a = sf.agg(["sum", "count"], columns="b", formula=True)
     assert isinstance(a, DataFrame)
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data, [[116], [8]])
 
 
@@ -219,7 +219,7 @@ def test_index_list_as_address(sf: SheetFrame):
 def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
     a = sf.groupby(by).agg(func, as_address=True, formula=True)
     b = df.groupby(by).agg(func).astype(float)
-    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet)
     assert sf.data.equals(b)
 
 
@@ -230,7 +230,7 @@ def test_sf_group_str_range(sf: SheetFrame, df: DataFrame, func, by):
     rng.value = func
     a = sf.groupby(by).agg(rng, as_address=True, formula=True)
     b = df.groupby(by).agg(func).astype(float)
-    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet)
     assert sf.data.equals(b)
 
 
@@ -239,7 +239,7 @@ def test_sf_group_str_range(sf: SheetFrame, df: DataFrame, func, by):
 def test_sf_group_list_str(sf: SheetFrame, df: DataFrame, func, by):
     a = sf.groupby(by).agg(func, as_address=True, formula=True)
     b = df.groupby(by).agg(func).astype(float)
-    sf = SheetFrame(50, 10, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(50, 10, data=a, sheet=sf.sheet)
     assert sf.data.equals(b)
 
 
@@ -248,7 +248,7 @@ def test_sf_group_list_str(sf: SheetFrame, df: DataFrame, func, by):
 def test_sf_group_list_str_sort(sf: SheetFrame, df: DataFrame, by, sort):
     a = sf.groupby(by, sort=sort).agg("sum", as_address=True, formula=True)
     b = df.groupby(by, sort=sort).agg("sum").astype(float)
-    sf = SheetFrame(50, 20, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(50, 20, data=a, sheet=sf.sheet)
     assert sf.data.equals(b)
 
 
@@ -261,7 +261,7 @@ def test_sf_group_list_str_sort(sf: SheetFrame, df: DataFrame, by, sort):
 def test_sf_group_list_dict(sf: SheetFrame, df: DataFrame, func, by, sort):
     a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
     b = df.groupby(by, sort=sort).agg(func).astype(float)
-    sf = SheetFrame(50, 30, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(50, 30, data=a, sheet=sf.sheet)
     assert sf.data.equals(b)
 
 
@@ -271,5 +271,5 @@ def test_sf_group_list_list(sf: SheetFrame, df: DataFrame, func, sort):
     by = ["y", "x"]
     a = sf.groupby(by, sort=sort).agg(func, as_address=True, formula=True)
     b = df.groupby(by, sort=sort).agg(func).astype(float)
-    sf = SheetFrame(50, 40, data=a, sheet=sf.sheet, style=False)
+    sf = SheetFrame(50, 40, data=a, sheet=sf.sheet)
     assert sf.data.equals(b)

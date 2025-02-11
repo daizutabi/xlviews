@@ -56,13 +56,13 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
 
 
 def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set_data_from_sheet(index_level=2, columns_level=2)
-    assert sf.has_index is True
+    sf.set(index_level=2, columns_level=2)
+    assert sf.index_level == 2
     assert sf.index_columns == ["x", "y"]
     c = [(None, "z"), ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
     assert sf.value_columns == c
-    sf.set_data_from_sheet(index_level=3, columns_level=2)
-    assert sf.has_index is True
+    sf.set(index_level=3, columns_level=2)
+    assert sf.index_level == 3
     assert sf.index_columns == ["x", "y", "z"]
     c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
     assert sf.value_columns == c

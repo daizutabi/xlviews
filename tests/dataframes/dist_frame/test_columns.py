@@ -35,7 +35,7 @@ def test_group_error(sheet: Sheet):
         },
     )
     df = df.set_index(["x", "y"])
-    sf = SheetFrame(3, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(3, 2, data=df, sheet=sheet)
     with pytest.raises(ValueError, match="group must be continuous"):
         sf = DistFrame(sf, None, by=["x", "y"])
 
@@ -51,7 +51,7 @@ def test_group_const(sheet: Sheet):
     )
     df = df.set_index(["x", "y"])
 
-    sf = SheetFrame(3, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(3, 2, data=df, sheet=sheet)
     sf = sf.dist_frame(by=["x", "y"])
     assert sf.sheet["H20"].value == 1
     assert sf.sheet["H21"].value == NONCONST_VALUE

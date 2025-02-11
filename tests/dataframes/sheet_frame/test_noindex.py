@@ -34,11 +34,11 @@ def test_init(sf: SheetFrame, fc: FrameContainer):
 
 
 def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set_data_from_sheet(index_level=1)
-    assert sf.has_index is True
+    sf.set(index_level=1)
+    assert sf.index_level == 1
     assert sf.value_columns == ["b"]
-    sf.set_data_from_sheet(index_level=0)
-    assert sf.has_index is False
+    sf.set(index_level=0)
+    assert sf.index_level == 0
     assert sf.value_columns == ["a", "b"]
 
 
@@ -123,7 +123,7 @@ def test_range_error(sf: SheetFrame):
 
 def test_setitem(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet)
     x = [10, 20, 30]
     sf["a"] = x
     np.testing.assert_array_equal(sf.data["a"], x)
@@ -131,7 +131,7 @@ def test_setitem(sheet: Sheet):
 
 def test_setitem_new_column(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet)
     x = [10, 20, 30]
     sf["c"] = x
     assert sf.columns == [None, "a", "b", "c"]

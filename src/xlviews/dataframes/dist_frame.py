@@ -27,13 +27,8 @@ class DistFrame(SheetFrame):
         self,
         parent: SheetFrame,
         columns: str | list[str] | None = None,
-        *,
         by: str | list[str] | None = None,
         dist: str | dict[str, str] = "norm",
-        style: bool = True,
-        gray: bool = True,
-        autofit: bool = True,
-        **kwargs,
     ) -> None:
         if columns is None:
             columns = parent.value_columns
@@ -48,13 +43,7 @@ class DistFrame(SheetFrame):
         by = list(iter_columns(parent, by)) if by else None
         data = get_init_data(parent, columns, by)
 
-        super().__init__(
-            data=data,
-            parent=parent,
-            index=by is not None,
-            style=False,
-            **kwargs,
-        )
+        super().__init__(data=data, parent=parent, index=by is not None)
 
         if by:
             self.link_to_index(by)
@@ -87,11 +76,10 @@ class DistFrame(SheetFrame):
 
         for column in columns:
             fmt = self.parent.range(column).impl.number_format
-            self.set_number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
+            self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
 
-        if style:
-            self.set_style(autofit=autofit, gray=gray)
-
+        self.style(gray=True)
+        self.autofit()
         self.const_values()
 
     def link_to_index(self, by: list[str]) -> None:
@@ -110,7 +98,7 @@ class DistFrame(SheetFrame):
         index = self.parent.index_columns
         array = np.zeros((len(index), 1))
         df = DataFrame(array, columns=["value"], index=index)
-        sf = SheetFrame(data=df, head=self, gray=True, autofit=False)
+        sf = SheetFrame(data=df, head=self).style(gray=True)
         head = self.parent.cell.offset(-1, 0)
         tail = sf.cell.offset(1, 1)
         for k in range(len(index)):

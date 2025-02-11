@@ -31,7 +31,7 @@ def df():
 
 @pytest.fixture(scope="module")
 def sf(df: DataFrame, sheet_module: Sheet):
-    return SheetFrame(3, 3, data=df, table=True, sheet=sheet_module)
+    return SheetFrame(3, 3, data=df, sheet=sheet_module).as_table()
 
 
 @pytest.mark.parametrize(
