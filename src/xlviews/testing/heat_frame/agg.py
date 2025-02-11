@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import create_sheet
-from xlviews.testing.heat_frame.base import MultiIndex
+from xlviews.testing.heat_frame.base import MultiIndexParent
 from xlviews.utils import add_validate_list
 
 
-class Agg(MultiIndex):
+class Agg(MultiIndexParent):
     column: int = 2
 
 

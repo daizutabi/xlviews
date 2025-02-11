@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 
 class HeatFrame(SheetFrame):
-    data: DataFrame
+    _data: DataFrame
 
     @turn_off_screen_updating
     def __init__(
@@ -68,19 +68,16 @@ class HeatFrame(SheetFrame):
         # else:
         #     df = data
 
-        self.data = data
+        self._data = data
 
         super().__init__(row, column, data=data, index=True, sheet=sheet)
 
-        # if style:
-        #     set_heat_frame_style(self, autofit=autofit, font_size=font_size, **kwargs)
-
-        # self.set_adjacent_column_width(1, offset=-1)
-
-        # self.set_extrema(vmin, vmax)
-        # self.set_colorbar()
-
-        # set_color_scale(self.heat_range(), self.vmin, self.vmax)
+        set_heat_frame_style(self)
+        self.set_adjacent_column_width(1, offset=-1)
+        self.set_extrema(vmin, vmax)
+        self.set_colorbar()
+        set_color_scale(self.heat_range(), self.vmin, self.vmax)
+        self.set_heat_style()
 
         # self.set_label(value)
 
@@ -92,7 +89,7 @@ class HeatFrame(SheetFrame):
 
     @property
     def shape(self) -> tuple[int, int]:
-        return self.data.shape
+        return self._data.shape
 
     def __len__(self) -> int:
         return self.shape[0]
@@ -163,6 +160,13 @@ class HeatFrame(SheetFrame):
         rng.value = label
         set_font(rng, bold=True, size=rcParams["frame.font.size"])
         set_alignment(rng, horizontal_alignment="center")
+
+    def autofit(self) -> Self:
+        start = self.cell
+        end = start.offset(*self.shape)
+        self.sheet.range(start, end).autofit()
+        self.label.expand("down").autofit()
+        return self
 
     def set_adjacent_column_width(self, width: float, offset: int = 1) -> None:
         """Set the width of the adjacent empty column."""

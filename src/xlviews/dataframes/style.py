@@ -218,7 +218,6 @@ def set_table_style(
 def set_heat_frame_style(
     sf: HeatFrame,
     *,
-    autofit: bool = False,
     alignment: str | None = "center",
     border: bool = True,
     font: bool = True,
@@ -229,7 +228,6 @@ def set_heat_frame_style(
 
     Args:
         sf: The SheetFrame object.
-        autofit: Whether to autofit the frame.
         alignment: The alignment of the frame.
         border: Whether to draw the border.
         font: Whether to specify the font.
@@ -268,9 +266,6 @@ def set_heat_frame_style(
     set_style(start, end, "values")
 
     rng = sheet.range(cell, end)
-
-    if autofit:
-        rng.columns.autofit()
 
     if alignment:
         set_alignment(rng, alignment)

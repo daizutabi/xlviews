@@ -4,19 +4,20 @@ from xlwings import Sheet
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing import is_excel_installed
-from xlviews.testing.heat_frame.base import Base
+from xlviews.testing.heat_frame.base import Base, BaseParent
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def fc(sheet_module: Sheet):
-    return Base(sheet_module)
+def fc_parent(sheet_module: Sheet):
+    return BaseParent(sheet_module)
 
 
 @pytest.fixture(scope="module")
-def sf(fc: Base):
-    return HeatFrame(2, 6, data=fc.sf, x="x", y="y", value="v", sheet=fc.sf.sheet)
+def sf(fc_parent: BaseParent):
+    fc = Base(fc_parent.sf)
+    return fc.sf
 
 
 def test_index(sf: HeatFrame):

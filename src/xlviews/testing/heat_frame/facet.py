@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import create_sheet
-from xlviews.testing.heat_frame.base import MultiIndex
+from xlviews.testing.heat_frame.base import MultiIndexParent
 
 if TYPE_CHECKING:
     from pandas import DataFrame
 
 
-class Facet(MultiIndex):
+class Facet(MultiIndexParent):
     column: int = 2
 
     @classmethod
