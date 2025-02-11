@@ -87,10 +87,10 @@ class DistFrame(SheetFrame):
 
         for column in columns:
             fmt = self.parent.range(column).impl.number_format
-            self.set_number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
+            self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
 
         if style:
-            self.set_style(autofit=autofit, gray=gray)
+            self.style(autofit=autofit, gray=gray)
 
         self.const_values()
 

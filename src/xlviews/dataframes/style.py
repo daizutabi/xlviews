@@ -82,7 +82,6 @@ def _set_style_font(
 def set_frame_style(
     sf: SheetFrame,
     *,
-    autofit: bool = False,
     alignment: str | None = "center",
     banding: bool = False,
     succession: bool = False,
@@ -166,9 +165,6 @@ def set_frame_style(
         ew = 2 if gray else 3
         ec = rcParams["frame.gray.border.color"] if gray else 0
         set_border(rng, edge_weight=ew, inside_weight=0, edge_color=ec)
-
-    if autofit:
-        rng.columns.autofit()
 
     if alignment:
         set_alignment(rng, alignment)

@@ -29,7 +29,7 @@ class Parent(FrameContainer):
         return df
 
     def init(self) -> None:
-        self.sf.set_number_format(c="0.00")
+        self.sf.number_format(c="0.00")
 
 
 if __name__ == "__main__":

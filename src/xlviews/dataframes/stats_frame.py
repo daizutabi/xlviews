@@ -79,13 +79,13 @@ class StatsFrame(SheetFrame):
         if table:
             self.as_table(autofit=False, const_header=True)
 
-        self.set_style(autofit=False, succession=succession)
+        self.style(autofit=False, succession=succession)
 
         if isinstance(funcs, list):
             self.set_stats_style(func_column_name)
 
         if table:
-            self.set_alignment("left")
+            self.alignment("left")
 
         if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
             func = default if default in funcs else funcs[0]

@@ -39,26 +39,26 @@ def test_column_one(sheet: Sheet):
 
 @pytest.mark.parametrize("number_format", ["0", "0.00", "0.00%"])
 def test_number_format(sf: SheetFrame, number_format: str):
-    sf.set_number_format(number_format, autofit=True)
+    sf.number_format(number_format, autofit=True)
     assert sf.range("a").impl.number_format == number_format
     assert sf.range("b").impl.number_format == number_format
 
 
 def test_number_format_kwargs(sf: SheetFrame):
-    sf.set_number_format(autofit=False, a="0", b="0.0")
+    sf.number_format(autofit=False, a="0", b="0.0")
     assert sf.range("a").impl.number_format == "0"
     assert sf.range("b").impl.number_format == "0.0"
 
 
 def test_number_format_dict(sf: SheetFrame):
-    sf.set_number_format({r"[ab]": "0.00"}, autofit=True)
+    sf.number_format({r"[ab]": "0.00"}, autofit=True)
     assert sf.get_number_format("a") == "0.00"
     assert sf.get_number_format("b") == "0.00"
 
 
 def test_style_gray(sf: SheetFrame):
     sf.add_wide_column("u", range(3), autofit=True, number_format="0", style=True)
-    sf.set_style(gray=True)
+    sf.style(gray=True)
     assert sf.sheet["F2"].api.Font.Bold
     assert sf.sheet["D3"].api.Font.Bold
     assert sf.sheet["C3"].api.Interior.Color == 15658734
@@ -71,7 +71,7 @@ def test_style_gray(sf: SheetFrame):
     [("left", -4131), ("center", -4108), ("right", -4152)],
 )
 def test_alignment(sf: SheetFrame, alignment: str, value: int):
-    sf.set_alignment(alignment)
+    sf.alignment(alignment)
     assert sf.cell.api.HorizontalAlignment == value
 
 
