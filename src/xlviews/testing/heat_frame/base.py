@@ -29,7 +29,7 @@ class Base(HeatFrameContainer):
 
 
 class MultiIndexParent(FrameContainer):
-    column: int = 14
+    column: int = 15
 
     @classmethod
     def dataframe(cls) -> DataFrame:

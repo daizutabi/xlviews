@@ -21,7 +21,7 @@ def sf(fc_parent: MultiIndexParent):
 
 
 def test_index(sf: HeatFrame):
-    x = sf.sheet.range("T3:T26").value
+    x = sf.sheet.range("V3:V26").value
     assert x
     y = np.array([None] * 24)
     y[::6] = range(1, 5)
@@ -34,7 +34,7 @@ def test_index_from_df(sf: HeatFrame):
 
 
 def test_columns(sf: HeatFrame):
-    x = sf.sheet.range("U2:AF2").value
+    x = sf.sheet.range("W2:AH2").value
     assert x
     y = np.array([None] * 12)
     y[::4] = range(1, 4)
@@ -55,16 +55,16 @@ def test_columns_from_df(sf: HeatFrame):
     ],
 )
 def test_values(sf: HeatFrame, i: int, value: int):
-    assert sf.sheet.range(f"U{i}:Y{i}").value == value
+    assert sf.sheet.range(f"W{i}:AA{i}").value == value
 
 
 def test_vmin(sf: HeatFrame):
-    assert sf.vmin.get_address() == "$AH$26"
+    assert sf.vmin.get_address() == "$AJ$26"
 
 
 def test_vmax(sf: HeatFrame):
-    assert sf.vmax.get_address() == "$AH$3"
+    assert sf.vmax.get_address() == "$AJ$3"
 
 
 def test_label(sf: HeatFrame):
-    assert sf.label.get_address() == "$AH$2"
+    assert sf.label.get_address() == "$AJ$2"

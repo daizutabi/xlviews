@@ -29,7 +29,7 @@ class AggRange(HeatFrameContainer):
 
     @classmethod
     def dataframe(cls, sf: SheetFrame) -> DataFrame:
-        func = Range((13, 13), sheet=sf.sheet)
+        func = Range((13, 14), sheet=sf.sheet)
         add_validate_list(func, ["min", "max", "mean", "median", "soa"], "mean")
         return sf.pivot_table("v", "Y", "X", func, formula=True)
 
