@@ -30,8 +30,8 @@ def sf_basic(sheet_module: Sheet):
     from xlviews.dataframes.style import set_frame_style
 
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet_module)
-    set_frame_style(sf, autofit=True)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet_module)
+    set_frame_style(sf)
     return sf
 
 
@@ -49,8 +49,8 @@ def test_frame_style_banding_succession(sheet_module: Sheet):
 
     df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     df = df.set_index("x")
-    sf = SheetFrame(2, 6, data=df, style=False, sheet=sheet_module)
-    set_frame_style(sf, autofit=True, banding=True, succession=True)
+    sf = SheetFrame(2, 6, data=df, sheet=sheet_module)
+    set_frame_style(sf, banding=True, succession=True)
     assert sf.sheet["F4"].api.FormatConditions(1)
     assert sf.sheet["H5"].api.FormatConditions(1)
 
@@ -68,8 +68,8 @@ def df_mc():
 def sf_mc(sheet_module: Sheet, df_mc: DataFrame):
     from xlviews.dataframes.style import set_frame_style
 
-    sf = SheetFrame(9, 2, data=df_mc, style=False, sheet=sheet_module)
-    set_frame_style(sf, autofit=True)
+    sf = SheetFrame(9, 2, data=df_mc, sheet=sheet_module)
+    set_frame_style(sf)
     return sf
 
 
@@ -107,8 +107,8 @@ def df_mic(df_mc: DataFrame):
 def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
     from xlviews.dataframes.style import set_frame_style
 
-    sf = SheetFrame(9, 7, data=df_mic, style=False, sheet=sheet_module)
-    set_frame_style(sf, autofit=True)
+    sf = SheetFrame(9, 7, data=df_mic, sheet=sheet_module)
+    set_frame_style(sf)
     return sf
 
 
@@ -137,7 +137,7 @@ def sf_wide(sheet_module: Sheet):
     from xlviews.dataframes.style import set_wide_column_style
 
     df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
-    sf = SheetFrame(24, 2, data=df, style=False, sheet=sheet_module)
+    sf = SheetFrame(24, 2, data=df, sheet=sheet_module)
     sf.add_wide_column("u", range(3), autofit=True)
     sf.add_wide_column("v", range(4), autofit=True)
     set_wide_column_style(sf, gray=False)
@@ -158,7 +158,8 @@ def test_table_style(sheet_module: Sheet):
 
     df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     df = df.set_index("x")
-    sf = SheetFrame(17, 2, data=df, style=False, sheet=sheet_module)
-    table = sf.as_table(style=False)
+    sf = SheetFrame(17, 2, data=df, sheet=sheet_module)
+    table = sf.as_table(style=False).table
+    assert table
     set_table_style(table)
     assert table.sheet.book.api.TableStyles("xlviews")

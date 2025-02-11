@@ -70,7 +70,7 @@ class HeatFrame(SheetFrame):
 
         self.df = df
 
-        super().__init__(row, column, data=df, index=True, sheet=sheet, style=False)
+        super().__init__(row, column, data=df, index=True, sheet=sheet)
 
         if style:
             set_heat_frame_style(self, autofit=autofit, font_size=font_size, **kwargs)

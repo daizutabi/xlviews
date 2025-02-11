@@ -123,7 +123,7 @@ def test_range_error(sf: SheetFrame):
 
 def test_setitem(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet)
     x = [10, 20, 30]
     sf["a"] = x
     np.testing.assert_array_equal(sf.data["a"], x)
@@ -131,7 +131,7 @@ def test_setitem(sheet: Sheet):
 
 def test_setitem_new_column(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet)
     x = [10, 20, 30]
     sf["c"] = x
     assert sf.columns == [None, "a", "b", "c"]

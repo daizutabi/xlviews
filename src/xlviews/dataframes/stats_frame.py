@@ -23,14 +23,11 @@ class StatsFrame(SheetFrame):
         self,
         parent: SheetFrame,
         funcs: str | list[str] | None = None,
-        *,
         by: str | list[str] | None = None,
-        table: bool = True,
+        *,
         default: str = "median",
         func_column_name: str = "func",
-        succession: bool = False,
         auto_filter: bool = True,
-        **kwargs,
     ) -> None:
         """Create a StatsFrame.
 
@@ -41,13 +38,8 @@ class StatsFrame(SheetFrame):
                     'count', 'sum', 'min', 'max', 'mean', 'median', 'std', 'soa%'
                 None to use the default functions.
             by (str, list of str, optional): The column names to be grouped by.
-            table (bool): If True, the frame is displayed in table format.
             default (str, optional): The default function to be displayed.
             func_column_name (str, optional): The name of the function column.
-            succession (bool, optional): If True, the continuous index is hidden.
-            auto_filter (bool): If True, the displayed functions are limited to
-                the default ones.
-            **kwargs: Passed to SheetFrame.__init__.
         """
         funcs = get_func(funcs)
         by = get_by(parent, by)
@@ -69,23 +61,17 @@ class StatsFrame(SheetFrame):
             column,
             data=df,
             index=bool(parent.index_level),
-            autofit=False,
-            style=False,
             sheet=parent.sheet,
-            **kwargs,
         )
         self.parent = parent
 
-        if table:
-            self.as_table(autofit=False, const_header=True)
-
-        self.style(autofit=False, succession=succession)
+        self.as_table(autofit=False, const_header=True)
+        self.style()
 
         if isinstance(funcs, list):
             self.set_stats_style(func_column_name)
 
-        if table:
-            self.alignment("left")
+        self.alignment("left")
 
         if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
             func = default if default in funcs else funcs[0]

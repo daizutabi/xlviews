@@ -27,7 +27,7 @@ def sf(fc: FrameContainer):
 
 @pytest.fixture
 def table(sf: SheetFrame):
-    yield sf.as_table()
+    yield sf.as_table().table
     sf.unlist()
 
 

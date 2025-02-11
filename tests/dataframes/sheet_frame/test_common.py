@@ -12,26 +12,26 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 @pytest.fixture
 def sf(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    return SheetFrame(3, 3, data=df, style=False, sheet=sheet)
+    return SheetFrame(3, 3, data=df, sheet=sheet)
 
 
 def test_index_false(sheet: Sheet):
     df = DataFrame({"a": [1, 2], "b": [2, 4]})
-    sf = SheetFrame(2, 3, data=df, index=False, style=False, sheet=sheet)
+    sf = SheetFrame(2, 3, data=df, index=False, sheet=sheet)
     assert sf.columns == ["a", "b"]
     assert sf.index_level == 0
 
 
 def test_row_one(sheet: Sheet):
     df = DataFrame({"a": [1], "b": [2]})
-    sf = SheetFrame(2, 2, data=df, style=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet)
     assert len(sf) == 1
     np.testing.assert_array_equal(sf.data["a"], [1])
 
 
 def test_column_one(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3]})
-    sf = SheetFrame(2, 2, data=df, style=False, index=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, index=False, sheet=sheet)
     assert len(sf) == 3
     assert sf.columns == ["a"]
     np.testing.assert_array_equal(sf.data["a"], [1, 2, 3])
@@ -88,7 +88,7 @@ def test_child_frame(sf: SheetFrame):
     assert cell.get_address() == "$J$3"
 
     df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
-    sf_child = SheetFrame(parent=sf, data=df, style=False)
+    sf_child = SheetFrame(parent=sf, data=df)
     assert sf_child.cell.get_address() == "$G$3"
 
     assert sf_child.parent is sf
@@ -100,7 +100,7 @@ def test_child_frame(sf: SheetFrame):
 
 def test_head_frame(sf: SheetFrame):
     df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
-    sf_tail = SheetFrame(head=sf, data=df, number_format="0.00")
+    sf_tail = SheetFrame(head=sf, data=df)
     assert sf_tail.cell.get_address() == "$C$9"
     assert sf.tail is sf_tail
     assert sf_tail.head is sf
@@ -110,6 +110,6 @@ def test_active_sheet(sheet: Sheet):
     sheet.name = "active"
     sheet.activate()
     df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
-    sf = SheetFrame(100, 10, data=df, style=False)
+    sf = SheetFrame(100, 10, data=df)
     assert sf.sheet.name == "active"
     assert sf.cell.get_address() == "$J$100"
