@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from itertools import product
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -9,13 +8,11 @@ from pandas import DataFrame
 
 from xlviews.config import rcParams
 from xlviews.decorators import turn_off_screen_updating
+from xlviews.range.range import Range
 from xlviews.range.style import set_alignment, set_font
 from xlviews.utils import iter_columns
 
 from .sheet_frame import SheetFrame
-
-if TYPE_CHECKING:
-    from xlwings import Range
 
 
 class DistFrame(SheetFrame):
@@ -50,12 +47,24 @@ class DistFrame(SheetFrame):
         if by:
             self.link_to_index(parent, by)
 
-        group = self.groupby(by).group
+        self.set_values(parent, columns, by)
+        self.style(gray=True)
+        self.autofit()
+        self.const_values(parent)
 
-        for column in columns:
+    def set_values(
+        self,
+        parent: SheetFrame,
+        columns: list[str],
+        by: list[str] | None,
+    ) -> None:
+        group = self.groupby(by)
+        parent_columns = parent.column_index(columns)
+        self_columns = self.column_index([c + "_n" for c in columns])
+
+        it = zip(parent_columns, self_columns, columns, strict=True)
+        for parent_column, self_column, column in it:
             dist = self.dist_func[column]
-            parent_column = parent.range(column).column
-            column_int = self.range(column + "_n").column
 
             for row in group.values():
                 if len(row) != 1:
@@ -64,37 +73,34 @@ class DistFrame(SheetFrame):
                 start = row[0][0]
                 length = row[0][1] - start + 1
 
-                parent_cell = parent.sheet.range(start, parent_column)
-                cell = self.sheet.range(start, column_int)
+                parent_cell = Range((start, parent_column), sheet=parent.sheet)
+                self_cell = Range((start, self_column), sheet=self.sheet)
 
                 formula = counter(parent_cell)
-                set_formula(cell, length, formula)
+                set_formula(self_cell, length, formula)
 
-                formula = sorted_value(parent_cell, cell, length)
-                set_formula(cell.offset(0, 1), length, formula)
+                formula = sorted_value(parent_cell, self_cell, length)
+                set_formula(self_cell.offset(0, 1), length, formula)
 
-                formula = sigma_value(cell, length, dist)
-                set_formula(cell.offset(0, 2), length, formula)
+                formula = sigma_value(self_cell, length, dist)
+                set_formula(self_cell.offset(0, 2), length, formula)
 
         for column in columns:
             fmt = parent.range(column).impl.number_format
             self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
 
-        self.style(gray=True)
-        self.autofit()
-        self.const_values(parent)
-
     def link_to_index(self, parent: SheetFrame, by: list[str]) -> None:
         start = self.row + 1
         end = start + len(self) - 1
-        for column in by:
-            ref = parent.index(column)
-            ref = parent.sheet.range(start, ref)
-            ref = ref.get_address(row_absolute=False)
-            formula = f"={ref}"
-            to = self.index(column)
-            range_ = self.sheet.range((start, to), (end, to))
-            range_.value = formula
+
+        parent_columns = parent.column_index(by)
+        self_columns = self.column_index(by)
+
+        it = zip(parent_columns, self_columns, strict=True)
+        for parent_column, self_column in it:
+            ref = Range((start, parent_column), sheet=parent.sheet)
+            to = Range((start, self_column), (end, self_column), sheet=self.sheet)
+            to.value = ref.get_address(row_absolute=False, formula=True)
 
     def const_values(self, parent: SheetFrame) -> None:
         index = parent.index_columns
@@ -103,13 +109,15 @@ class DistFrame(SheetFrame):
 
         row = self.row + len(self) + self.columns_level + 1
         column = self.column
+
         sf = SheetFrame(row, column, data, index=bool(index), sheet=self.sheet)
         sf.style(gray=True)
-        head = parent.cell.offset(-1, 0)
-        tail = sf.cell.offset(1, 1)
+
+        head = Range((parent.row - 1, parent.column), sheet=parent.sheet)
+        tail = Range((sf.row + 1, sf.column + 1), sheet=sf.sheet)
+
         for k in range(len(index)):
-            formula = "=" + head.offset(0, k).get_address()
-            tail.offset(k, 0).value = formula
+            tail.offset(k, 0).value = head.offset(0, k).get_address(formula=True)
 
     def plot(
         self,
@@ -265,5 +273,5 @@ def sigma_value(cell: Range, length: int, dist: str) -> str:
 
 
 def set_formula(cell: Range, length: int, formula: str) -> None:
-    end = cell.offset(length - 1)
-    cell.sheet.range(cell, end).value = formula
+    rng = Range((cell.row, cell.column), (cell.row + length - 1, cell.column))
+    rng.value = formula

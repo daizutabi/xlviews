@@ -21,7 +21,7 @@ def test_set_first_position(sheet: Sheet, pos: str, left: float, top: float):
     )
 
     df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
-    sf = SheetFrame(2, 2, data=df, style=False, autofit=False, sheet=sheet)
+    sf = SheetFrame(2, 2, data=df, sheet=sheet)
 
     set_first_position(sf, pos)
     assert FIRST_POSITION["left"] == left

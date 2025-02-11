@@ -44,12 +44,6 @@ class SheetFrame:
     columns_names: list[str] | None = None
     table: Table | None = None
     name: str | None
-    # parent: SheetFrame | None
-    # children: list[SheetFrame]
-    # head: SheetFrame | None
-    # tail: SheetFrame | None = None
-    # stats: StatsFrame | None = None
-    # dist: DistFrame | None = None
 
     @turn_off_screen_updating
     def __init__(
@@ -79,19 +73,6 @@ class SheetFrame:
                 The upper SheetFrame represents the additional information
                 of the parent.
         """
-        # self.parent = parent
-        # self.children = []
-        # self.head = head
-
-        # if self.parent:  # Locate the child frame to the right of the parent frame.
-        #     self.cell = self.parent.get_child_cell()
-        #     self.parent.add_child_frame(self)
-
-        # elif self.head:  # Locate the child frame below the head frame.
-        #     row_offset = len(self.head) + self.head.columns_level + 1
-        #     self.cell = self.head.cell.offset(row_offset, 0)
-        #     self.head.tail = self
-
         self.sheet = sheet or xlwings.sheets.active
         self.cell = self.sheet.range(row, column)
         self.name = name
