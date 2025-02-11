@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlviews.dataframes.heat_frame import pivot_table
 from xlviews.range.range import Range
 from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.base import MultiIndexParent
@@ -22,8 +21,7 @@ class AggParent(MultiIndexParent):
 class AggStr(HeatFrameContainer):
     @classmethod
     def dataframe(cls, sf: SheetFrame) -> DataFrame:
-        data = sf.groupby(["X", "Y"]).agg("mean", "v", formula=True)
-        return pivot_table(data, "v", "X", "Y")
+        return sf.pivot_table("v", "Y", "X", "mean", formula=True)
 
 
 class AggRange(HeatFrameContainer):
@@ -33,8 +31,7 @@ class AggRange(HeatFrameContainer):
     def dataframe(cls, sf: SheetFrame) -> DataFrame:
         func = Range((13, 13), sheet=sf.sheet)
         add_validate_list(func, ["min", "max", "mean", "median", "soa"], "mean")
-        data = sf.groupby(["X", "Y"]).agg(func, "v", formula=True)
-        return pivot_table(data, "v", "X", "Y")
+        return sf.pivot_table("v", "Y", "X", func, formula=True)
 
 
 if __name__ == "__main__":

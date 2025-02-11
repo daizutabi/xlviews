@@ -554,61 +554,6 @@ class SheetFrame:
         rng.options(transpose=True).value = value
         return rng
 
-    def ranges(self) -> Iterator[Range]:
-        if self.columns_names is None:
-            start = self.column + self.index_level
-            end = start + len(self.value_columns) - 1
-            offset = self.row + self.columns_level
-
-            for index in range(len(self)):
-                yield Range(
-                    (index + offset, start),
-                    (index + offset, end),
-                    sheet=self.sheet,
-                )
-
-        else:
-            start = self.row + self.columns_level
-            end = start + len(self) - 1
-            offset = self.column + self.index_level
-
-            for index in range(len(self.value_columns)):
-                yield Range(
-                    (start, index + offset),
-                    (end, index + offset),
-                    sheet=self.sheet,
-                )
-
-    def melt(
-        self,
-        func: Func = None,
-        value_name: str = "value",
-        row_absolute: bool = True,
-        column_absolute: bool = True,
-        include_sheetname: bool = False,
-        external: bool = False,
-        formula: bool = False,
-    ) -> DataFrame:
-        """Unpivot a SheetFrame from wide to long format."""
-        if self.columns_names is None:
-            raise NotImplementedError
-
-        columns = self.value_columns
-        df = DataFrame(columns, columns=self.columns_names)
-
-        agg = partial(
-            aggregate,
-            func,
-            row_absolute=row_absolute,
-            column_absolute=column_absolute,
-            include_sheetname=include_sheetname,
-            external=external,
-            formula=formula,
-        )
-
-        df[value_name] = list(map(agg, self.ranges()))
-        return df
-
     @overload
     def get_address(
         self,
@@ -756,6 +701,99 @@ class SheetFrame:
             func = None
 
         return aggregate(func, rng, **kwargs)
+
+    def ranges(self) -> Iterator[Range]:
+        if self.columns_names is None:
+            start = self.column + self.index_level
+            end = start + len(self.value_columns) - 1
+            offset = self.row + self.columns_level
+
+            for index in range(len(self)):
+                yield Range(
+                    (index + offset, start),
+                    (index + offset, end),
+                    sheet=self.sheet,
+                )
+
+        else:
+            start = self.row + self.columns_level
+            end = start + len(self) - 1
+            offset = self.column + self.index_level
+
+            for index in range(len(self.value_columns)):
+                yield Range(
+                    (start, index + offset),
+                    (end, index + offset),
+                    sheet=self.sheet,
+                )
+
+    def melt(
+        self,
+        func: Func = None,
+        value_name: str = "value",
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
+    ) -> DataFrame:
+        """Unpivot a SheetFrame from wide to long format."""
+        if self.columns_names is None:
+            raise NotImplementedError
+
+        columns = self.value_columns
+        df = DataFrame(columns, columns=self.columns_names)
+
+        agg = partial(
+            aggregate,
+            func,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
+
+        df[value_name] = list(map(agg, self.ranges()))
+        return df
+
+    def pivot_table(
+        self,
+        values: str | list[str],
+        index: str | list[str],
+        columns: str | list[str],
+        aggfunc: Func = None,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
+    ) -> DataFrame:
+        if aggfunc is None:
+            data = self.get_address(
+                [values] if isinstance(values, str) else values,
+                row_absolute=row_absolute,
+                column_absolute=column_absolute,
+                include_sheetname=include_sheetname,
+                external=external,
+                formula=formula,
+            )
+
+        else:
+            by = [index] if isinstance(index, str) else index
+            by = [*by, columns] if isinstance(columns, str) else by + columns
+
+            data = self.groupby(by).agg(
+                aggfunc,
+                values,
+                row_absolute=row_absolute,
+                column_absolute=column_absolute,
+                include_sheetname=include_sheetname,
+                external=external,
+                formula=formula,
+            )
+
+        return data.pivot_table(values, index, columns, aggfunc=lambda x: x)
 
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)

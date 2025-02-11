@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from pandas import DataFrame
 
-from xlviews.dataframes.heat_frame import pivot_table
 from xlviews.testing.common import FrameContainer, create_sheet
 from xlviews.testing.heat_frame.common import HeatFrameContainer
 
@@ -28,12 +27,11 @@ class BaseParent(FrameContainer):
 class Base(HeatFrameContainer):
     @classmethod
     def dataframe(cls, sf: SheetFrame) -> DataFrame:
-        data = sf.get_address(["v"], formula=True)
-        return pivot_table(data, "v", "x", "y")
+        return sf.pivot_table("v", "y", "x", formula=True)
 
     def init(self) -> None:
         super().init()
-        self.sf.set_label("v")
+        self.sf.label = "v"
 
 
 class MultiIndexParent(FrameContainer):
@@ -58,8 +56,7 @@ class MultiIndexParent(FrameContainer):
 class MultiIndex(HeatFrameContainer):
     @classmethod
     def dataframe(cls, sf: SheetFrame) -> DataFrame:
-        data = sf.get_address(["v"], formula=True)
-        return pivot_table(data, "v", ["X", "x"], ["Y", "y"])
+        return sf.pivot_table("v", ["Y", "y"], ["X", "x"], formula=True)
 
 
 if __name__ == "__main__":
