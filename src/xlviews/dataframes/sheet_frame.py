@@ -14,7 +14,7 @@ from xlwings import Sheet
 from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 from xlviews.element import Bar, Plot, Scatter
 from xlviews.grid import FacetGrid
 from xlviews.range.formula import Func, aggregate
@@ -44,7 +44,7 @@ class SheetFrame:
     columns_names: list[str] | None = None
     table: Table | None = None
 
-    @turn_off_screen_updating
+    @suspend_screen_updates
     def __init__(
         self,
         row: int,

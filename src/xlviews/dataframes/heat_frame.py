@@ -6,7 +6,7 @@ from pandas import MultiIndex
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 from xlviews.range.formula import aggregate
 from xlviews.range.range import Range
 from xlviews.range.style import (
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 class HeatFrame(SheetFrame):
     _data: DataFrame
 
-    @turn_off_screen_updating
+    @suspend_screen_updates
     def __init__(
         self,
         row: int,

@@ -10,7 +10,7 @@ from xlwings.constants import TableStyleElementType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 from xlviews.range.style import (
     hide_succession,
     hide_unique,
@@ -78,7 +78,7 @@ def _set_style_font(
     set_font(rng, color=color, bold=bold, size=size)
 
 
-@turn_off_screen_updating
+@suspend_screen_updates
 def set_frame_style(
     sf: SheetFrame,
     *,
@@ -214,7 +214,7 @@ def set_table_style(
     table.api.TableStyle = style
 
 
-@turn_off_screen_updating
+@suspend_screen_updates
 def set_heat_frame_style(
     sf: HeatFrame,
     *,

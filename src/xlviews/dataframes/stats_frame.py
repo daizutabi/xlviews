@@ -5,7 +5,7 @@ from pandas import DataFrame
 from xlwings.constants import Direction
 
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 from xlviews.range.formula import AGG_FUNCS
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_font, set_number_format
@@ -16,7 +16,7 @@ from .sheet_frame import SheetFrame
 
 
 class StatsFrame(SheetFrame):
-    @turn_off_screen_updating
+    @suspend_screen_updates
     def __init__(
         self,
         parent: SheetFrame,

@@ -6,7 +6,7 @@ import pandas as pd
 # import spin.pandas as spd
 from xlviews.chart.axes import Axes, chart_position
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 
 # from xlviews.style import palette
 # from xlviews.utils import format_label, label_func_from_list
@@ -264,7 +264,7 @@ class Element:
                     ylabel = label_y + " " + ylabel[ylabel.index("[") :]
             axes.set_ylabel(ylabel)
 
-    @turn_off_screen_updating
+    @suspend_screen_updates
     @autohandle
     @autolegend
     def _plot(
@@ -626,7 +626,7 @@ class Bar(Element):
         super().__init__(data)
         self.bar(x, y, label=label, **kwargs)
 
-    @turn_off_screen_updating
+    @suspend_screen_updates
     def bar(self, x, y, label="auto", stacked=False, **kwargs):
         if isinstance(x, list):
             xs, x = x, x[0]

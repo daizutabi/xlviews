@@ -12,8 +12,8 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def turn_off_screen_updating(func: Callable[P, R]) -> Callable[P, R]:
-    """Turn screen updating off to speed up your script."""
+def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
+    """Suspend screen updates to speed up operations."""
 
     @wraps(func)
     def _func(*args: P.args, **kwargs: P.kwargs) -> R:
