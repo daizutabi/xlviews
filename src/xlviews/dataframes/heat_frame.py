@@ -50,11 +50,18 @@ class HeatFrame(SheetFrame):
         font_size: int | None = None,
         **kwargs,
     ) -> None:
-        sheet = sheet or xlwings.sheets.active
+        sheet = sheet or (
+            data.sheet if isinstance(data, SheetFrame) else xlwings.sheets.active
+        )
 
         if isinstance(data, SheetFrame):
-            include_sheetname = sheet.name != data.sheet.name
-            data = _to_dataframe(data, value, x, y, aggfunc, include_sheetname)
+            data = _to_dataframe(
+                data,
+                value,
+                _to_list(x, y),
+                aggfunc,
+                include_sheetname=sheet.name != data.sheet.name,
+            )
 
         if value and x and y:
             df = pivot_table(data, value, x, y)
@@ -170,56 +177,58 @@ class HeatFrame(SheetFrame):
     @classmethod
     def facet(
         cls,
+        cell_row: int,
+        cell_column: int,
         data: DataFrame | SheetFrame,
+        value: str,
+        x: str | list[str] | None,
+        y: str | list[str] | None,
         col: str | list[str],
         row: str | list[str],
+        aggfunc: Func = None,
+        vmin: float | None = None,
+        vmax: float | None = None,
+        sheet: Sheet | None = None,
+        style: bool = True,
+        autofit: bool = True,
+        font_size: int | None = None,
+        **kwargs,
     ) -> list[Self]:
-        pass
-
-
-def pivot_table(
-    data: DataFrame,
-    value: str,
-    x: str | list[str],
-    y: str | list[str],
-    # aggfunc: Callable = lambda x: x,
-) -> DataFrame:
-    df = data.pivot_table(value, y, x, aggfunc=lambda x: x)
-
-    if isinstance(x, list):
-        df.columns = df.columns.droplevel(list(range(1, len(x))))
-
-    if isinstance(y, list):
-        df.index = df.index.droplevel(list(range(1, len(y))))
-
-    df.index.name = None
-
-    return df
-
-
-def _to_dataframe(
-    sf: SheetFrame,
-    value: str | None,
-    x: str | list[str] | None,
-    y: str | list[str] | None,
-    aggfunc: Func = None,
-    include_sheetname: bool = False,
-) -> DataFrame:
-    columns = [value] if isinstance(value, str) else value
-
-    if aggfunc is None:
-        return sf.get_address(
-            columns,
-            include_sheetname=include_sheetname,
-            formula=True,
+        sheet = sheet or (
+            data.sheet if isinstance(data, SheetFrame) else xlwings.sheets.active
         )
 
-    return sf.groupby(_to_list(x, y)).agg(
-        aggfunc,
-        columns,
-        include_sheetname=include_sheetname,
-        formula=True,
-    )
+        if isinstance(data, SheetFrame):
+            data = _to_dataframe(
+                data,
+                value,
+                _to_list(col, row, x, y),
+                aggfunc,
+                include_sheetname=sheet.name != data.sheet.name,
+            )
+
+        df = pivot_table(
+            data,
+            value,
+            _to_list(col, x),
+            _to_list(row, y),
+            drop_levels=False,
+        )
+        print(df)
+        print(df.loc[[1], [1]])
+
+        # cls(
+        #     cell_row,
+        #     cell_column,
+        #     value=None,
+        #     x=None,
+        #     y=None,
+        #     sheet=sheet,
+        #     style=style,
+        #     autofit=autofit,
+        #     font_size=font_size,
+        #     **kwargs,
+        # )
 
 
 def _to_list(*args: str | list[str] | None) -> list[str]:
@@ -235,6 +244,51 @@ def _to_list(*args: str | list[str] | None) -> list[str]:
             results.append(arg)
 
     return results
+
+
+def _to_dataframe(
+    sf: SheetFrame,
+    value: str | None,
+    by: str | list[str] | None,
+    aggfunc: Func = None,
+    include_sheetname: bool = False,
+) -> DataFrame:
+    columns = [value] if isinstance(value, str) else value
+
+    if aggfunc is None:
+        return sf.get_address(
+            columns,
+            include_sheetname=include_sheetname,
+            formula=True,
+        )
+
+    return sf.groupby(by).agg(
+        aggfunc,
+        columns,
+        include_sheetname=include_sheetname,
+        formula=True,
+    )
+
+
+def pivot_table(
+    data: DataFrame,
+    value: str,
+    x: str | list[str],
+    y: str | list[str],
+    drop_levels: bool = True,
+    # aggfunc: Callable = lambda x: x,
+) -> DataFrame:
+    df = data.pivot_table(value, y, x, aggfunc=lambda x: x)
+
+    if isinstance(x, list) and drop_levels:
+        df.columns = df.columns.droplevel(list(range(1, len(x))))
+
+    if isinstance(y, list) and drop_levels:
+        df.index = df.index.droplevel(list(range(1, len(y))))
+
+    df.index.name = None
+
+    return df
 
 
 def _set_border(sf: HeatFrame) -> None:

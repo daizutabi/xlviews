@@ -37,6 +37,7 @@ if __name__ == "__main__":
     sf = fc.sf
     sf.set_adjacent_column_width(1)
 
-    x = ["X", "x"]
-    y = ["Y", "y"]
-    sf = HeatFrame(2, 8, sf, "v", x, y)
+    sf = HeatFrame(2, 8, fc.sf, "v", ["X", "x"], ["Y", "y"])
+    sf.set_adjacent_column_width(1)
+
+    HeatFrame.facet(2, 21, fc.sf, "v", x="x", y="y", col="X", row="Y")
