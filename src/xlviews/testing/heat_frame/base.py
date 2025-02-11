@@ -45,7 +45,9 @@ if __name__ == "__main__":
     fc = Base(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    sf = HeatFrame(2, 6, sf, "v", "x", "y")
+
+    data = sf.get_address(["v"], formula=True)
+    sf = HeatFrame(2, 6, data)
     sf.set_adjacent_column_width(1)
 
     fc = MultiIndex(sheet, style=True)

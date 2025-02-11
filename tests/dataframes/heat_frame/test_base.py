@@ -24,7 +24,7 @@ def test_index(sf: HeatFrame):
 
 
 def test_index_from_df(sf: HeatFrame):
-    assert sf.df.index.to_list() == [1, 2, 3, 4, 5, 6]
+    assert sf.data.index.to_list() == [1, 2, 3, 4, 5, 6]
 
 
 def test_columns(sf: HeatFrame):
@@ -32,7 +32,7 @@ def test_columns(sf: HeatFrame):
 
 
 def test_columns_from_df(sf: HeatFrame):
-    assert sf.df.columns.to_list() == [1, 2, 3, 4]
+    assert sf.data.columns.to_list() == [1, 2, 3, 4]
 
 
 @pytest.mark.parametrize(

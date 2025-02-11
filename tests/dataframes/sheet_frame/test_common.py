@@ -80,30 +80,30 @@ def test_adjacent_column_width(sf: SheetFrame):
     assert sf.sheet["F1"].column_width == 10
 
 
-def test_child_frame(sf: SheetFrame):
-    cell = sf.get_child_cell()
-    assert cell.get_address() == "$G$3"
+# def test_child_frame(sf: SheetFrame):
+#     cell = sf.get_child_cell()
+#     assert cell.get_address() == "$G$3"
 
-    cell = sf.get_adjacent_cell(offset=3)
-    assert cell.get_address() == "$J$3"
+#     cell = sf.get_adjacent_cell(offset=3)
+#     assert cell.get_address() == "$J$3"
 
-    df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
-    sf_child = SheetFrame(parent=sf, data=df)
-    assert sf_child.cell.get_address() == "$G$3"
+#     df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
+#     sf_child = SheetFrame(parent=sf, data=df)
+#     assert sf_child.cell.get_address() == "$G$3"
 
-    assert sf_child.parent is sf
-    assert sf.children[0] is sf_child
+#     assert sf_child.parent is sf
+#     assert sf.children[0] is sf_child
 
-    cell = sf.get_adjacent_cell()
-    assert cell.get_address() == "$L$3"
+#     cell = sf.get_adjacent_cell()
+#     assert cell.get_address() == "$L$3"
 
 
-def test_head_frame(sf: SheetFrame):
-    df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
-    sf_tail = SheetFrame(head=sf, data=df)
-    assert sf_tail.cell.get_address() == "$C$9"
-    assert sf.tail is sf_tail
-    assert sf_tail.head is sf
+# def test_head_frame(sf: SheetFrame):
+#     df = DataFrame({"x": [1, 2], "y": [5, 6], "z": [7, 8]})
+#     sf_tail = SheetFrame(head=sf, data=df)
+#     assert sf_tail.cell.get_address() == "$C$9"
+#     assert sf.tail is sf_tail
+#     assert sf_tail.head is sf
 
 
 def test_active_sheet(sheet: Sheet):

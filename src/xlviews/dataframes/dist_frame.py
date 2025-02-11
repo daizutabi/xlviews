@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 
 class DistFrame(SheetFrame):
-    parent: SheetFrame
     dist_func: dict[str, str]
 
     @turn_off_screen_updating
@@ -43,16 +42,19 @@ class DistFrame(SheetFrame):
         by = list(iter_columns(parent, by)) if by else None
         data = get_init_data(parent, columns, by)
 
-        super().__init__(data=data, parent=parent, index=by is not None)
+        row = parent.row
+        column = parent.column + len(parent.columns) + 1
+
+        super().__init__(row, column, data, index=by is not None, sheet=parent.sheet)
 
         if by:
-            self.link_to_index(by)
+            self.link_to_index(parent, by)
 
         group = self.groupby(by).group
 
         for column in columns:
             dist = self.dist_func[column]
-            parent_column = self.parent.range(column).column
+            parent_column = parent.range(column).column
             column_int = self.range(column + "_n").column
 
             for row in group.values():
@@ -62,7 +64,7 @@ class DistFrame(SheetFrame):
                 start = row[0][0]
                 length = row[0][1] - start + 1
 
-                parent_cell = self.parent.sheet.range(start, parent_column)
+                parent_cell = parent.sheet.range(start, parent_column)
                 cell = self.sheet.range(start, column_int)
 
                 formula = counter(parent_cell)
@@ -75,31 +77,35 @@ class DistFrame(SheetFrame):
                 set_formula(cell.offset(0, 2), length, formula)
 
         for column in columns:
-            fmt = self.parent.range(column).impl.number_format
+            fmt = parent.range(column).impl.number_format
             self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
 
         self.style(gray=True)
         self.autofit()
-        self.const_values()
+        self.const_values(parent)
 
-    def link_to_index(self, by: list[str]) -> None:
+    def link_to_index(self, parent: SheetFrame, by: list[str]) -> None:
         start = self.row + 1
         end = start + len(self) - 1
         for column in by:
-            ref = self.parent.index(column)
-            ref = self.parent.sheet.range(start, ref)
+            ref = parent.index(column)
+            ref = parent.sheet.range(start, ref)
             ref = ref.get_address(row_absolute=False)
             formula = f"={ref}"
             to = self.index(column)
             range_ = self.sheet.range((start, to), (end, to))
             range_.value = formula
 
-    def const_values(self) -> None:
-        index = self.parent.index_columns
+    def const_values(self, parent: SheetFrame) -> None:
+        index = parent.index_columns
         array = np.zeros((len(index), 1))
-        df = DataFrame(array, columns=["value"], index=index)
-        sf = SheetFrame(data=df, head=self).style(gray=True)
-        head = self.parent.cell.offset(-1, 0)
+        data = DataFrame(array, columns=["value"], index=index)
+
+        row = self.row + len(self) + self.columns_level + 1
+        column = self.column
+        sf = SheetFrame(row, column, data, index=bool(index), sheet=self.sheet)
+        sf.style(gray=True)
+        head = parent.cell.offset(-1, 0)
         tail = sf.cell.offset(1, 1)
         for k in range(len(index)):
             formula = "=" + head.offset(0, k).get_address()

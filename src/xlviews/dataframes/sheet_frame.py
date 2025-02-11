@@ -37,29 +37,28 @@ if TYPE_CHECKING:
 class SheetFrame:
     """Data frame on an Excel sheet."""
 
-    sheet: Sheet
     cell: RangeImpl
+    sheet: Sheet
     index_level: int
     columns_level: int
     columns_names: list[str] | None = None
     table: Table | None = None
-    parent: SheetFrame | None
-    children: list[SheetFrame]
-    head: SheetFrame | None
-    tail: SheetFrame | None = None
-    stats: StatsFrame | None = None
-    dist: DistFrame | None = None
     name: str | None
+    # parent: SheetFrame | None
+    # children: list[SheetFrame]
+    # head: SheetFrame | None
+    # tail: SheetFrame | None = None
+    # stats: StatsFrame | None = None
+    # dist: DistFrame | None = None
 
     @turn_off_screen_updating
     def __init__(
         self,
-        *args,
+        row: int,
+        column: int,
         data: DataFrame | Series | None = None,
         index: bool = True,
         sheet: Sheet | None = None,
-        parent: SheetFrame | None = None,
-        head: SheetFrame | None = None,
         name: str | None = None,
     ) -> None:
         """Create a DataFrame on an Excel sheet.
@@ -80,25 +79,22 @@ class SheetFrame:
                 The upper SheetFrame represents the additional information
                 of the parent.
         """
+        # self.parent = parent
+        # self.children = []
+        # self.head = head
+
+        # if self.parent:  # Locate the child frame to the right of the parent frame.
+        #     self.cell = self.parent.get_child_cell()
+        #     self.parent.add_child_frame(self)
+
+        # elif self.head:  # Locate the child frame below the head frame.
+        #     row_offset = len(self.head) + self.head.columns_level + 1
+        #     self.cell = self.head.cell.offset(row_offset, 0)
+        #     self.head.tail = self
+
+        self.sheet = sheet or xlwings.sheets.active
+        self.cell = self.sheet.range(row, column)
         self.name = name
-        self.parent = parent
-        self.children = []
-        self.head = head
-
-        if self.parent:  # Locate the child frame to the right of the parent frame.
-            self.cell = self.parent.get_child_cell()
-            self.parent.add_child_frame(self)
-
-        elif self.head:  # Locate the child frame below the head frame.
-            row_offset = len(self.head) + self.head.columns_level + 1
-            self.cell = self.head.cell.offset(row_offset, 0)
-            self.head.tail = self
-
-        else:
-            sheet = sheet or xlwings.sheets.active
-            self.cell = sheet.range(*args)
-
-        self.sheet = self.cell.sheet
 
         if data is not None:
             self.set_data(data, index=index)
@@ -821,21 +817,21 @@ class SheetFrame:
         column = self.column + len(self.columns)
         self.sheet.range(1, column).column_width = width
 
-    def add_child_frame(self, child: SheetFrame) -> None:
-        """Add a child SheetFrame."""
-        self.children.append(child)
-        child.parent = self
+    # def add_child_frame(self, child: SheetFrame) -> None:
+    #     """Add a child SheetFrame."""
+    #     self.children.append(child)
+    #     child.parent = self
 
-    def get_child_cell(self) -> RangeImpl:
-        """Get the cell of the child SheetFrame."""
-        offset = len(self.columns) + 1
-        offset += sum(len(child.columns) + 1 for child in self.children)
-        return self.cell.offset(0, offset)
+    # def get_child_cell(self) -> RangeImpl:
+    #     """Get the cell of the child SheetFrame."""
+    #     offset = len(self.columns) + 1
+    #     offset += sum(len(child.columns) + 1 for child in self.children)
+    #     return self.cell.offset(0, offset)
 
     def get_adjacent_cell(self, offset: int = 0) -> RangeImpl:
         """Get the adjacent cell of the SheetFrame."""
-        if self.children:
-            return self.get_child_cell()
+        # if self.children:
+        #     return self.get_child_cell()
 
         return self.cell.offset(0, len(self.columns) + offset + 1)
 

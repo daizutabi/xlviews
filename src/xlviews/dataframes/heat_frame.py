@@ -30,76 +30,76 @@ if TYPE_CHECKING:
 
 
 class HeatFrame(SheetFrame):
-    df: DataFrame
+    data: DataFrame
 
     @turn_off_screen_updating
     def __init__(
         self,
         row: int,
         column: int,
-        data: DataFrame | SheetFrame,
-        value: str | None,
-        x: str | list[str] | None,
-        y: str | list[str] | None,
-        aggfunc: Func = None,
+        data: DataFrame,
+        # value: str | None,
+        # x: str | list[str] | None,
+        # y: str | list[str] | None,
+        # aggfunc: Func = None,
         vmin: float | None = None,
         vmax: float | None = None,
         sheet: Sheet | None = None,
-        style: bool = True,
-        autofit: bool = True,
-        font_size: int | None = None,
-        **kwargs,
+        # style: bool = True,
+        # autofit: bool = True,
+        # font_size: int | None = None,
+        # **kwargs,
     ) -> None:
-        sheet = sheet or (
-            data.sheet if isinstance(data, SheetFrame) else xlwings.sheets.active
-        )
+        # sheet = sheet or (
+        #     data.sheet if isinstance(data, SheetFrame) else xlwings.sheets.active
+        # )
 
-        if isinstance(data, SheetFrame):
-            data = _to_dataframe(
-                data,
-                value,
-                _to_list(x, y),
-                aggfunc,
-                include_sheetname=sheet.name != data.sheet.name,
-            )
+        # if isinstance(data, SheetFrame):
+        #     data = _to_dataframe(
+        #         data,
+        #         value,
+        #         _to_list(x, y),
+        #         aggfunc,
+        #         include_sheetname=sheet.name != data.sheet.name,
+        #     )
 
-        if value and x and y:
-            df = pivot_table(data, value, x, y)
-        else:
-            df = data
+        # if value and x and y:
+        #     df = pivot_table(data, value, x, y)
+        # else:
+        #     df = data
 
-        self.df = df
+        self.data = data
 
-        super().__init__(row, column, data=df, index=True, sheet=sheet)
+        super().__init__(row, column, data=data, index=True, sheet=sheet)
 
-        if style:
-            set_heat_frame_style(self, autofit=autofit, font_size=font_size, **kwargs)
+        # if style:
+        #     set_heat_frame_style(self, autofit=autofit, font_size=font_size, **kwargs)
 
-        self.set_adjacent_column_width(1, offset=-1)
+        # self.set_adjacent_column_width(1, offset=-1)
 
-        self.set_extrema(vmin, vmax)
-        self.set_colorbar()
+        # self.set_extrema(vmin, vmax)
+        # self.set_colorbar()
 
-        set_color_scale(self.heat_range(), self.vmin, self.vmax)
+        # set_color_scale(self.heat_range(), self.vmin, self.vmax)
 
-        self.set_label(value)
+        # self.set_label(value)
 
-        if autofit:
-            self.label.expand("down").autofit()
+        # if autofit:
+        #     self.label.expand("down").autofit()
 
-        if style:
-            self.set_heat_style()
+        # if style:
+        #     self.set_heat_style()
 
     @property
     def shape(self) -> tuple[int, int]:
-        return self.df.shape
+        return self.data.shape
 
     def __len__(self) -> int:
         return self.shape[0]
 
     @property
     def index(self) -> Index:
-        return self.df.index
+        return self.data.index
 
     def heat_range(self) -> Range:
         start = self.row + 1, self.column + 1
@@ -170,8 +170,8 @@ class HeatFrame(SheetFrame):
         self.sheet.range(1, column).column_width = width
 
     def set_heat_style(self) -> None:
-        _merge_index(self.df.columns, self.row, self.column, 1, self.sheet)
-        _merge_index(self.df.index, self.row, self.column, 0, self.sheet)
+        _merge_index(self.data.columns, self.row, self.column, 1, self.sheet)
+        _merge_index(self.data.index, self.row, self.column, 0, self.sheet)
         _set_border(self)
 
     @classmethod
@@ -229,6 +229,26 @@ class HeatFrame(SheetFrame):
         #     font_size=font_size,
         #     **kwargs,
         # )
+
+        # sheet = sheet or (
+        #     data.sheet if isinstance(data, SheetFrame) else xlwings.sheets.active
+        # )
+
+        # if isinstance(data, SheetFrame):
+        #     data = _to_dataframe(
+        #         data,
+        #         value,
+        #         _to_list(x, y),
+        #         aggfunc,
+        #         include_sheetname=sheet.name != data.sheet.name,
+        #     )
+
+        # if value and x and y:
+        #     df = pivot_table(data, value, x, y)
+        # else:
+        #     df = data
+
+        # self.df = df
 
 
 def _to_list(*args: str | list[str] | None) -> list[str]:
@@ -297,11 +317,11 @@ def _set_border(sf: HeatFrame) -> None:
 
     ec = rcParams["heat.border.color"]
 
-    for row in iter_group_ranges(sf.df.index):
+    for row in iter_group_ranges(sf.data.index):
         if row[0] == row[1]:
             continue
 
-        for col in iter_group_ranges(sf.df.columns):
+        for col in iter_group_ranges(sf.data.columns):
             if col[0] == col[1]:
                 continue
 

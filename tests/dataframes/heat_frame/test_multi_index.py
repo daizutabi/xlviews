@@ -31,7 +31,7 @@ def test_index(sf: HeatFrame):
 
 def test_index_from_df(sf: HeatFrame):
     x = np.repeat(list(range(1, 5)), 6)
-    np.testing.assert_array_equal(sf.df.index, x)
+    np.testing.assert_array_equal(sf.data.index, x)
 
 
 def test_columns(sf: HeatFrame):
@@ -44,7 +44,7 @@ def test_columns(sf: HeatFrame):
 
 def test_columns_from_df(sf: HeatFrame):
     x = np.repeat(list(range(1, 4)), 4)
-    np.testing.assert_array_equal(sf.df.columns, x)
+    np.testing.assert_array_equal(sf.data.columns, x)
 
 
 @pytest.mark.parametrize(

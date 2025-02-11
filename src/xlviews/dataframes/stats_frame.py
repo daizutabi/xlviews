@@ -16,8 +16,6 @@ from .sheet_frame import SheetFrame
 
 
 class StatsFrame(SheetFrame):
-    parent: SheetFrame
-
     @turn_off_screen_updating
     def __init__(
         self,
@@ -32,7 +30,7 @@ class StatsFrame(SheetFrame):
         """Create a StatsFrame.
 
         Args:
-            parent (SheetFrame): The sheetframe to be aggregated.
+            parent (SheetFrame): The `SheetFrame` to be aggregated.
             funcs (str, list of str, optional): The aggregation
                 functions to be used. The following functions are supported:
                     'count', 'sum', 'min', 'max', 'mean', 'median', 'std', 'soa%'
@@ -40,6 +38,7 @@ class StatsFrame(SheetFrame):
             by (str, list of str, optional): The column names to be grouped by.
             default (str, optional): The default function to be displayed.
             func_column_name (str, optional): The name of the function column.
+            auto_filter (bool, optional): Whether to automatically filter the data.
         """
         funcs = get_func(funcs)
         by = get_by(parent, by)
@@ -53,23 +52,17 @@ class StatsFrame(SheetFrame):
 
         move_down(parent, offset)
 
-        gr = GroupBy(parent, by)
-        df = get_frame(gr, funcs, func_column_name)
+        gp = GroupBy(parent, by)
+        data = get_frame(gp, funcs, func_column_name)
 
-        super().__init__(
-            row,
-            column,
-            data=df,
-            index=bool(parent.index_level),
-            sheet=parent.sheet,
-        )
-        self.parent = parent
+        index = bool(parent.index_level)
+        super().__init__(row, column, data, index, sheet=parent.sheet)
 
         self.as_table(autofit=False, const_header=True)
         self.style()
 
         if isinstance(funcs, list):
-            self.set_stats_style(func_column_name)
+            self.set_stats_style(func_column_name, parent)
 
         self.alignment("left")
 
@@ -77,14 +70,14 @@ class StatsFrame(SheetFrame):
             func = default if default in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
 
-    def set_stats_style(self, func_column_name: str) -> None:
+    def set_stats_style(self, func_column_name: str, parent: SheetFrame) -> None:
         func_index = self.index(func_column_name)
 
         start = self.column + self.index_level
         end = self.column + len(self.columns)
         idx = [func_index, *range(start, end)]
 
-        get_fmt = self.parent.get_number_format
+        get_fmt = parent.get_number_format
         formats = [get_fmt(column) for column in self.value_columns]
         formats = [None, *formats]
 
@@ -132,22 +125,22 @@ def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
 
 
 def get_frame(
-    gr: GroupBy,
+    group: GroupBy,
     funcs: list[str],
     func_column_name: str = "func",
 ) -> DataFrame:
-    df = gr.agg(funcs, gr.sf.value_columns, formula=True, as_address=True)
+    df = group.agg(funcs, group.sf.value_columns, formula=True, as_address=True)
     df = df.stack(level=1, future_stack=True)  # noqa: PD013
 
     index = df.index.to_frame()
     index = index.rename(columns={index.columns[-1]: func_column_name})
 
-    for c in gr.sf.index_columns:
-        if c not in gr.by:
+    for c in group.sf.index_columns:
+        if c not in group.by:
             index[c] = ""
 
     df = pd.concat([index, df], axis=1)
-    return df.set_index([func_column_name, *gr.sf.index_columns])
+    return df.set_index([func_column_name, *group.sf.index_columns])
 
 
 def has_header(sf: SheetFrame) -> bool:
