@@ -8,30 +8,34 @@ from pandas import DataFrame
 from xlviews.testing.common import FrameContainer, create_sheet
 
 
-def create_base() -> DataFrame:
-    values = list(product(range(1, 5), range(1, 7)))
-    df = DataFrame(values, columns=["x", "y"])
-    df["u"] = list(range(len(df), 2 * len(df)))
-    df["v"] = list(range(len(df)))
-    df = df[(df["x"] + df["y"]) % 4 != 0]
-    return df.set_index(["x", "y"])
+class Base(FrameContainer):
+    @classmethod
+    def dataframe(cls) -> DataFrame:
+        values = list(product(range(1, 5), range(1, 7)))
+        df = DataFrame(values, columns=["x", "y"])
+        df["u"] = list(range(len(df), 2 * len(df)))
+        df["v"] = list(range(len(df)))
+        df = df[(df["x"] + df["y"]) % 4 != 0]
+        return df.set_index(["x", "y"])
 
 
-def create_multi() -> DataFrame:
-    df = create_base().reset_index()
+class MultiIndex(FrameContainer):
+    @classmethod
+    def dataframe(cls) -> DataFrame:
+        df = Base.dataframe().reset_index()
 
-    dfs = []
-    for x in range(1, 4):
-        for y in range(1, 5):
-            a = df.copy()
-            a["X"] = x
-            a["Y"] = y
-            dfs.append(a)
+        dfs = []
+        for x in range(1, 4):
+            for y in range(1, 5):
+                a = df.copy()
+                a["X"] = x
+                a["Y"] = y
+                dfs.append(a)
 
-    df = pd.concat(dfs)
-    df["u"] = list(range(len(df), 2 * len(df)))
-    df["v"] = list(range(len(df)))
-    return df.set_index(["X", "Y", "x", "y"])
+        df = pd.concat(dfs)
+        df["u"] = list(range(len(df), 2 * len(df)))
+        df["v"] = list(range(len(df)))
+        return df.set_index(["X", "Y", "x", "y"])
 
 
 def create_pivot() -> DataFrame:
@@ -55,27 +59,6 @@ def create_pivot() -> DataFrame:
     df["u"] = list(range(len(df), 2 * len(df)))
     df["v"] = list(range(len(df)))
     return df.set_index(["A", "B", "X", "Y", "x", "y"])
-
-
-class Pivot(FrameContainer):
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        values = list(product(range(1, 5), range(1, 7)))
-        df = DataFrame(values, columns=["x", "y"])
-        df["v"] = list(range(len(df)))
-        df = df[(df["x"] + df["y"]) % 4 != 0]
-
-        dfs = []
-        for x in range(1, 4):
-            for y in range(1, 5):
-                a = df.copy()
-                a["X"] = x
-                a["Y"] = y
-                dfs.append(a)
-
-        df = pd.concat(dfs)
-        df["v"] = list(range(len(df)))
-        return df.set_index(["X", "Y", "x", "y"])
 
 
 if __name__ == "__main__":

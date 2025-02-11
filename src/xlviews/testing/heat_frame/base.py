@@ -2,20 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlviews.testing.common import FrameContainer, create_sheet
+from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.common import HeatFrameContainer
-from xlviews.testing.sheet_frame.pivot import create_base, create_multi
+from xlviews.testing.sheet_frame.pivot import Base as BaseParent
+from xlviews.testing.sheet_frame.pivot import MultiIndex as MultiIndexParent_
 
 if TYPE_CHECKING:
     from pandas import DataFrame
 
     from xlviews.dataframes.sheet_frame import SheetFrame
-
-
-class BaseParent(FrameContainer):
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        return create_base()
 
 
 class Base(HeatFrameContainer):
@@ -28,12 +23,8 @@ class Base(HeatFrameContainer):
         self.sf.label = "v"
 
 
-class MultiIndexParent(FrameContainer):
+class MultiIndexParent(MultiIndexParent_):
     column: int = 15
-
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        return create_multi()
 
 
 class MultiIndex(HeatFrameContainer):

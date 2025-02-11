@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from xlviews.range.range import Range
 from xlviews.testing.common import create_sheet
-from xlviews.testing.heat_frame.base import MultiIndexParent
 from xlviews.testing.heat_frame.common import HeatFrameContainer
+from xlviews.testing.sheet_frame.pivot import MultiIndex
 from xlviews.utils import add_validate_list
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from xlviews.dataframes.sheet_frame import SheetFrame
 
 
-class AggParent(MultiIndexParent):
+class AggParent(MultiIndex):
     column: int = 2
 
 
