@@ -68,7 +68,7 @@ class StatsFrame(SheetFrame):
             row,
             column,
             data=df,
-            index=parent.has_index,
+            index=bool(parent.index_level),
             autofit=False,
             style=False,
             sheet=parent.sheet,

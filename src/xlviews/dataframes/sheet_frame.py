@@ -7,10 +7,11 @@ from functools import partial
 from itertools import chain, takewhile
 from typing import TYPE_CHECKING, overload
 
-import xlwings as xw
+import xlwings
 from pandas import DataFrame, Index, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
+from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.decorators import turn_off_screen_updating
@@ -38,8 +39,6 @@ class SheetFrame:
 
     sheet: Sheet
     cell: RangeImpl
-    name: str | None
-    has_index: bool
     index_level: int
     columns_level: int
     columns_names: list[str] | None = None
@@ -50,6 +49,7 @@ class SheetFrame:
     tail: SheetFrame | None = None
     stats: StatsFrame | None = None
     dist: DistFrame | None = None
+    name: str | None
 
     @turn_off_screen_updating
     def __init__(
@@ -112,7 +112,7 @@ class SheetFrame:
             self.head.tail = self
 
         else:
-            sheet = sheet or xw.sheets.active
+            sheet = sheet or xlwings.sheets.active
             self.cell = sheet.range(*args)
 
         self.sheet = self.cell.sheet
@@ -153,7 +153,6 @@ class SheetFrame:
         if isinstance(data, Series):
             data = data.to_frame()
 
-        self.has_index = index
         self.index_level = len(data.index.names) if index else 0
         self.columns_level = len(data.columns.names)
 
@@ -186,7 +185,6 @@ class SheetFrame:
             self.cell = book.names[self.name].refers_to_range
             self.sheet = self.cell.sheet
 
-        self.has_index = bool(index_level)
         self.index_level = index_level
         self.columns_level = columns_level
 
@@ -250,7 +248,7 @@ class SheetFrame:
 
         if self.columns_names:
             idx = [tuple(self.columns_names)]
-        elif self.has_index:
+        elif self.index_level:
             start = self.row + self.columns_level - 1, self.column
             end = start[0], start[1] + self.index_level - 1
             idx = self.sheet.range(start, end).value or []
@@ -383,11 +381,11 @@ class SheetFrame:
         start = self.row + 1, self.column
         end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
         range_ = self.sheet.range(start, end)
-        data = range_.api.SpecialCells(xw.constants.CellType.xlCellTypeVisible)
+        data = range_.api.SpecialCells(CellType.xlCellTypeVisible)
         value = [row.Value[0] for row in data.Rows]
         df = DataFrame(value, columns=self.columns)
 
-        if self.has_index and self.index_level:
+        if self.index_level:
             df = df.set_index(list(df.columns[: self.index_level]))
 
         return df
@@ -713,7 +711,7 @@ class SheetFrame:
         values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
-        if self.has_index and self.index_columns[0]:
+        if self.index_level and self.index_columns[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
                 df.index = Index(index[index.columns[0]])

@@ -35,10 +35,10 @@ def test_init(sf: SheetFrame, fc: FrameContainer):
 
 def test_set_data_from_sheet(sf: SheetFrame):
     sf.set_data_from_sheet(index_level=1)
-    assert sf.has_index is True
+    assert sf.index_level == 1
     assert sf.value_columns == ["b"]
     sf.set_data_from_sheet(index_level=0)
-    assert sf.has_index is False
+    assert sf.index_level == 0
     assert sf.value_columns == ["a", "b"]
 
 
