@@ -35,12 +35,12 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_names is None
 
 
-def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set(index_level=0)
+def test_load(sf: SheetFrame):
+    sf.load(index_level=0)
     assert sf.index_level == 0
     assert sf.index_columns == []
     assert sf.value_columns == ["x", "y", "a", "b"]
-    sf.set(index_level=2)
+    sf.load(index_level=2)
     assert sf.index_level == 2
     assert sf.index_columns == ["x", "y"]
     assert sf.value_columns == ["a", "b"]

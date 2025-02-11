@@ -62,40 +62,13 @@ class StatsFrame(SheetFrame):
         self.style()
 
         if isinstance(funcs, list):
-            self.set_stats_style(func_column_name, parent)
+            set_style(self, parent, func_column_name)
 
         self.alignment("left")
 
         if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
             func = default if default in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
-
-    def set_stats_style(self, func_column_name: str, parent: SheetFrame) -> None:
-        func_index = self.index(func_column_name)
-
-        start = self.column + self.index_level
-        end = self.column + len(self.columns)
-        idx = [func_index, *range(start, end)]
-
-        get_fmt = parent.get_number_format
-        formats = [get_fmt(column) for column in self.value_columns]
-        formats = [None, *formats]
-
-        for (func,), rows in self.groupby(func_column_name).items():
-            for col, fmt in zip(idx, formats, strict=True):
-                rc = RangeCollection(rows, col, self.sheet)
-
-                if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
-                    set_number_format(rc, fmt)
-
-                color = rcParams.get(f"stats.{func}.color")
-                italic = rcParams.get(f"stats.{func}.italic")
-                set_font(rc, color=color, italic=italic)
-
-                if func == "soa" and col != func_index:
-                    set_number_format(rc, "0.0%")
-
-        set_font(self.range(func_column_name), italic=True)
 
 
 def get_func(func: str | list[str] | None) -> list[str]:
@@ -164,3 +137,32 @@ def move_down(sf: SheetFrame, length: int) -> int:
     rows = sf.sheet.api.Rows(f"{start}:{end}")
     rows.Insert(Shift=Direction.xlDown)
     return end - start + 1
+
+
+def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
+    func_index = sf.index(func_column_name)
+
+    start = sf.column + sf.index_level
+    end = sf.column + len(sf.columns)
+    idx = [func_index, *range(start, end)]
+
+    get_fmt = parent.get_number_format
+    formats = [get_fmt(column) for column in sf.value_columns]
+    formats = [None, *formats]
+
+    for (func,), rows in sf.groupby(func_column_name).items():
+        for col, fmt in zip(idx, formats, strict=True):
+            rc = RangeCollection(rows, col, sf.sheet)
+
+            if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
+                set_number_format(rc, fmt)
+
+            color = rcParams.get(f"stats.{func}.color")
+            italic = rcParams.get(f"stats.{func}.italic")
+            set_font(rc, color=color, italic=italic)
+
+            if func == "soa" and col != func_index:
+                set_number_format(rc, "0.0%")
+
+    rng = sf.column_range(func_column_name)
+    set_font(rng, italic=True)

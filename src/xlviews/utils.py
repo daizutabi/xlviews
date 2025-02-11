@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import xlwings as xw
 from pandas import Series
-from xlwings import Range
 from xlwings.constants import DVType, FormatConditionOperator
 
 from xlviews.colors import rgb
@@ -14,9 +13,11 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
     from pandas import DataFrame, Index
+    from xlwings import Range as RangeImpl
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.dataframes.sheet_frame import SheetFrame
+    from xlviews.range.range import Range
 
 
 def constant(type_: str, name: str | None = None) -> int:
@@ -122,7 +123,7 @@ def set_font_api(
 
 
 def add_validate_list(
-    rng: Range,
+    rng: Range | RangeImpl,
     value: list[object],
     default: object | None = None,
 ) -> None:

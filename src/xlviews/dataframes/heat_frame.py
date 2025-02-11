@@ -38,17 +38,9 @@ class HeatFrame(SheetFrame):
         row: int,
         column: int,
         data: DataFrame,
-        # value: str | None,
-        # x: str | list[str] | None,
-        # y: str | list[str] | None,
-        # aggfunc: Func = None,
         vmin: float | None = None,
         vmax: float | None = None,
         sheet: Sheet | None = None,
-        # style: bool = True,
-        # autofit: bool = True,
-        # font_size: int | None = None,
-        # **kwargs,
     ) -> None:
         # sheet = sheet or (
         #     data.sheet if isinstance(data, SheetFrame) else xlwings.sheets.active
@@ -94,9 +86,9 @@ class HeatFrame(SheetFrame):
     def __len__(self) -> int:
         return self.shape[0]
 
-    @property
-    def index(self) -> Index:
-        return self.data.index
+    # @property
+    # def index(self) -> Index:
+    #     return self.data.index
 
     def heat_range(self) -> Range:
         start = self.row + 1, self.column + 1
@@ -131,6 +123,12 @@ class HeatFrame(SheetFrame):
         self.vmin.value = vmin
         self.vmax.value = vmax
 
+    def set_label(self, label: str | None) -> None:
+        rng = self.label
+        rng.value = label
+        set_font(rng, bold=True, size=rcParams["frame.font.size"])
+        set_alignment(rng, horizontal_alignment="center")
+
     def set_colorbar(self) -> None:
         vmin = self.vmin.get_address()
         vmax = self.vmax.get_address()
@@ -154,12 +152,6 @@ class HeatFrame(SheetFrame):
             rng = self.sheet.range((start + 1, col), (end - 1, col))
             set_font(rng, size=4)
             set_number_format(rng, "0")
-
-    def set_label(self, label: str | None) -> None:
-        rng = self.label
-        rng.value = label
-        set_font(rng, bold=True, size=rcParams["frame.font.size"])
-        set_alignment(rng, horizontal_alignment="center")
 
     def autofit(self) -> Self:
         start = self.cell

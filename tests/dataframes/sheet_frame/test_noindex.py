@@ -33,11 +33,11 @@ def test_init(sf: SheetFrame, fc: FrameContainer):
     assert sf.columns_names is None
 
 
-def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set(index_level=1)
+def test_load(sf: SheetFrame):
+    sf.load(index_level=1)
     assert sf.index_level == 1
     assert sf.value_columns == ["b"]
-    sf.set(index_level=0)
+    sf.load(index_level=0)
     assert sf.index_level == 0
     assert sf.value_columns == ["a", "b"]
 

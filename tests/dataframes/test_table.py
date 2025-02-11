@@ -115,7 +115,7 @@ def test_sheetframe(table: Table):
     from xlviews.dataframes.sheet_frame import SheetFrame
 
     sf = SheetFrame(table.cell.row, table.cell.column, sheet=table.sheet)
-    sf.set()
+    sf.load()
     assert sf.table
     assert sf.table.cell.row == table.cell.row
     assert sf.table.cell.column == table.cell.column
