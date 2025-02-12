@@ -8,7 +8,7 @@ from xlwings import Sheet
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
-from xlviews.testing.sheet_frame import MultiColumn
+from xlviews.testing.sheet_frame.base import MultiColumn
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 

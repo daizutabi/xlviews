@@ -21,7 +21,7 @@ def sf(fc_parent: BaseParent):
 
 
 def test_index(sf: HeatFrame):
-    assert sf.sheet.range("F3:F8").value == [1, 2, 3, 4, 5, 6]
+    assert sf.sheet.range("G3:G8").value == [1, 2, 3, 4, 5, 6]
 
 
 def test_index_from_df(sf: HeatFrame):
@@ -29,7 +29,7 @@ def test_index_from_df(sf: HeatFrame):
 
 
 def test_columns(sf: HeatFrame):
-    assert sf.sheet.range("G2:J2").value == [1, 2, 3, 4]
+    assert sf.sheet.range("H2:K2").value == [1, 2, 3, 4]
 
 
 def test_columns_from_df(sf: HeatFrame):
@@ -48,19 +48,19 @@ def test_columns_from_df(sf: HeatFrame):
     ],
 )
 def test_values(sf: HeatFrame, i: int, value: int):
-    assert sf.sheet.range(f"G{i}:J{i}").value == value
+    assert sf.sheet.range(f"H{i}:K{i}").value == value
 
 
 def test_vmin(sf: HeatFrame):
-    assert sf.vmin.get_address() == "$L$8"
+    assert sf.vmin.get_address() == "$M$8"
 
 
 def test_vmax(sf: HeatFrame):
-    assert sf.vmax.get_address() == "$L$3"
+    assert sf.vmax.get_address() == "$M$3"
 
 
 def test_label(sf: HeatFrame):
-    assert sf.label.get_address() == "$L$2"
+    assert sf.label.get_address() == "$M$2"
 
 
 def test_label_value(sf: HeatFrame):
@@ -79,6 +79,6 @@ def test_label_value(sf: HeatFrame):
     ],
 )
 def test_colorbar(sf: HeatFrame, i: int, value: int):
-    v = sf.sheet.range(f"L{i}").value
+    v = sf.sheet.range(f"M{i}").value
     assert isinstance(v, float)
     np.testing.assert_allclose(v, value)

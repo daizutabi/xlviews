@@ -759,9 +759,9 @@ class SheetFrame:
 
     def pivot_table(
         self,
-        values: str | list[str],
-        index: str | list[str],
-        columns: str | list[str],
+        values: str | list[str] | None = None,
+        index: str | list[str] | None = None,
+        columns: str | list[str] | None = None,
         aggfunc: Func = None,
         row_absolute: bool = True,
         column_absolute: bool = True,

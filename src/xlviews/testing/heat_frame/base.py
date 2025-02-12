@@ -1,27 +1,16 @@
 from __future__ import annotations
 
-from itertools import product
 from typing import TYPE_CHECKING
 
-import pandas as pd
-from pandas import DataFrame
-
-from xlviews.testing.common import FrameContainer, create_sheet
+from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.common import HeatFrameContainer
+from xlviews.testing.sheet_frame.pivot import Base as BaseParent
+from xlviews.testing.sheet_frame.pivot import MultiIndex as MultiIndexParent_
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
+
     from xlviews.dataframes.sheet_frame import SheetFrame
-
-
-class BaseParent(FrameContainer):
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        values = list(product(range(1, 5), range(1, 7)))
-        df = DataFrame(values, columns=["x", "y"])
-        df["v"] = list(range(len(df)))
-        df = df[(df["x"] + df["y"]) % 4 != 0]
-
-        return df.set_index(["x", "y"])
 
 
 class Base(HeatFrameContainer):
@@ -34,23 +23,8 @@ class Base(HeatFrameContainer):
         self.sf.label = "v"
 
 
-class MultiIndexParent(FrameContainer):
-    column: int = 14
-
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        base = BaseParent.dataframe().reset_index()
-        dfs = []
-        for x in range(1, 4):
-            for y in range(1, 5):
-                a = base.copy()
-                a["X"] = x
-                a["Y"] = y
-                dfs.append(a)
-
-        df = pd.concat(dfs)
-        df["v"] = list(range(len(df)))
-        return df.set_index(["X", "Y", "x", "y"])
+class MultiIndexParent(MultiIndexParent_):
+    column: int = 15
 
 
 class MultiIndex(HeatFrameContainer):
