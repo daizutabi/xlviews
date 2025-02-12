@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pandas import DataFrame
 
+from xlviews.dataframes.dist_frame import DistFrame
 from xlviews.testing.common import FrameContainer, create_sheet
 
 
@@ -25,4 +26,5 @@ class Parent(FrameContainer):
 if __name__ == "__main__":
     sheet = create_sheet()
     fc = Parent(sheet, 3, 2, style=True)
-    fc.sf.dist_frame(["a", "b"], by=["x", "y"])
+    fc.sf.set_adjacent_column_width(1)
+    DistFrame(fc.sf, ["a", "b"], by=["x", "y"])
