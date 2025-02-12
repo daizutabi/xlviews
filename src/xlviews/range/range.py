@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import xlwings
 from xlwings import Range as RangeImpl
 
-from .address import get_index, index_to_column_name, split_book, split_sheet
+from .address import index_to_column_name
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -23,42 +23,33 @@ class Range:
 
     def __init__(
         self,
-        cell1: str | Range | RangeImpl | tuple[int, int],
-        cell2: str | Range | RangeImpl | tuple[int, int] | None = None,
+        cell1: tuple[int, int] | int,
+        cell2: tuple[int, int] | int | None = None,
         sheet: Sheet | None = None,
     ) -> None:
+        self.sheet = sheet or xlwings.sheets.active
+
         if isinstance(cell1, tuple):
             if not isinstance(cell2, tuple) and cell2 is not None:
                 msg = "cell2 must be a tuple or None"
                 raise TypeError(msg)
 
-            self.sheet = sheet or xlwings.sheets.active
             self.row, self.column = cell1
             self.row_end, self.column_end = cell2 or cell1
 
+        elif isinstance(cell2, int):
+            self.row = self.row_end = cell1
+            self.column = self.column_end = cell2
+
         else:
-            t1 = to_tuple(cell1, sheet)
-            self.sheet, self.row, self.column = t1[:3]
+            msg = "cell2 must be an integer"
+            raise TypeError(msg)
 
-            if cell2 is None:
-                self.row_end, self.column_end = t1[3:]
-            else:
-                t2 = to_tuple(cell2, sheet)
-
-                if self.sheet != t2[0]:
-                    msg = f"Cells are not in the same sheet: {self.sheet} != {t2[0]}"
-                    raise ValueError(msg)
-
-                self.row_end, self.column_end = t2[3:]
-
-        self.row, self.row_end = (
-            min(self.row, self.row_end),
-            max(self.row, self.row_end),
-        )
-        self.column, self.column_end = (
-            min(self.column, self.column_end),
-            max(self.column, self.column_end),
-        )
+    @classmethod
+    def from_range(cls, rng: RangeImpl) -> Self:
+        start = rng.row, rng.column
+        end = rng.last_cell.row, rng.last_cell.column
+        return cls(start, end, rng.sheet)
 
     def __len__(self) -> int:
         return (self.row_end - self.row + 1) * (self.column_end - self.column + 1)
@@ -147,46 +138,6 @@ class Range:
     @property
     def api(self):  # noqa: ANN201
         return self.impl.api
-
-
-def to_tuple(
-    cell: str | tuple[int, int] | Range | RangeImpl,
-    sheet: Sheet | None = None,
-) -> tuple[Sheet, int, int, int, int]:
-    if isinstance(cell, Range):
-        return cell.sheet, cell.row, cell.column, cell.row_end, cell.column_end
-
-    if isinstance(cell, RangeImpl):
-        row, column = cell.row, cell.column
-        row_end, column_end = cell.last_cell.row, cell.last_cell.column
-        return cell.sheet, row, column, row_end, column_end
-
-    sheet = sheet or xlwings.sheets.active
-
-    if isinstance(cell, tuple):
-        row, column = cell
-        return sheet, row, column, row, column
-
-    if isinstance(cell, str):
-        book_name, address = split_book(cell, sheet)
-        sheet_name, address = split_sheet(address, sheet)
-
-        if book_name != sheet.book.name:
-            msg = f"Book name does not match: {book_name} != {sheet.book.name}"
-            raise ValueError(msg)
-
-        if sheet_name != sheet.name:
-            if sheet_name not in [s.name for s in sheet.book.sheets]:
-                msg = f"Sheet not found: {sheet_name}"
-                raise ValueError(msg)
-
-            sheet = sheet.book.sheets[sheet_name]
-
-        index = get_index(address)
-        return sheet, *index  # type: ignore
-
-    msg = f"Invalid type: {type(cell)}"
-    raise TypeError(msg)
 
 
 def iter_addresses(

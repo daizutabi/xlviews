@@ -14,7 +14,7 @@ def test_border_index(index, value):
     assert getattr(BordersIndex, f"xlInside{index}") == value
 
 
-@pytest.fixture(params=[lambda x: x, Range], ids=["RangeImpl", "Range"])
+@pytest.fixture(params=[lambda x: x, Range.from_range], ids=["RangeImpl", "Range"])
 def cls(request: pytest.FixtureRequest):
     return request.param
 
