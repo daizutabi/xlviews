@@ -78,8 +78,8 @@ class SheetFrame:
         if isinstance(data, Series):
             data = data.to_frame()
 
-        self.index_level = len(data.index.names) if index else 0
-        self.columns_level = len(data.columns.names)
+        self.index_level = data.index.nlevels if index else 0
+        self.columns_level = data.columns.nlevels
 
         self.cell.options(DataFrame, index=index).value = data
 
@@ -780,8 +780,15 @@ class SheetFrame:
             )
 
         else:
-            by = [index] if isinstance(index, str) else index
-            by = [*by, columns] if isinstance(columns, str) else by + columns
+            if index is None:
+                by = []
+            else:
+                by = [index] if isinstance(index, str) else index
+            if columns is None:
+                if not by:
+                    raise ValueError("index and columns cannot be None")
+            else:
+                by = [*by, columns] if isinstance(columns, str) else by + columns
 
             data = self.groupby(by).agg(
                 aggfunc,

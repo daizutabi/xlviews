@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.base import MultiIndexParent
+from xlviews.utils import iter_group_ranges
 
 if TYPE_CHECKING:
     from pandas import DataFrame
 
 
-class Facet(MultiIndexParent):
+class FacetParent(MultiIndexParent):
     column: int = 2
 
     @classmethod
@@ -33,11 +34,16 @@ class Facet(MultiIndexParent):
 if __name__ == "__main__":
     sheet = create_sheet()
 
-    fc = Facet(sheet, style=True)
+    fc = FacetParent(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
 
-    sf = HeatFrame(2, 8, fc.sf, "v", ["X", "x"], ["Y", "y"])
-    sf.set_adjacent_column_width(1)
+    df = sf.pivot_table("u", ["Y", "y"], ["X", "x"], formula=True)
+    HeatFrame(2, 9, df).autofit()
 
-    HeatFrame.facet(2, 21, fc.sf, "v", x="x", y="y", col="X", row="Y")
+    a = df.loc[[1], [1]]
+    a.index = a.index.droplevel(0)
+    a.columns = a.columns.droplevel(0)
+    HeatFrame(2, 22, a).autofit()
+    print(list(iter_group_ranges(df.index.get_level_values(0))))
+    print(a)

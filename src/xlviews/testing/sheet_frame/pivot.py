@@ -21,6 +21,8 @@ class Base(FrameContainer):
 
 
 class MultiIndex(FrameContainer):
+    column: int = 17
+
     @classmethod
     def dataframe(cls) -> DataFrame:
         df = Base.dataframe().reset_index()
@@ -70,10 +72,23 @@ if __name__ == "__main__":
     fc = Base(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-
     df = sf.pivot_table("u", "y", "x", formula=True)
     SheetFrame(2, 7, df).style()
-    df = fc.df.pivot_table("v", "y", "x", aggfunc=lambda x: x)
+    df = sf.pivot_table(None, "y", "x", formula=True)
     SheetFrame(10, 7, df).style().autofit()
-    df = fc.df.pivot_table(None, "y", "x", aggfunc=lambda x: x)
-    SheetFrame(18, 7, df).style().autofit()
+    df = sf.pivot_table("u", None, "x", formula=True, aggfunc="mean")
+    SheetFrame(19, 7, df).style().autofit()
+    df = sf.pivot_table("v", "y", None, formula=True, aggfunc="max")
+    SheetFrame(22, 7, df).style().autofit()
+
+    sf.set_adjacent_column_width(1)
+    fc = MultiIndex(sheet, style=True)
+    sf = fc.sf
+    sf.set_adjacent_column_width(1)
+
+    df = sf.pivot_table("u", ["Y", "y"], ["X", "x"], formula=True)
+    SheetFrame(2, 24, df).style()
+    df = sf.pivot_table("v", "Y", ["X", "y", "x"], formula=True)
+    SheetFrame(29, 24, df).style().autofit()
+    df = sf.pivot_table(["u", "v"], ["Y", "y"], ["X", "x"], formula=True)
+    SheetFrame(37, 24, df).style()
