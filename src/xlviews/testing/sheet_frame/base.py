@@ -112,15 +112,22 @@ class WideColumn(FrameContainer):
 if __name__ == "__main__":
     sheet = create_sheet()
 
-    classes: list[type[FrameContainer]] = [
-        NoIndex,
-        Index,
-        MultiIndex,
-        MultiColumn,
-        MultiIndexColumn,
-        WideColumn,
-    ]
+    # classes: list[type[FrameContainer]] = [
+    #     NoIndex,
+    #     Index,
+    #     MultiIndex,
+    #     MultiColumn,
+    #     MultiIndexColumn,
+    #     WideColumn,
+    # ]
 
-    fcs = [cls(sheet, style=True) for cls in classes]
-    for fc in fcs:
-        fc.sf.set_adjacent_column_width(1)
+    # fcs = [cls(sheet, style=True) for cls in classes]
+    # for fc in fcs:
+    #     fc.sf.set_adjacent_column_width(1)
+
+    df = MultiIndexColumn.dataframe()
+    df["x"] = 1
+    df[(None, "y")] = 2
+    print(df)
+
+    print(df.columns)
