@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from itertools import chain
 from typing import TYPE_CHECKING
 
 from .range import Range, iter_addresses
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
-    from typing import Self
+    from collections.abc import Iterator, Sequence
 
-    from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
 
@@ -23,15 +20,6 @@ class RangeCollection:
         sheet: Sheet | None = None,
     ) -> None:
         self.ranges = list(_iter_ranges_from_index(row, column, sheet))
-
-    @classmethod
-    def from_iterable(
-        cls,
-        ranges: Iterable[str | Range | RangeImpl | tuple[int, int]],
-    ) -> Self:
-        instance = cls.__new__(cls)
-        instance.ranges = list(chain.from_iterable(_iter_ranges(r) for r in ranges))
-        return instance
 
     def __repr__(self) -> str:
         cls = self.__class__.__name__
@@ -93,18 +81,6 @@ class RangeCollection:
             api = union(api, r.api)
 
         return api
-
-
-def _iter_ranges(cell: str | Range | RangeImpl | tuple[int, int]) -> Iterator[Range]:
-    if isinstance(cell, Range):
-        yield cell
-
-    elif isinstance(cell, str):
-        for c in cell.split(","):
-            yield Range(c)
-
-    else:
-        yield Range(cell)
 
 
 def _iter_ranges_from_index(

@@ -40,50 +40,6 @@ def test_range_collection_column(column, n, address, sheet_module: Sheet):
     assert rc.api.Address == address
 
 
-@pytest.mark.parametrize(
-    ("ranges", "n"),
-    [
-        (["A1:B3"], 1),
-        (["A2:A4", "A5:A8"], 2),
-        (["A2:A4,A5:A8"], 2),
-        (["A2:A4,A5:A8", "C4:C7,D10:D12"], 4),
-    ],
-)
-def test_range_collection_from_str(ranges, n, sheet_module: Sheet):
-    rc = RangeCollection.from_iterable(ranges)
-    assert len(rc) == n
-    a = rc.get_address(row_absolute=False, column_absolute=False)
-    assert a == ",".join(ranges)
-
-
-@pytest.mark.parametrize(
-    ("ranges", "n"),
-    [(["$A$1:$B$3"], 1), (["$A$2:$A$4", "$A$5:$A$8"], 2)],
-)
-def test_range_collection_from_range(ranges, n, sheet_module: Sheet):
-    ranges = [sheet_module.range(r) for r in ranges]
-    rc = RangeCollection.from_iterable(ranges)
-    assert len(rc) == n
-    a = rc.get_address()
-    assert a == ",".join(r.get_address() for r in ranges)
-
-
-def test_range_collection_from_range_one(sheet_module: Sheet):
-    rng = sheet_module.range("A1:B2")
-    rc = RangeCollection.from_iterable(rng)
-    assert len(rc) == 4
-    a = rc.get_address()
-    assert a == "$A$1,$B$1,$A$2,$B$2"
-
-
-def test_range_collection_from_range_list(sheet_module: Sheet):
-    rng = sheet_module.range("A1:B2")
-    rc = RangeCollection.from_iterable([rng])
-    assert len(rc) == 1
-    a = rc.get_address()
-    assert a == "$A$1:$B$2"
-
-
 def test_range_collection_iter(sheet_module: Sheet):
     rc = RangeCollection([(2, 5), (10, 12)], 1, sheet_module)
     for rng, row in zip(rc, [2, 10], strict=True):

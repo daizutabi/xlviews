@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import re
 from functools import cache
 from typing import TYPE_CHECKING
-
-import xlwings
 
 if TYPE_CHECKING:
     from xlwings import Range as RangeImpl
@@ -55,55 +52,6 @@ def column_name_to_index(col: str) -> int:
         index = index * 26 + (ord(char) - ord("A") + 1)
 
     return index
-
-
-def split_book(address: str, sheet: Sheet | None = None) -> tuple[str, str]:
-    """Return a tuple of the book name and the rest from the address."""
-    if address.startswith("["):
-        book_name, sheet_name = address[1:].split("]", 1)
-        return book_name, sheet_name
-
-    sheet = sheet or xlwings.sheets.active
-    return sheet.book.name, address
-
-
-def split_sheet(address: str, sheet: Sheet | None = None) -> tuple[str, str]:
-    """Return a tuple of the sheet name and the rest from the address."""
-    index = address.find("!")
-    if index != -1:
-        return address[:index], address[index + 1 :]
-
-    sheet = sheet or xlwings.sheets.active
-    return sheet.name, address
-
-
-ADDRESS_PATTERN = re.compile(r"([A-Z]+)(\d+):([A-Z]+)(\d+)|([A-Z]+)(\d+)")
-
-
-def get_index(address: str) -> tuple[int, int, int, int]:
-    """Return the row and column indexes from the address.
-
-    Returns:
-        tuple[int, int, int, int]: Row, column, row_end, column_end.
-
-    """
-    address = address.replace("$", "").upper()
-
-    if m := ADDRESS_PATTERN.match(address):
-        if m.group(1):
-            column, row, column_end, row_end = m.groups()[:4]
-        else:
-            column, row = m.groups()[4:]
-            column_end, row_end = column, row
-        return (
-            int(row),
-            column_name_to_index(column),
-            int(row_end),
-            column_name_to_index(column_end),
-        )
-
-    msg = f"Invalid address format: {address}"
-    raise ValueError(msg)
 
 
 def reference(

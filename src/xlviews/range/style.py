@@ -186,10 +186,10 @@ def hide_unique(
     def address(r: Range | RangeImpl) -> str:
         return r.get_address(row_absolute=False, column_absolute=False)
 
-    start = rng[0].offset(1, 0)
-    end = rng[0].offset(length, 0)
+    start = (rng[0].row + 1, rng[0].column)
+    end = (rng[0].row + length, rng[0].column)
     cell = address(Range(start, end))
-    ref = address(start)
+    ref = address(Range(start))
     formula = f"=COUNTIF({cell}, {ref}) = {length}"
 
     add = rng.api.FormatConditions.Add
