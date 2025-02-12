@@ -7,9 +7,9 @@ from xlviews.testing import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-@pytest.fixture(scope="module", params=[True, False])
-def sf(sf_parent: SheetFrame, request: pytest.FixtureRequest):
-    return StatsFrame(sf_parent, "count", by="x", table=request.param)
+@pytest.fixture(scope="module")
+def sf(sf_parent: SheetFrame):
+    return StatsFrame(sf_parent, "count", by="x")
 
 
 def test_len(sf: SheetFrame):

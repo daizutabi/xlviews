@@ -17,9 +17,9 @@ def sfs(sheet: Sheet):
     df2 = DataFrame({"e": [3, 3], "f": [3, 3]})
     df2 = df2.set_index("e")
 
-    sf0 = SheetFrame(2, 3, data=df0, style=False, sheet=sheet)
-    sf1 = SheetFrame(7, 3, data=df1, style=False, sheet=sheet)
-    sf2 = SheetFrame(2, 7, data=df2, style=False, sheet=sheet)
+    sf0 = SheetFrame(2, 3, data=df0, sheet=sheet)
+    sf1 = SheetFrame(7, 3, data=df1, sheet=sheet)
+    sf2 = SheetFrame(2, 7, data=df2, sheet=sheet)
 
     return [sf0, sf1, sf2]
 

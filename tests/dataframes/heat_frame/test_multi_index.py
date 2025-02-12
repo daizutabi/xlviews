@@ -4,25 +4,24 @@ from xlwings import Sheet
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing import is_excel_installed
-from xlviews.testing.heat_frame.base import MultiIndex
+from xlviews.testing.heat_frame.base import MultiIndex, MultiIndexParent
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def fc(sheet_module: Sheet):
-    return MultiIndex(sheet_module)
+def fc_parent(sheet_module: Sheet):
+    return MultiIndexParent(sheet_module)
 
 
 @pytest.fixture(scope="module")
-def sf(fc: MultiIndex):
-    x = ["X", "x"]
-    y = ["Y", "y"]
-    return HeatFrame(2, 20, data=fc.sf, x=x, y=y, value="v", sheet=fc.sf.sheet)
+def sf(fc_parent: MultiIndexParent):
+    fc = MultiIndex(fc_parent.sf)
+    return fc.sf
 
 
 def test_index(sf: HeatFrame):
-    x = sf.sheet.range("T3:T26").value
+    x = sf.sheet.range("V3:V26").value
     assert x
     y = np.array([None] * 24)
     y[::6] = range(1, 5)
@@ -31,11 +30,11 @@ def test_index(sf: HeatFrame):
 
 def test_index_from_df(sf: HeatFrame):
     x = np.repeat(list(range(1, 5)), 6)
-    np.testing.assert_array_equal(sf.df.index, x)
+    np.testing.assert_array_equal(sf._data.index, x)
 
 
 def test_columns(sf: HeatFrame):
-    x = sf.sheet.range("U2:AF2").value
+    x = sf.sheet.range("W2:AH2").value
     assert x
     y = np.array([None] * 12)
     y[::4] = range(1, 4)
@@ -44,7 +43,7 @@ def test_columns(sf: HeatFrame):
 
 def test_columns_from_df(sf: HeatFrame):
     x = np.repeat(list(range(1, 4)), 4)
-    np.testing.assert_array_equal(sf.df.columns, x)
+    np.testing.assert_array_equal(sf._data.columns, x)
 
 
 @pytest.mark.parametrize(
@@ -56,20 +55,16 @@ def test_columns_from_df(sf: HeatFrame):
     ],
 )
 def test_values(sf: HeatFrame, i: int, value: int):
-    assert sf.sheet.range(f"U{i}:Y{i}").value == value
+    assert sf.sheet.range(f"W{i}:AA{i}").value == value
 
 
 def test_vmin(sf: HeatFrame):
-    assert sf.vmin.get_address() == "$AH$26"
+    assert sf.vmin.get_address() == "$AJ$26"
 
 
 def test_vmax(sf: HeatFrame):
-    assert sf.vmax.get_address() == "$AH$3"
+    assert sf.vmax.get_address() == "$AJ$3"
 
 
 def test_label(sf: HeatFrame):
-    assert sf.label.get_address() == "$AH$2"
-
-
-def test_label_value(sf: HeatFrame):
-    assert sf.label.value == "v"
+    assert sf.label.get_address() == "$AJ$2"

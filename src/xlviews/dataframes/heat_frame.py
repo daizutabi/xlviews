@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import xlwings
+from pandas import MultiIndex
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
-from xlviews.range.formula import Func, aggregate
+from xlviews.decorators import suspend_screen_updates
+from xlviews.range.formula import aggregate
 from xlviews.range.range import Range
 from xlviews.range.style import (
     set_alignment,
@@ -22,79 +22,51 @@ from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
+    from typing import Self
+
     from pandas import DataFrame, Index
     from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
 
 class HeatFrame(SheetFrame):
-    x: str | list[str]
-    y: str | list[str]
-    value: str
-    df: DataFrame
+    _data: DataFrame
 
-    @turn_off_screen_updating
+    @suspend_screen_updates
     def __init__(
         self,
-        *args,
-        data: DataFrame | SheetFrame,
-        value: str,
-        x: str | list[str],
-        y: str | list[str],
-        aggfunc: Func = None,
-        vmin: float | None = None,
-        vmax: float | None = None,
+        row: int,
+        column: int,
+        data: DataFrame,
         sheet: Sheet | None = None,
-        style: bool = True,
-        autofit: bool = True,
-        font_size: int | None = None,
-        **kwargs,
     ) -> None:
-        sheet = sheet or xlwings.sheets.active
+        self.data = clean_data(data)
 
-        if isinstance(data, SheetFrame):
-            include_sheetname = sheet.name != data.sheet.name
-            data = _to_dataframe(data, value, x, y, aggfunc, include_sheetname)
+        super().__init__(row, column, data=self.data, index=True, sheet=sheet)
 
-        df = pivot_table(data, value, y, x)
-
-        self.df = df
-        self.value = value
-        self.x = x
-        self.y = y
-
-        super().__init__(*args, data=df, index=True, sheet=sheet, style=False)
-
-        if style:
-            set_heat_frame_style(self, autofit=autofit, font_size=font_size, **kwargs)
-
+        set_heat_frame_style(self)
         self.set_adjacent_column_width(1, offset=-1)
-
-        self.set_extrema(vmin, vmax)
+        self.vmin = None
+        self.vmax = None
         self.set_colorbar()
+        set_style(self)
 
-        set_color_scale(self.heat_range(), self.vmin, self.vmax)
+    @property
+    def data(self) -> DataFrame:
+        return self._data
 
-        self.set_label(value)
-
-        if autofit:
-            self.label.expand("down").autofit()
-
-        if style:
-            self.set_heat_style()
+    @data.setter
+    def data(self, value: DataFrame) -> None:
+        self._data = value
 
     @property
     def shape(self) -> tuple[int, int]:
-        return self.df.shape
+        return self.data.shape
 
     def __len__(self) -> int:
         return self.shape[0]
 
-    @property
-    def index(self) -> Index:
-        return self.df.index
-
-    def heat_range(self) -> Range:
+    def data_range(self) -> Range:
         start = self.row + 1, self.column + 1
         end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
         return Range(start, end, self.sheet)
@@ -111,21 +83,30 @@ class HeatFrame(SheetFrame):
     def label(self) -> RangeImpl:
         return self.cell.offset(0, self.shape[1] + 2)
 
-    def set_extrema(
-        self,
-        vmin: float | str | None = None,
-        vmax: float | str | None = None,
-    ) -> None:
-        rng = self.heat_range()
+    @vmin.setter
+    def vmin(self, value: float | str | None) -> None:
+        rng = self.data_range()
 
-        if vmin is None:
-            vmin = aggregate("min", rng, formula=True)
+        if value is None:
+            value = aggregate("min", rng, formula=True)
 
-        if vmax is None:
-            vmax = aggregate("max", rng, formula=True)
+        self.vmin.value = value
 
-        self.vmin.value = vmin
-        self.vmax.value = vmax
+    @vmax.setter
+    def vmax(self, value: float | str | None) -> None:
+        rng = self.data_range()
+
+        if value is None:
+            value = aggregate("max", rng, formula=True)
+
+        self.vmax.value = value
+
+    @label.setter
+    def label(self, label: str | None) -> None:
+        rng = self.label
+        rng.value = label
+        set_font(rng, bold=True, size=rcParams["frame.font.size"])
+        set_alignment(rng, horizontal_alignment="center")
 
     def set_colorbar(self) -> None:
         vmin = self.vmin.get_address()
@@ -151,81 +132,48 @@ class HeatFrame(SheetFrame):
             set_font(rng, size=4)
             set_number_format(rng, "0")
 
-    def set_label(self, label: str) -> None:
-        rng = self.label
-        rng.value = label
-        set_font(rng, bold=True, size=rcParams["frame.font.size"])
-        set_alignment(rng, horizontal_alignment="center")
+    def autofit(self) -> Self:
+        start = self.cell
+        end = start.offset(*self.shape)
+        self.sheet.range(start, end).autofit()
+        self.label.expand("down").autofit()
+        return self
 
     def set_adjacent_column_width(self, width: float, offset: int = 1) -> None:
         """Set the width of the adjacent empty column."""
         column = self.vmax.column + offset
         self.sheet.range(1, column).column_width = width
 
-    def set_heat_style(self) -> None:
-        if isinstance(self.x, list):
-            _merge_index(self.df.columns, self.row, self.column, 1, self.sheet)
 
-        if isinstance(self.y, list):
-            _merge_index(self.df.index, self.row, self.column, 0, self.sheet)
+def clean_data(data: DataFrame) -> DataFrame:
+    data = data.copy()
 
-        if isinstance(self.x, list) and isinstance(self.y, list):
-            _set_border(self)
+    if isinstance(data.columns, MultiIndex):
+        data.columns = data.columns.droplevel(list(range(1, data.columns.nlevels)))
 
+    if isinstance(data.index, MultiIndex):
+        data.index = data.index.droplevel(list(range(1, data.index.nlevels)))
 
-def pivot_table(
-    data: DataFrame,
-    value: str,
-    y: str | list[str],
-    x: str | list[str],
-    # aggfunc: Callable = lambda x: x,
-) -> DataFrame:
-    df = data.pivot_table(value, y, x, aggfunc=lambda x: x)
+    data.index.name = None
 
-    if isinstance(y, list):
-        df.index = df.index.droplevel(list(range(1, len(y))))
-
-    if isinstance(x, list):
-        df.columns = df.columns.droplevel(list(range(1, len(x))))
-
-    df.index.name = None
-
-    return df
+    return data
 
 
-def _to_dataframe(
-    sf: SheetFrame,
-    value: str,
-    x: str | list[str],
-    y: str | list[str],
-    aggfunc: Func = None,
-    include_sheetname: bool = False,
-) -> DataFrame:
-    columns = [value] if isinstance(value, str) else value
-
-    if aggfunc is None:
-        return sf.get_address(
-            columns,
-            include_sheetname=include_sheetname,
-            formula=True,
-        )
-
-    return sf.groupby(_to_list(x, y)).agg(
-        aggfunc,
-        columns,
-        include_sheetname=include_sheetname,
-        formula=True,
-    )
+def set_style(sf: HeatFrame) -> None:
+    set_color_scale(sf.data_range(), sf.vmin, sf.vmax)
+    _merge_index(sf.data.columns, sf.row, sf.column, 1, sf.sheet)
+    _merge_index(sf.data.index, sf.row, sf.column, 0, sf.sheet)
+    _set_border(sf)
 
 
-def _to_list(*args: str | list[str]) -> list[str]:
-    results = []
-    for arg in args:
-        if isinstance(arg, list):
-            results.extend(arg)
+def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
+    for start, end in iter_group_ranges(index):
+        if start == end:
+            continue
+        if axis == 0:
+            sheet.range((row + start + 1, column), (row + end + 1, column)).merge()
         else:
-            results.append(arg)
-    return results
+            sheet.range((row, column + start + 1), (row, column + end + 1)).merge()
 
 
 def _set_border(sf: HeatFrame) -> None:
@@ -234,17 +182,15 @@ def _set_border(sf: HeatFrame) -> None:
 
     ec = rcParams["heat.border.color"]
 
-    for row in iter_group_ranges(sf.df.index):
-        for col in iter_group_ranges(sf.df.columns):
+    for row in iter_group_ranges(sf.data.index):
+        if row[0] == row[1]:
+            continue
+
+        for col in iter_group_ranges(sf.data.columns):
+            if col[0] == col[1]:
+                continue
+
             start = (r + row[0], c + col[0])
             end = (r + row[1], c + col[1])
             rng = sf.sheet.range(start, end)
             set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)
-
-
-def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
-    for start, end in iter_group_ranges(index):
-        if axis == 0:
-            sheet.range((row + start + 1, column), (row + end + 1, column)).merge()
-        else:
-            sheet.range((row, column + start + 1), (row, column + end + 1)).merge()

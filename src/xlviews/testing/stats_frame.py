@@ -29,13 +29,13 @@ class Parent(FrameContainer):
         return df
 
     def init(self) -> None:
-        self.sf.set_number_format(c="0.00")
+        self.sf.number_format(c="0.00")
 
 
 if __name__ == "__main__":
     sheet = create_sheet()
-    fc = Parent(sheet, 3, 3, style=True, table=True, succession=True)
+    fc = Parent(sheet, 3, 3, style=True, table=True)
     sf_parent = fc.sf
 
     funcs = ["count", "mean", "median", "min", "max", "soa", "sum"]
-    StatsFrame(sf_parent, funcs, by=":y", succession=True)
+    StatsFrame(sf_parent, funcs, by=":y")

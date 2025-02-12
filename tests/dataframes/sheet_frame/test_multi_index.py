@@ -6,7 +6,7 @@ from xlwings import Sheet
 from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
-from xlviews.testing.sheet_frame import MultiIndex
+from xlviews.testing.sheet_frame.base import MultiIndex
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
@@ -35,13 +35,13 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_names is None
 
 
-def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set_data_from_sheet(index_level=0)
-    assert sf.has_index is False
+def test_load(sf: SheetFrame):
+    sf.load(index_level=0)
+    assert sf.index_level == 0
     assert sf.index_columns == []
     assert sf.value_columns == ["x", "y", "a", "b"]
-    sf.set_data_from_sheet(index_level=2)
-    assert sf.has_index is True
+    sf.load(index_level=2)
+    assert sf.index_level == 2
     assert sf.index_columns == ["x", "y"]
     assert sf.value_columns == ["a", "b"]
 

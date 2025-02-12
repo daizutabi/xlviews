@@ -5,7 +5,7 @@ from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
-from xlviews.testing.sheet_frame import Index
+from xlviews.testing.sheet_frame.base import Index
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
@@ -33,12 +33,12 @@ def test_init(sf: SheetFrame):
     assert sf.columns_names is None
 
 
-def test_set_data_from_sheet(sf: SheetFrame):
-    sf.set_data_from_sheet(index_level=0)
-    assert sf.has_index is False
+def test_load(sf: SheetFrame):
+    sf.load(index_level=0)
+    assert sf.index_level == 0
     assert sf.value_columns == ["name", "a", "b"]
-    sf.set_data_from_sheet(index_level=1)
-    assert sf.has_index is True
+    sf.load(index_level=1)
+    assert sf.index_level == 1
     assert sf.value_columns == ["a", "b"]
 
 
@@ -84,6 +84,7 @@ def test_iter(sf: SheetFrame):
 )
 def test_index(sf: SheetFrame, column, index):
     assert sf.index(column) == index
+    assert sf.column_index(column) == index
 
 
 def test_data(sf: SheetFrame, df: DataFrame):
@@ -107,8 +108,9 @@ def test_data(sf: SheetFrame, df: DataFrame):
         ("a", None, "$D$3:$D$6"),
     ],
 )
-def test_range(sf: SheetFrame, column, offset, address):
+def test_range(sf: SheetFrame, column: str, offset, address):
     assert sf.range(column, offset).get_address() == address
+    assert sf.column_range(column, offset).get_address() == address
 
 
 def test_get_address(sf: SheetFrame):

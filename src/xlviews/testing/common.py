@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import cache
 from typing import TYPE_CHECKING, Any
 
-import xlwings as xw
+import xlwings
 from pywintypes import com_error
 from xlwings import Sheet
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 @cache
 def is_excel_installed() -> bool:
     try:
-        with xw.App(visible=False):
+        with xlwings.App(visible=False):
             pass
     except com_error:
         return False
@@ -27,10 +27,10 @@ def is_excel_installed() -> bool:
 
 
 def create_sheet() -> Sheet:
-    for app in xw.apps:
+    for app in xlwings.apps:
         app.quit()
 
-    book = xw.Book()
+    book = xlwings.Book()
     sheet = book.sheets.add()
     sheet.range("A1").column_width = 1
     hide_gridlines(sheet)
@@ -43,9 +43,19 @@ def create_sheet_frame(
     sheet: Sheet,
     row: int,
     column: int,
-    **kwargs,
+    index: bool = True,
+    style: bool = False,
+    table: bool = False,
 ) -> SheetFrame:
-    return SheetFrame(row, column, data=df, sheet=sheet, **kwargs)
+    sf = SheetFrame(row, column, data=df, index=index, sheet=sheet)
+    if style:
+        sf.style()
+        sf.autofit()
+
+    if table:
+        sf.as_table()
+
+    return sf
 
 
 class FrameContainer:

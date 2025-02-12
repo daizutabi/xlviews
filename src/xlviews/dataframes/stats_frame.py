@@ -5,7 +5,7 @@ from pandas import DataFrame
 from xlwings.constants import Direction
 
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 from xlviews.range.formula import AGG_FUNCS
 from xlviews.range.range_collection import RangeCollection
 from xlviews.range.style import set_font, set_number_format
@@ -16,38 +16,29 @@ from .sheet_frame import SheetFrame
 
 
 class StatsFrame(SheetFrame):
-    parent: SheetFrame
-
-    @turn_off_screen_updating
+    @suspend_screen_updates
     def __init__(
         self,
         parent: SheetFrame,
         funcs: str | list[str] | None = None,
-        *,
         by: str | list[str] | None = None,
-        table: bool = True,
+        *,
         default: str = "median",
         func_column_name: str = "func",
-        succession: bool = False,
         auto_filter: bool = True,
-        **kwargs,
     ) -> None:
         """Create a StatsFrame.
 
         Args:
-            parent (SheetFrame): The sheetframe to be aggregated.
+            parent (SheetFrame): The `SheetFrame` to be aggregated.
             funcs (str, list of str, optional): The aggregation
                 functions to be used. The following functions are supported:
                     'count', 'sum', 'min', 'max', 'mean', 'median', 'std', 'soa%'
                 None to use the default functions.
             by (str, list of str, optional): The column names to be grouped by.
-            table (bool): If True, the frame is displayed in table format.
             default (str, optional): The default function to be displayed.
             func_column_name (str, optional): The name of the function column.
-            succession (bool, optional): If True, the continuous index is hidden.
-            auto_filter (bool): If True, the displayed functions are limited to
-                the default ones.
-            **kwargs: Passed to SheetFrame.__init__.
+            auto_filter (bool, optional): Whether to automatically filter the data.
         """
         funcs = get_func(funcs)
         by = get_by(parent, by)
@@ -61,62 +52,23 @@ class StatsFrame(SheetFrame):
 
         move_down(parent, offset)
 
-        gr = GroupBy(parent, by)
-        df = get_frame(gr, funcs, func_column_name)
+        gp = GroupBy(parent, by)
+        data = get_frame(gp, funcs, func_column_name)
 
-        super().__init__(
-            row,
-            column,
-            data=df,
-            index=parent.has_index,
-            autofit=False,
-            style=False,
-            sheet=parent.sheet,
-            **kwargs,
-        )
-        self.parent = parent
+        index = bool(parent.index_level)
+        super().__init__(row, column, data, index, sheet=parent.sheet)
 
-        if table:
-            self.as_table(autofit=False, const_header=True)
-
-        self.set_style(autofit=False, succession=succession)
+        self.as_table(autofit=False, const_header=True)
+        self.style()
 
         if isinstance(funcs, list):
-            self.set_stats_style(func_column_name)
+            set_style(self, parent, func_column_name)
 
-        if table:
-            self.set_alignment("left")
+        self.alignment("left")
 
         if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
             func = default if default in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
-
-    def set_stats_style(self, func_column_name: str) -> None:
-        func_index = self.index(func_column_name)
-
-        start = self.column + self.index_level
-        end = self.column + len(self.columns)
-        idx = [func_index, *range(start, end)]
-
-        get_fmt = self.parent.get_number_format
-        formats = [get_fmt(column) for column in self.value_columns]
-        formats = [None, *formats]
-
-        for (func,), rows in self.groupby(func_column_name).items():
-            for col, fmt in zip(idx, formats, strict=True):
-                rc = RangeCollection(rows, col, self.sheet)
-
-                if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
-                    set_number_format(rc, fmt)
-
-                color = rcParams.get(f"stats.{func}.color")
-                italic = rcParams.get(f"stats.{func}.italic")
-                set_font(rc, color=color, italic=italic)
-
-                if func == "soa" and col != func_index:
-                    set_number_format(rc, "0.0%")
-
-        set_font(self.range(func_column_name), italic=True)
 
 
 def get_func(func: str | list[str] | None) -> list[str]:
@@ -146,22 +98,22 @@ def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
 
 
 def get_frame(
-    gr: GroupBy,
+    group: GroupBy,
     funcs: list[str],
     func_column_name: str = "func",
 ) -> DataFrame:
-    df = gr.agg(funcs, gr.sf.value_columns, formula=True, as_address=True)
+    df = group.agg(funcs, group.sf.value_columns, formula=True, as_address=True)
     df = df.stack(level=1, future_stack=True)  # noqa: PD013
 
     index = df.index.to_frame()
     index = index.rename(columns={index.columns[-1]: func_column_name})
 
-    for c in gr.sf.index_columns:
-        if c not in gr.by:
+    for c in group.sf.index_columns:
+        if c not in group.by:
             index[c] = ""
 
     df = pd.concat([index, df], axis=1)
-    return df.set_index([func_column_name, *gr.sf.index_columns])
+    return df.set_index([func_column_name, *group.sf.index_columns])
 
 
 def has_header(sf: SheetFrame) -> bool:
@@ -185,3 +137,32 @@ def move_down(sf: SheetFrame, length: int) -> int:
     rows = sf.sheet.api.Rows(f"{start}:{end}")
     rows.Insert(Shift=Direction.xlDown)
     return end - start + 1
+
+
+def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
+    func_index = sf.index(func_column_name)
+
+    start = sf.column + sf.index_level
+    end = sf.column + len(sf.columns)
+    idx = [func_index, *range(start, end)]
+
+    get_fmt = parent.get_number_format
+    formats = [get_fmt(column) for column in sf.value_columns]
+    formats = [None, *formats]
+
+    for (func,), rows in sf.groupby(func_column_name).items():
+        for col, fmt in zip(idx, formats, strict=True):
+            rc = RangeCollection(rows, col, sf.sheet)
+
+            if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
+                set_number_format(rc, fmt)
+
+            color = rcParams.get(f"stats.{func}.color")
+            italic = rcParams.get(f"stats.{func}.italic")
+            set_font(rc, color=color, italic=italic)
+
+            if func == "soa" and col != func_index:
+                set_number_format(rc, "0.0%")
+
+    rng = sf.column_range(func_column_name)
+    set_font(rng, italic=True)

@@ -1,56 +1,49 @@
 from __future__ import annotations
 
-from itertools import product
+from typing import TYPE_CHECKING
 
-import pandas as pd
-from pandas import DataFrame
+from xlviews.testing.common import create_sheet
+from xlviews.testing.heat_frame.common import HeatFrameContainer
+from xlviews.testing.sheet_frame.pivot import Base as BaseParent
+from xlviews.testing.sheet_frame.pivot import MultiIndex as MultiIndexParent_
 
-from xlviews.dataframes.heat_frame import HeatFrame
-from xlviews.testing.common import FrameContainer, create_sheet
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 
-class Base(FrameContainer):
+class Base(HeatFrameContainer):
     @classmethod
-    def dataframe(cls) -> DataFrame:
-        values = list(product(range(1, 5), range(1, 7)))
-        df = DataFrame(values, columns=["x", "y"])
-        df["v"] = list(range(len(df)))
-        df = df[(df["x"] + df["y"]) % 4 != 0]
+    def dataframe(cls, sf: SheetFrame) -> DataFrame:
+        return sf.pivot_table("v", "y", "x", formula=True)
 
-        return df.set_index(["x", "y"])
+    def init(self) -> None:
+        super().init()
+        self.sf.label = "v"
 
 
-class MultiIndex(FrameContainer):
-    column: int = 14
+class MultiIndexParent(MultiIndexParent_):
+    column: int = 15
 
+
+class MultiIndex(HeatFrameContainer):
     @classmethod
-    def dataframe(cls) -> DataFrame:
-        base = Base.dataframe().reset_index()
-        dfs = []
-        for x in range(1, 4):
-            for y in range(1, 5):
-                a = base.copy()
-                a["X"] = x
-                a["Y"] = y
-                dfs.append(a)
-
-        df = pd.concat(dfs)
-        df["v"] = list(range(len(df)))
-        return df.set_index(["X", "Y", "x", "y"])
+    def dataframe(cls, sf: SheetFrame) -> DataFrame:
+        return sf.pivot_table("v", ["Y", "y"], ["X", "x"], formula=True)
 
 
 if __name__ == "__main__":
     sheet = create_sheet()
 
-    fc = Base(sheet, style=True)
+    fc = BaseParent(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    sf = HeatFrame(2, 6, data=sf, x="x", y="y", value="v", sheet=sheet)
-    sf.set_adjacent_column_width(1)
+    fc = Base(sf)
+    fc.sf.set_adjacent_column_width(1)
 
-    fc = MultiIndex(sheet, style=True)
+    fc = MultiIndexParent(sheet, style=True)
     sf = fc.sf
     sf.set_adjacent_column_width(1)
-    x = ["X", "x"]
-    y = ["Y", "y"]
-    sf = HeatFrame(2, 20, data=sf, x=x, y=y, value="v", sheet=sheet)
+    fc = MultiIndex(sf)
+    fc.sf.set_adjacent_column_width(1)

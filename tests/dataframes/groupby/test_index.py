@@ -18,7 +18,7 @@ def sf(sheet_module: Sheet):
     y = list(range(10, 20))
     df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
     df = df.set_index(["a", "b", "c"])
-    return SheetFrame(2, 2, data=df, index=True, style=False, sheet=sheet_module)
+    return SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
 
 
 @pytest.mark.parametrize(

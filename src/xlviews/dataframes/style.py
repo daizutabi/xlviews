@@ -10,7 +10,7 @@ from xlwings.constants import TableStyleElementType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.decorators import turn_off_screen_updating
+from xlviews.decorators import suspend_screen_updates
 from xlviews.range.style import (
     hide_succession,
     hide_unique,
@@ -78,11 +78,10 @@ def _set_style_font(
     set_font(rng, color=color, bold=bold, size=size)
 
 
-@turn_off_screen_updating
+@suspend_screen_updates
 def set_frame_style(
     sf: SheetFrame,
     *,
-    autofit: bool = False,
     alignment: str | None = "center",
     banding: bool = False,
     succession: bool = False,
@@ -167,9 +166,6 @@ def set_frame_style(
         ec = rcParams["frame.gray.border.color"] if gray else 0
         set_border(rng, edge_weight=ew, inside_weight=0, edge_color=ec)
 
-    if autofit:
-        rng.columns.autofit()
-
     if alignment:
         set_alignment(rng, alignment)
 
@@ -218,11 +214,10 @@ def set_table_style(
     table.api.TableStyle = style
 
 
-@turn_off_screen_updating
+@suspend_screen_updates
 def set_heat_frame_style(
     sf: HeatFrame,
     *,
-    autofit: bool = False,
     alignment: str | None = "center",
     border: bool = True,
     font: bool = True,
@@ -233,7 +228,6 @@ def set_heat_frame_style(
 
     Args:
         sf: The SheetFrame object.
-        autofit: Whether to autofit the frame.
         alignment: The alignment of the frame.
         border: Whether to draw the border.
         font: Whether to specify the font.
@@ -272,9 +266,6 @@ def set_heat_frame_style(
     set_style(start, end, "values")
 
     rng = sheet.range(cell, end)
-
-    if autofit:
-        rng.columns.autofit()
 
     if alignment:
         set_alignment(rng, alignment)

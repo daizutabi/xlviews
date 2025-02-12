@@ -20,7 +20,7 @@ def create_data_frame(rows: int = 10, columns: int = 10) -> DataFrame:
 
 
 def create_sheet_frame(df: DataFrame, sheet: Sheet) -> SheetFrame:
-    return SheetFrame(2, 3, data=df, sheet=sheet, style=False)
+    return SheetFrame(2, 3, data=df, sheet=sheet)
 
 
 @pytest.mark.parametrize(("rows", "columns"), [(10, 10), (100, 100), (1000, 100)])

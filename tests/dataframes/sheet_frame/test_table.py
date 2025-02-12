@@ -5,7 +5,7 @@ from xlwings import Sheet
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.table import Table
 from xlviews.testing import FrameContainer, is_excel_installed
-from xlviews.testing.sheet_frame import Index
+from xlviews.testing.sheet_frame.base import Index
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
@@ -27,7 +27,7 @@ def sf(fc: FrameContainer):
 
 @pytest.fixture
 def table(sf: SheetFrame):
-    yield sf.as_table()
+    yield sf.as_table().table
     sf.unlist()
 
 
