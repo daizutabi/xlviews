@@ -63,7 +63,7 @@ def test_index_columns(sf: SheetFrame):
 
 
 def test_wide_columns(sf: SheetFrame):
-    assert sf.wide_columns == ["u", "v"]
+    assert list(sf.wide_columns) == ["u", "v"]
 
 
 def test_contains(sf: SheetFrame):
