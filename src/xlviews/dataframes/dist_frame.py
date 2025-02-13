@@ -42,7 +42,7 @@ class DistFrame(SheetFrame):
         row = parent.row
         column = parent.column + len(parent.headers) + 1
 
-        super().__init__(row, column, data, index=by is not None, sheet=parent.sheet)
+        super().__init__(row, column, data, parent.sheet)
 
         if by:
             self.link_to_index(parent, by)
@@ -110,7 +110,7 @@ class DistFrame(SheetFrame):
         row = self.row + len(self) + self.columns_level + 1
         column = self.column
 
-        sf = SheetFrame(row, column, data, index=bool(index), sheet=self.sheet)
+        sf = SheetFrame(row, column, data, self.sheet)
         sf.style(gray=True)
 
         head = Range((parent.row - 1, parent.column), sheet=parent.sheet)

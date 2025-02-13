@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return NoIndex(sheet_module, 2, 3)
+    return NoIndex(sheet_module)
 
 
 @pytest.fixture(scope="module")
@@ -28,7 +28,7 @@ def sf(fc: FrameContainer):
 def test_init(sf: SheetFrame, fc: FrameContainer):
     assert sf.row == fc.row
     assert sf.column == fc.column
-    assert sf.index_level == 0
+    assert sf.index_level == 1
     assert sf.columns_level == 1
     assert sf.columns_names is None
 
@@ -36,23 +36,15 @@ def test_init(sf: SheetFrame, fc: FrameContainer):
 def test_load(sf: SheetFrame):
     sf.load(index_level=1)
     assert sf.index_level == 1
-    assert sf.value_columns == ["b"]
-    sf.load(index_level=0)
-    assert sf.index_level == 0
     assert sf.value_columns == ["a", "b"]
 
 
-def test_expand(sf: SheetFrame):
-    v = [["a", "b"], [1, 5], [2, 6], [3, 7], [4, 8]]
-    assert sf.expand().options(ndim=2).value == v
-
-
 def test_repr(sf: SheetFrame):
-    assert repr(sf).endswith("!$C$2:$D$6>")
+    assert repr(sf).endswith("!$B$2:$D$6>")
 
 
 def test_str(sf: SheetFrame):
-    assert str(sf).endswith("!$C$2:$D$6>")
+    assert str(sf).endswith("!$B$2:$D$6>")
 
 
 def test_len(sf: SheetFrame):
@@ -60,7 +52,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.headers == ["a", "b"]
+    assert sf.headers == [None, "a", "b"]
 
 
 def test_value_columns(sf: SheetFrame):
@@ -68,7 +60,7 @@ def test_value_columns(sf: SheetFrame):
 
 
 def test_index_columns(sf: SheetFrame):
-    assert sf.index_columns == []
+    assert sf.index_columns == [None]
 
 
 def test_contains(sf: SheetFrame):
@@ -77,7 +69,7 @@ def test_contains(sf: SheetFrame):
 
 
 def test_iter(sf: SheetFrame):
-    assert list(sf) == ["a", "b"]
+    assert list(sf) == [None, "a", "b"]
 
 
 @pytest.mark.parametrize(

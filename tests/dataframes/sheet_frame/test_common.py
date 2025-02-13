@@ -12,28 +12,21 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 @pytest.fixture
 def sf(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
-    return SheetFrame(3, 3, data=df, sheet=sheet)
-
-
-def test_index_false(sheet: Sheet):
-    df = DataFrame({"a": [1, 2], "b": [2, 4]})
-    sf = SheetFrame(2, 3, data=df, index=False, sheet=sheet)
-    assert sf.headers == ["a", "b"]
-    assert sf.index_level == 0
+    return SheetFrame(3, 3, df, sheet)
 
 
 def test_row_one(sheet: Sheet):
     df = DataFrame({"a": [1], "b": [2]})
-    sf = SheetFrame(2, 2, data=df, sheet=sheet)
+    sf = SheetFrame(2, 2, df, sheet)
     assert len(sf) == 1
     np.testing.assert_array_equal(sf.data["a"], [1])
 
 
 def test_column_one(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3]})
-    sf = SheetFrame(2, 2, data=df, index=False, sheet=sheet)
+    sf = SheetFrame(2, 2, df, sheet)
     assert len(sf) == 3
-    assert sf.headers == ["a"]
+    assert sf.headers == [None, "a"]
     np.testing.assert_array_equal(sf.data["a"], [1, 2, 3])
 
 
