@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return Index(sheet_module, 2, 3)
+    return Index(sheet_module)
 
 
 @pytest.fixture(scope="module")
@@ -26,8 +26,8 @@ def sf(fc: FrameContainer):
 
 
 def test_init(sf: SheetFrame):
-    assert sf.row == 2
-    assert sf.column == 3
+    assert sf.row == 8
+    assert sf.column == 2
     assert sf.index_level == 1
     assert sf.columns_level == 1
     assert sf.columns_names is None
@@ -76,10 +76,10 @@ def test_iter(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("column", "index"),
     [
-        ("name", 3),
-        ("a", 4),
-        ("b", 5),
-        (["name", "b"], [3, 5]),
+        ("name", 2),
+        ("a", 3),
+        ("b", 4),
+        (["name", "b"], [2, 4]),
     ],
 )
 def test_index(sf: SheetFrame, column, index):
@@ -101,11 +101,11 @@ def test_data(sf: SheetFrame, df: DataFrame):
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
-        ("b", 0, "$E$3"),
-        ("a", -1, "$D$2"),
-        ("b", -1, "$E$2"),
-        ("name", -1, "$C$2"),
-        ("a", None, "$D$3:$D$6"),
+        ("b", 0, "$D$9"),
+        ("a", -1, "$C$8"),
+        ("b", -1, "$D$8"),
+        ("name", -1, "$B$8"),
+        ("a", None, "$C$9:$C$12"),
     ],
 )
 def test_range(sf: SheetFrame, column: str, offset, address):
@@ -118,4 +118,4 @@ def test_get_address(sf: SheetFrame):
     assert df.columns.to_list() == ["a", "b"]
     assert df.index.name == "name"
     assert df.index.to_list() == ["x", "x", "y", "y"]
-    assert df.to_numpy()[0, 0] == "=D3"
+    assert df.to_numpy()[0, 0] == "=C9"
