@@ -15,8 +15,6 @@ from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.decorators import suspend_screen_updates
-from xlviews.element import Bar, Plot, Scatter
-from xlviews.grid import FacetGrid
 from xlviews.range.formula import Func, aggregate
 from xlviews.range.range import Range, iter_addresses
 from xlviews.range.style import set_alignment
@@ -78,8 +76,8 @@ class SheetFrame:
         if isinstance(data, Series):
             data = data.to_frame()
 
-        self.index_level = len(data.index.names) if index else 0
-        self.columns_level = len(data.columns.names)
+        self.index_level = data.index.nlevels if index else 0
+        self.columns_level = data.columns.nlevels
 
         self.cell.options(DataFrame, index=index).value = data
 
@@ -780,8 +778,15 @@ class SheetFrame:
             )
 
         else:
-            by = [index] if isinstance(index, str) else index
-            by = [*by, columns] if isinstance(columns, str) else by + columns
+            if index is None:
+                by = []
+            else:
+                by = [index] if isinstance(index, str) else index
+            if columns is None:
+                if not by:
+                    raise ValueError("index and columns cannot be None")
+            else:
+                by = [*by, columns] if isinstance(columns, str) else by + columns
 
             data = self.groupby(by).agg(
                 aggfunc,
@@ -921,14 +926,14 @@ class SheetFrame:
     def set_chart_position(self, pos: str = "right") -> None:
         set_first_position(self, pos=pos)
 
-    def scatter(self, *args, **kwargs) -> Scatter:
-        return Scatter(*args, data=self, **kwargs)
+    # def scatter(self, *args, **kwargs) -> Scatter:
+    #     return Scatter(*args, data=self, **kwargs)
 
-    def plot(self, *args, **kwargs) -> Plot:
-        return Plot(*args, data=self, **kwargs)
+    # def plot(self, *args, **kwargs) -> Plot:
+    #     return Plot(*args, data=self, **kwargs)
 
-    def bar(self, *args, **kwargs) -> Bar:
-        return Bar(*args, data=self, **kwargs)
+    # def bar(self, *args, **kwargs) -> Bar:
+    #     return Bar(*args, data=self, **kwargs)
 
-    def grid(self, *args, **kwargs) -> FacetGrid:
-        return FacetGrid(self, *args, **kwargs)
+    # def grid(self, *args, **kwargs) -> FacetGrid:
+    #     return FacetGrid(self, *args, **kwargs)

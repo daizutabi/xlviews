@@ -45,7 +45,7 @@ def test_add_formula_column(formula, value, use_setitem, sheet: Sheet):
     np.testing.assert_array_equal(sf.data["c"], [v + 1 for v in value])
 
 
-@pytest.mark.parametrize("apply", [lambda x: x, Range])
+@pytest.mark.parametrize("apply", [lambda x: x, Range.from_range])
 def test_add_formula_column_range(apply, sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     sf = SheetFrame(2, 3, data=df, sheet=sheet)

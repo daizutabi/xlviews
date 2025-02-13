@@ -5,24 +5,16 @@ from xlwings import Sheet
 
 from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing import is_excel_installed
-from xlviews.testing.heat_frame.facet import Facet
+from xlviews.testing.heat_frame.facet import FacetParent
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
-def fc(sheet_module: Sheet):
-    return Facet(sheet_module)
+def fc_parent(sheet_module: Sheet):
+    return FacetParent(sheet_module)
 
 
 @pytest.fixture(scope="module")
-def df(fc: Facet):
-    return fc.df
-
-    HeatFrame.facet(data, "X", "Y").map()
-
-
-# def test_group(df: DataFrame):
-#     df = df.pivot_table("v", ["Y", "y"], ["X", "x"], aggfunc=lambda x: x)
-#     print(df)
-# assert 0
+def df(fc_parent: FacetParent):
+    return fc_parent.df
