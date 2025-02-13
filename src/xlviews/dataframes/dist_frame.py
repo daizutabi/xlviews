@@ -107,7 +107,7 @@ class DistFrame(SheetFrame):
         array = np.zeros((len(index), 1))
         data = DataFrame(array, columns=["value"], index=index)
 
-        row = self.row + len(self) + self.columns_level + 1
+        row = self.row + len(self) + self.columns.nlevels + 1
         column = self.column
 
         sf = SheetFrame(row, column, data, self.sheet)
@@ -203,7 +203,7 @@ class DistFrame(SheetFrame):
         set_font(sigma_cell, size=8, bold=True, italic=True, color="green")
         set_alignment(sigma_cell, "center")
         sigma = sigma_cell.get_address()
-        row = self.cell.offset(self.columns_level).row
+        row = self.cell.offset(self.columns.nlevels).row
         column_ref = self.index_past(f"{x}_s")
         cell_ref = self.sheet.range(row, column_ref)
         cell_ref = cell_ref.get_address(row_absolute=False)

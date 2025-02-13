@@ -269,8 +269,8 @@ def aggregate(
 # def main():
 #     import xlviews as xv
 
-#     sf = xv.SheetFrame(2, 2, style=False, index_level=1)
-#     to = xv.SheetFrame(2, 6, style=False, index_level=0)
+#     sf = xv.SheetFrame(2, 2, style=False, index.nlevels=1)
+#     to = xv.SheetFrame(2, 6, style=False, index.nlevels=0)
 #     linear_fit(sf, "x", "y", to, by="k")
 #     # columns = ['time', 'soa%']
 #     # y = match_index(sf, ref, columns=columns)

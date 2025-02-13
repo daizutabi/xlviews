@@ -30,20 +30,9 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.row == 2
     assert sf.column == 6
     assert sf.sheet.name == sheet_module.name
-    assert sf.index_level == 2
-    assert sf.columns_level == 1
+    assert sf.index.nlevels == 2
+    assert sf.columns.nlevels == 1
     assert sf.columns_names is None
-
-
-def test_load(sf: SheetFrame):
-    sf.load(index_level=0)
-    assert sf.index_level == 0
-    assert sf.index_columns == []
-    assert sf.value_columns == ["x", "y", "a", "b"]
-    sf.load(index_level=2)
-    assert sf.index_level == 2
-    assert sf.index_columns == ["x", "y"]
-    assert sf.value_columns == ["a", "b"]
 
 
 def test_expand(sf: SheetFrame):
