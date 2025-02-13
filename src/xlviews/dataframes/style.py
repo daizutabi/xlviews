@@ -171,7 +171,7 @@ def set_frame_style(
 
 
 def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
-    wide_columns = sf.wide_columns
+    wide_columns = list(sf.wide_columns)
     edge_color = rcParams["frame.gray.border.color"] if gray else 0
 
     for wide_column in wide_columns:

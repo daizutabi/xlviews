@@ -15,6 +15,7 @@ from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.core.formula import Func, aggregate
+from xlviews.core.index import WideIndex
 from xlviews.core.range import Range, iter_addresses
 from xlviews.core.style import set_alignment
 from xlviews.decorators import suspend_screen_updates
@@ -39,6 +40,7 @@ class SheetFrame:
     sheet: Sheet
     index: Index
     columns: Index
+    wide_columns: WideIndex
     columns_names: list[str] | None = None
     table: Table | None = None
 
@@ -63,6 +65,7 @@ class SheetFrame:
 
         self.index = data.index
         self.columns = data.columns
+        self.wide_columns = WideIndex()
 
         self.cell.options(DataFrame).value = data
 
@@ -135,7 +138,7 @@ class SheetFrame:
         return self.headers[: self.index.nlevels]
 
     @property
-    def wide_columns(self) -> list[str]:
+    def wide_columns_past(self) -> list[str]:
         start = self.row - 1, self.column + self.index.nlevels
         end = start[0], start[1] + len(self.headers) - self.index.nlevels - 1
         cs = self.sheet.range(start, end).value or []
@@ -411,7 +414,7 @@ class SheetFrame:
             autofit (bool): Whether to autofit the width.
         """
         columns = self.headers
-        wide_columns = self.wide_columns
+        wide_columns = list(self.wide_columns)
 
         if isinstance(rng, str):
             if rng not in columns + wide_columns:
@@ -456,7 +459,7 @@ class SheetFrame:
     def add_wide_column(
         self,
         column: str,
-        values: Iterable[str | float],
+        values: Iterable[Any],
         *,
         number_format: str | None = None,
         autofit: bool = True,
@@ -474,16 +477,25 @@ class SheetFrame:
         if self.columns.nlevels != 1:
             raise NotImplementedError
 
+        values = list(values)
+
+        if self.wide_columns is None:
+            self.wide_columns = WideIndex({column: values})
+        elif column in self.wide_columns:
+            msg = f"column {column} already exists"
+            raise ValueError(msg)
+        else:
+            self.wide_columns[column] = values
+
         rng = self.cell.offset(0, len(self.headers))
-        values_list = list(values)
-        rng.value = values_list
+        rng.value = values
 
         header = rng.offset(-1)
         header.value = column
 
         set_alignment(header, horizontal_alignment="left")
 
-        rng = self.sheet.range(rng, rng.offset(0, len(values_list)))
+        rng = self.sheet.range(rng, rng.offset(0, len(values)))
         if number_format:
             rng.number_format = number_format
 
