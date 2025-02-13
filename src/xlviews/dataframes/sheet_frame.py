@@ -178,10 +178,7 @@ class SheetFrame:
         value = [row.Value[0] for row in data.Rows]
         df = DataFrame(value, columns=self.headers)
 
-        if self.index.nlevels:
-            df = df.set_index(list(df.columns[: self.index.nlevels]))
-
-        return df
+        return df.set_index(list(df.columns[: self.index.nlevels]))
 
     @overload
     def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
