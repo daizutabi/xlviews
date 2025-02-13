@@ -137,13 +137,6 @@ class SheetFrame:
     def index_columns(self) -> list[str | tuple[str, ...] | None]:
         return self.headers[: self.index.nlevels]
 
-    @property
-    def wide_columns_past(self) -> list[str]:
-        start = self.row - 1, self.column + self.index.nlevels
-        end = start[0], start[1] + len(self.headers) - self.index.nlevels - 1
-        cs = self.sheet.range(start, end).value or []
-        return [c for c in cs if c]
-
     def __contains__(self, item: str | tuple) -> bool:
         return item in self.headers
 
