@@ -13,7 +13,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return MultiIndexColumn(sheet_module, 5, 3)
+    return MultiIndexColumn(sheet_module)
 
 
 @pytest.fixture(scope="module")
@@ -46,26 +46,13 @@ def test_value_values(sf: SheetFrame):
 
 
 def test_init(sf: SheetFrame, sheet_module: Sheet):
-    assert sf.cell.get_address() == "$C$5"
-    assert sf.row == 5
-    assert sf.column == 3
+    assert sf.cell.get_address() == "$U$13"
+    assert sf.row == 13
+    assert sf.column == 21
     assert sf.sheet.name == sheet_module.name
-    assert sf.index_level == 3
-    assert sf.columns_level == 2
+    assert sf.index.nlevels == 3
+    assert sf.columns.nlevels == 2
     assert sf.columns_names is None
-
-
-def test_load(sf: SheetFrame):
-    sf.load(index_level=2, columns_level=2)
-    assert sf.index_level == 2
-    assert sf.index_columns == ["x", "y"]
-    c = [(None, "z"), ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-    assert sf.value_columns == c
-    sf.load(index_level=3, columns_level=2)
-    assert sf.index_level == 3
-    assert sf.index_columns == ["x", "y", "z"]
-    c = [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-    assert sf.value_columns == c
 
 
 def test_expand(sf: SheetFrame):
@@ -84,7 +71,7 @@ def test_len(sf: SheetFrame):
 def test_columns(sf: SheetFrame):
     i = "x", "y", "z"
     c = ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")
-    assert sf.columns == [*i, *c]
+    assert sf.headers == [*i, *c]
 
 
 def test_value_columns(sf: SheetFrame):
@@ -112,18 +99,18 @@ def test_iter(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("column", "index"),
     [
-        ("z", 5),
-        (("a1", "b1"), 6),
-        (["x", ("a2", "b2")], [3, 9]),
+        ("z", 23),
+        (("a1", "b1"), 24),
+        (["x", ("a2", "b2")], [21, 27]),
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.index(column) == index
+    assert sf.index_past(column) == index
 
 
 def test_index_error(sf: SheetFrame):
     with pytest.raises(ValueError, match="'a' is not in list"):
-        sf.index("a")
+        sf.index_past("a")
 
 
 def test_data(sf: SheetFrame, df: DataFrame):
@@ -138,12 +125,12 @@ def test_data(sf: SheetFrame, df: DataFrame):
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
-        ("x", -1, "$C$5:$C$6"),
-        ("y", 0, "$D$7"),
-        ("z", None, "$E$7:$E$14"),
-        (("a1", "b1"), -1, "$F$5:$F$6"),
-        (("a1", "b2"), 0, "$G$7"),
-        (("a2", "b1"), None, "$H$7:$H$14"),
+        ("x", -1, "$U$13:$U$14"),
+        ("y", 0, "$V$15"),
+        ("z", None, "$W$15:$W$22"),
+        (("a1", "b1"), -1, "$X$13:$X$14"),
+        (("a1", "b2"), 0, "$Y$15"),
+        (("a2", "b1"), None, "$Z$15:$Z$22"),
     ],
 )
 def test_range_column(sf: SheetFrame, column, offset, address):
@@ -153,9 +140,9 @@ def test_range_column(sf: SheetFrame, column, offset, address):
 @pytest.mark.parametrize(
     ("by", "one", "two"),
     [
-        ("x", [(7, 10)], [(11, 14)]),
-        ("y", [(7, 8), (11, 12)], [(9, 10), (13, 14)]),
-        ("z", [(7, 9), (12, 14)], [(10, 11)]),
+        ("x", [(15, 18)], [(19, 22)]),
+        ("y", [(15, 16), (19, 20)], [(17, 18), (21, 22)]),
+        ("z", [(15, 17), (20, 22)], [(18, 19)]),
     ],
 )
 def test_groupby(sf: SheetFrame, by, one, two):
@@ -168,9 +155,15 @@ def test_groupby(sf: SheetFrame, by, one, two):
 @pytest.mark.parametrize(
     ("by", "v11", "v12", "v21", "v22"),
     [
-        (["x", "y"], [(7, 8)], [(9, 10)], [(11, 12)], [(13, 14)]),
-        (["x", "z"], [(7, 9)], [(10, 10)], [(12, 14)], [(11, 11)]),
-        (["y", "z"], [(7, 8), (12, 12)], [(11, 11)], [(9, 9), (13, 14)], [(10, 10)]),
+        (["x", "y"], [(15, 16)], [(17, 18)], [(19, 20)], [(21, 22)]),
+        (["x", "z"], [(15, 17)], [(18, 18)], [(20, 22)], [(19, 19)]),
+        (
+            ["y", "z"],
+            [(15, 16), (20, 20)],
+            [(19, 19)],
+            [(17, 17), (21, 22)],
+            [(18, 18)],
+        ),
     ],
 )
 def test_groupby_list(sf: SheetFrame, by, v11, v12, v21, v22):

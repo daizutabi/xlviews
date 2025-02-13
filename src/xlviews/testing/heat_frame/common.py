@@ -18,7 +18,7 @@ class HeatFrameContainer:
 
     def __init__(self, sf: SheetFrame, row: int = 0, column: int = 0) -> None:
         self.row = row or self.row or sf.row
-        self.column = column or self.column or (sf.column + len(sf.columns) + 1)
+        self.column = column or self.column or (sf.column + len(sf.headers) + 1)
         self.df = self.dataframe(sf)
         self.sf = HeatFrame(self.row, self.column, data=self.df, sheet=sf.sheet)
         self.init()

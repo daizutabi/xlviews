@@ -55,8 +55,7 @@ class StatsFrame(SheetFrame):
         gp = GroupBy(parent, by)
         data = get_frame(gp, funcs, func_column_name)
 
-        index = bool(parent.index_level)
-        super().__init__(row, column, data, index, sheet=parent.sheet)
+        super().__init__(row, column, data, parent.sheet)
 
         self.as_table(autofit=False, const_header=True)
         self.style()
@@ -118,7 +117,7 @@ def get_frame(
 
 def has_header(sf: SheetFrame) -> bool:
     start = sf.cell.offset(-1)
-    end = start.offset(0, len(sf.columns))
+    end = start.offset(0, len(sf.headers))
     value = sf.sheet.range(start, end).options(ndim=1).value
 
     if not isinstance(value, list):
@@ -140,10 +139,10 @@ def move_down(sf: SheetFrame, length: int) -> int:
 
 
 def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
-    func_index = sf.index(func_column_name)
+    func_index = sf.index_past(func_column_name)
 
-    start = sf.column + sf.index_level
-    end = sf.column + len(sf.columns)
+    start = sf.column + sf.index.nlevels
+    end = sf.column + len(sf.headers)
     idx = [func_index, *range(start, end)]
 
     get_fmt = parent.get_number_format

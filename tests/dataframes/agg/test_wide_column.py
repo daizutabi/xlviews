@@ -34,7 +34,7 @@ def test_str(sf: SheetFrame, df: DataFrame, func: str):
     b = df.agg(func)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(20, 2, a.to_frame(), sf.sheet)
     np.testing.assert_array_equal(sf.data[0], b)
 
 
@@ -45,7 +45,7 @@ def test_list(sf: SheetFrame, df: DataFrame):
     assert isinstance(a, DataFrame)
     assert a.index.to_list() == b.index.to_list()
     assert a.columns.to_list() == b.columns.to_list()
-    sf = SheetFrame(50, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(50, 2, a, sf.sheet)
     np.testing.assert_array_equal(sf.data, b)
 
 
@@ -68,5 +68,5 @@ def test_sf_first(sf: SheetFrame):
 def test_sf_group_str_str(sf: SheetFrame, df: DataFrame, func, by):
     a = sf.groupby(by).agg(func, as_address=True, formula=True)
     b = df.groupby(by).agg(func).astype(float)
-    sf = SheetFrame(50, 30, data=a, sheet=sf.sheet)
+    sf = SheetFrame(50, 30, a, sf.sheet)
     assert sf.data.equals(b)

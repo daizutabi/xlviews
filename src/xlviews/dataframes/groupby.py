@@ -61,7 +61,7 @@ def groupby(
     """Group by the specified column and return the group key and row number."""
     if not by:
         if sf.columns_names is None:
-            start = sf.row + sf.columns_level
+            start = sf.row + sf.columns.nlevels
             end = start + len(sf) - 1
             return {(): [(start, end)]}
 
@@ -81,9 +81,9 @@ def groupby(
     index = create_group_index(values, sort=sort)
 
     if sf.columns_names is None:
-        offset = sf.row + sf.columns_level  # vertical
+        offset = sf.row + sf.columns.nlevels  # vertical
     else:
-        offset = sf.column + sf.index_level  # horizontal
+        offset = sf.column + sf.index.nlevels  # horizontal
 
     return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
 
@@ -191,7 +191,7 @@ class GroupBy:
             values = self.keys()
             return DataFrame(values, columns=self.by)
 
-        cs = self.sf.columns
+        cs = self.sf.headers
         column = self.sf.column
         idx = [cs.index(c) + column for c in self.by]
 
@@ -219,7 +219,7 @@ class GroupBy:
         external: bool = False,
         formula: bool = False,
     ) -> DataFrame:
-        if self.sf.columns_level != 1:
+        if self.sf.columns.nlevels != 1:
             raise NotImplementedError
 
         if isinstance(func, dict):

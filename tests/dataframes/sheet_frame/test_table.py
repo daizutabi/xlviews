@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return Index(sheet_module, 2, 3)
+    return Index(sheet_module)
 
 
 @pytest.fixture(scope="module")

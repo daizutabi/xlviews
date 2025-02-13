@@ -40,9 +40,9 @@ class DistFrame(SheetFrame):
         data = get_init_data(parent, columns, by)
 
         row = parent.row
-        column = parent.column + len(parent.columns) + 1
+        column = parent.column + len(parent.headers) + 1
 
-        super().__init__(row, column, data, index=by is not None, sheet=parent.sheet)
+        super().__init__(row, column, data, parent.sheet)
 
         if by:
             self.link_to_index(parent, by)
@@ -107,10 +107,10 @@ class DistFrame(SheetFrame):
         array = np.zeros((len(index), 1))
         data = DataFrame(array, columns=["value"], index=index)
 
-        row = self.row + len(self) + self.columns_level + 1
+        row = self.row + len(self) + self.columns.nlevels + 1
         column = self.column
 
-        sf = SheetFrame(row, column, data, index=bool(index), sheet=self.sheet)
+        sf = SheetFrame(row, column, data, self.sheet)
         sf.style(gray=True)
 
         head = Range((parent.row - 1, parent.column), sheet=parent.sheet)
@@ -194,17 +194,17 @@ class DistFrame(SheetFrame):
             フィッティングに用いるσ値の範囲
         """
         column_ = f"{x}_sf"
-        if column_ in self.columns:
+        if column_ in self.headers:
             return column_
         self[column_] = 1
-        column = self.index(column_)
+        column = self.index_past(column_)
         sigma_cell = self.sheet.range(self.row - 1, column)
         sigma_cell.value = sigma
         set_font(sigma_cell, size=8, bold=True, italic=True, color="green")
         set_alignment(sigma_cell, "center")
         sigma = sigma_cell.get_address()
-        row = self.cell.offset(self.columns_level).row
-        column_ref = self.index(f"{x}_s")
+        row = self.cell.offset(self.columns.nlevels).row
+        column_ref = self.index_past(f"{x}_s")
         cell_ref = self.sheet.range(row, column_ref)
         cell_ref = cell_ref.get_address(row_absolute=False)
         cell = self.sheet.range(row, column)

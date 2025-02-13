@@ -19,7 +19,7 @@ if __name__ == "__main__":
     d = ["x", "y"] * 8
     df = DataFrame(np.arange(16 * 6).reshape(16, 6).T)
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
-    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
+    sf = SheetFrame(2, 2, df, sheet_module)
 
     len(list(sf.ranges()))
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     y = list(range(10, 20))
     df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
     df = df.set_index(["a", "b", "c"])
-    sf = SheetFrame(2, 2, data=df, index=True, sheet=sheet_module)
+    sf = SheetFrame(2, 2, df, sheet_module)
 
     ax = Axes(left=200, chart_type=ChartType.xlXYScatter)
     x = sf.range("x")

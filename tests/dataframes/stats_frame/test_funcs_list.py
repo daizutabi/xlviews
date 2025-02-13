@@ -19,7 +19,7 @@ def test_len(sf: StatsFrame):
 
 
 def test_columns(sf: StatsFrame):
-    assert sf.columns == ["func", "x", "y", "z", "a", "b", "c"]
+    assert sf.headers == ["func", "x", "y", "z", "a", "b", "c"]
 
 
 def test_index_columns(sf: StatsFrame):

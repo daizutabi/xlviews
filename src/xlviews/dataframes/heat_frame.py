@@ -42,7 +42,7 @@ class HeatFrame(SheetFrame):
     ) -> None:
         self.data = clean_data(data)
 
-        super().__init__(row, column, data=self.data, index=True, sheet=sheet)
+        super().__init__(row, column, self.data, sheet)
 
         set_heat_frame_style(self)
         self.set_adjacent_column_width(1, offset=-1)

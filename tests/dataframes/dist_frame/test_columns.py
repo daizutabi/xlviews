@@ -22,7 +22,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 def test_columns(columns, values, sheet: Sheet):
     fc = Parent(sheet, 3, 2)
     sf = DistFrame(fc.sf, columns, by=["x", "y"])
-    assert sf.columns == values
+    assert sf.headers == values
 
 
 def test_group_error(sheet: Sheet):

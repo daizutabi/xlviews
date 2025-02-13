@@ -29,7 +29,7 @@ class Table:
         style: bool = False,
         sheet: Sheet | None = None,
         api: COMRetryObjectWrapper | None = None,
-        index_level: int | None = None,
+        index_nlevels: int | None = None,
     ) -> None:
         if isinstance(rng, Range):
             self.cell = rng[0]
@@ -52,7 +52,7 @@ class Table:
             self.header.api.EntireColumn.AutoFit()
 
         if const_header:
-            self.add_const_header(index_level)
+            self.add_const_header(index_nlevels)
 
         if style:
             set_table_style(self)

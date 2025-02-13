@@ -13,7 +13,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return MultiIndex(sheet_module, 10, 6)
+    return MultiIndex(sheet_module)
 
 
 @pytest.fixture(scope="module")
@@ -27,23 +27,12 @@ def sf(fc: FrameContainer):
 
 
 def test_init(sf: SheetFrame, sheet_module: Sheet):
-    assert sf.row == 10
+    assert sf.row == 2
     assert sf.column == 6
     assert sf.sheet.name == sheet_module.name
-    assert sf.index_level == 2
-    assert sf.columns_level == 1
+    assert sf.index.nlevels == 2
+    assert sf.columns.nlevels == 1
     assert sf.columns_names is None
-
-
-def test_load(sf: SheetFrame):
-    sf.load(index_level=0)
-    assert sf.index_level == 0
-    assert sf.index_columns == []
-    assert sf.value_columns == ["x", "y", "a", "b"]
-    sf.load(index_level=2)
-    assert sf.index_level == 2
-    assert sf.index_columns == ["x", "y"]
-    assert sf.value_columns == ["a", "b"]
 
 
 def test_expand(sf: SheetFrame):
@@ -66,7 +55,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.columns == ["x", "y", "a", "b"]
+    assert sf.headers == ["x", "y", "a", "b"]
 
 
 def test_value_columns(sf: SheetFrame):
@@ -95,12 +84,12 @@ def test_iter(sf: SheetFrame):
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.index(column) == index
+    assert sf.index_past(column) == index
 
 
 def test_index_error(sf: SheetFrame):
     with pytest.raises(ValueError, match="'z' is not in list"):
-        sf.index("z")
+        sf.index_past("z")
 
 
 def test_data(sf: SheetFrame, df: DataFrame):
@@ -117,11 +106,11 @@ def test_data(sf: SheetFrame, df: DataFrame):
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
-        ("x", -1, "$F$10"),
-        ("y", 0, "$G$11"),
-        ("a", -1, "$H$10"),
-        ("b", 0, "$I$11"),
-        ("y", None, "$G$11:$G$18"),
+        ("x", -1, "$F$2"),
+        ("y", 0, "$G$3"),
+        ("a", -1, "$H$2"),
+        ("b", 0, "$I$3"),
+        ("y", None, "$G$3:$G$10"),
     ],
 )
 def test_range(sf: SheetFrame, column, offset, address):
@@ -131,8 +120,8 @@ def test_range(sf: SheetFrame, column, offset, address):
 @pytest.mark.parametrize(
     ("by", "v1", "v2"),
     [
-        ("x", [(11, 14)], [(15, 18)]),
-        ("y", [(11, 12), (15, 16)], [(13, 14), (17, 18)]),
+        ("x", [(3, 6)], [(7, 10)]),
+        ("y", [(3, 4), (7, 8)], [(5, 6), (9, 10)]),
     ],
 )
 def test_groupby(sf: SheetFrame, by, v1, v2):
@@ -145,14 +134,14 @@ def test_groupby(sf: SheetFrame, by, v1, v2):
 def test_groupby_list(sf: SheetFrame):
     g = groupby(sf, ["x", "y"])
     assert len(g) == 4
-    assert g[(1, 1)] == [(11, 12)]
-    assert g[(1, 2)] == [(13, 14)]
-    assert g[(2, 1)] == [(15, 16)]
-    assert g[(2, 2)] == [(17, 18)]
+    assert g[(1, 1)] == [(3, 4)]
+    assert g[(1, 2)] == [(5, 6)]
+    assert g[(2, 1)] == [(7, 8)]
+    assert g[(2, 2)] == [(9, 10)]
 
 
 def test_get_address(sf: SheetFrame):
     df = sf.get_address(row_absolute=False, column_absolute=False, formula=True)
     assert df.columns.to_list() == ["a", "b"]
     assert df.index.names == ["x", "y"]
-    assert df.to_numpy()[0, 0] == "=H11"
+    assert df.to_numpy()[0, 0] == "=H3"

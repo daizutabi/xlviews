@@ -47,12 +47,12 @@ def set_first_position(sf: SheetFrame, pos: str = "right") -> None:
         FIRST_POSITION["top"] = cell.top
 
     elif pos == "inside":
-        cell = sf.cell.offset(sf.columns_level, sf.index_level)
+        cell = sf.cell.offset(sf.columns.nlevels, sf.index.nlevels)
         FIRST_POSITION["left"] = cell.left + 30
         FIRST_POSITION["top"] = cell.top + 30
 
     elif pos == "bottom":
-        cell = sf.cell.offset(sf.columns_level + len(sf) + 1)
+        cell = sf.cell.offset(sf.columns.nlevels + len(sf) + 1)
         FIRST_POSITION["left"] = cell.left
         FIRST_POSITION["top"] = cell.top
 

@@ -50,7 +50,7 @@ def test_len(benchmark, sf: SheetFrame, shape):
 
 
 def test_columns(benchmark, sf: SheetFrame, shape):
-    assert benchmark(lambda: len(sf.columns)) == shape[1] + 1
+    assert benchmark(lambda: len(sf.headers)) == shape[1] + 1
 
 
 def test_data(benchmark, sf: SheetFrame, shape):
@@ -60,7 +60,7 @@ def test_data(benchmark, sf: SheetFrame, shape):
 
 
 def test_index_str(benchmark, sf: SheetFrame):
-    assert benchmark(lambda: sf.index("E")) == 8
+    assert benchmark(lambda: sf.index_past("E")) == 8
 
 
 @pytest.fixture(
@@ -76,7 +76,7 @@ def columns(request: pytest.FixtureRequest):
 
 
 def test_index_list(benchmark, sf: SheetFrame, columns):
-    x = benchmark(lambda: sf.index(columns))
+    x = benchmark(lambda: sf.index_past(columns))
     assert x == list(range(4, len(columns) + 4))
 
 

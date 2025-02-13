@@ -17,7 +17,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.columns == ["func", "x", "y", "z", "a", "b", "c"]
+    assert sf.headers == ["func", "x", "y", "z", "a", "b", "c"]
 
 
 def test_index_columns(sf: SheetFrame):

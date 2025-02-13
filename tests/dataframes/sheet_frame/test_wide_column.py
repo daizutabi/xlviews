@@ -13,7 +13,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return WideColumn(sheet_module, 4, 2)
+    return WideColumn(sheet_module)
 
 
 @pytest.fixture(scope="module")
@@ -27,11 +27,11 @@ def sf(fc: FrameContainer):
 
 
 def test_init(sf: SheetFrame, sheet_module: Sheet):
-    assert sf.row == 4
-    assert sf.column == 2
+    assert sf.row == 3
+    assert sf.column == 29
     assert sf.sheet.name == sheet_module.name
-    assert sf.index_level == 2
-    assert sf.columns_level == 1
+    assert sf.index.nlevels == 2
+    assert sf.columns.nlevels == 1
 
 
 def test_expand(sf: SheetFrame):
@@ -51,7 +51,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.columns == ["x", "y", "a", "b", *range(3), *range(4)]
+    assert sf.headers == ["x", "y", "a", "b", *range(3), *range(4)]
 
 
 def test_value_columns(sf: SheetFrame):
@@ -79,24 +79,24 @@ def test_iter(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("column", "index"),
     [
-        ("a", 4),
-        ("b", 5),
-        (["y", "b"], [3, 5]),
-        ("u", (6, 8)),
-        ("v", (9, 12)),
-        (("v", 0), 9),
-        (("v", 3), 12),
-        (["x", "a", "u", ("v", 0)], [2, 4, (6, 8), 9]),
+        ("a", 31),
+        ("b", 32),
+        (["y", "b"], [30, 32]),
+        ("u", (33, 35)),
+        ("v", (36, 39)),
+        (("v", 0), 36),
+        (("v", 3), 39),
+        (["x", "a", "u", ("v", 0)], [29, 31, (33, 35), 36]),
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.index(column) == index
+    assert sf.index_past(column) == index
 
 
 @pytest.mark.parametrize("column", ["z", ("u", -1)])
 def test_index_error(sf: SheetFrame, column):
     with pytest.raises(ValueError, match=".* is not in list"):
-        sf.index(column)
+        sf.index_past(column)
 
 
 def test_data(sf: SheetFrame, df: DataFrame):
@@ -115,15 +115,15 @@ def test_data(sf: SheetFrame, df: DataFrame):
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
-        ("x", -1, "$B$4"),
-        ("y", 0, "$C$5"),
-        ("a", None, "$D$5:$D$9"),
-        (("u", 0), -1, "$F$3:$F$4"),
-        (("u", 2), 0, "$H$5"),
-        (("v", 0), None, "$I$5:$I$9"),
-        ("u", -1, "$F$3:$H$4"),
-        ("u", 0, "$F$5:$H$5"),
-        ("v", None, "$I$5:$L$9"),
+        ("x", -1, "$AC$3"),
+        ("y", 0, "$AD$4"),
+        ("a", None, "$AE$4:$AE$8"),
+        (("u", 0), -1, "$AG$2:$AG$3"),
+        (("u", 2), 0, "$AI$4"),
+        (("v", 0), None, "$AJ$4:$AJ$8"),
+        ("u", -1, "$AG$2:$AI$3"),
+        ("u", 0, "$AG$4:$AI$4"),
+        ("v", None, "$AJ$4:$AM$8"),
     ],
 )
 def test_range_column(sf: SheetFrame, column, offset, address):
@@ -133,8 +133,8 @@ def test_range_column(sf: SheetFrame, column, offset, address):
 @pytest.mark.parametrize(
     ("by", "v1", "v2"),
     [
-        ("x", [(5, 6), (9, 9)], [(7, 8)]),
-        ("y", [(5, 5), (7, 7), (9, 9)], [(6, 6), (8, 8)]),
+        ("x", [(4, 5), (8, 8)], [(6, 7)]),
+        ("y", [(4, 4), (6, 6), (8, 8)], [(5, 5), (7, 7)]),
     ],
 )
 def test_groupby(sf: SheetFrame, by, v1, v2):
@@ -148,7 +148,7 @@ def test_groupby(sf: SheetFrame, by, v1, v2):
 def test_groupby_list(sf: SheetFrame):
     g = groupby(sf, ["x", "y"])
     assert len(g) == 4
-    assert g[("i", "k")] == [(5, 5), (9, 9)]
-    assert g[("i", "l")] == [(6, 6)]
-    assert g[("j", "k")] == [(7, 7)]
-    assert g[("j", "l")] == [(8, 8)]
+    assert g[("i", "k")] == [(4, 4), (8, 8)]
+    assert g[("i", "l")] == [(5, 5)]
+    assert g[("j", "k")] == [(6, 6)]
+    assert g[("j", "l")] == [(7, 7)]

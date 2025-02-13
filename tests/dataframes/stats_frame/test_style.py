@@ -40,7 +40,7 @@ def test_func(sf: StatsFrame, funcs: list[str]):
 @pytest.mark.parametrize("o", [0, 8])
 def test_color(sf: StatsFrame, funcs: list[str], func: str, color, c, o):
     row = funcs.index(func) + sf.row + o + 1
-    column = sf.index(c)
+    column = sf.index_past(c)
     rng = sf.sheet.range(row, column)
     assert rgb(rng.font.color) == rgb(color)
 
@@ -50,7 +50,7 @@ def test_color(sf: StatsFrame, funcs: list[str], func: str, color, c, o):
 @pytest.mark.parametrize("o", [16, 24])
 def test_italic(sf: StatsFrame, funcs: list[str], func: str, c, o):
     row = funcs.index(func) + sf.row + o + 1
-    column = sf.index(c)
+    column = sf.index_past(c)
     rng = sf.sheet.range(row, column)
     assert rng.font.italic
 
@@ -58,7 +58,7 @@ def test_italic(sf: StatsFrame, funcs: list[str], func: str, c, o):
 @pytest.mark.parametrize("c", ["a", "b"])
 def test_soa(sf: StatsFrame, funcs: list[str], c):
     row = funcs.index("soa") + sf.row + 1
-    column = sf.index(c)
+    column = sf.index_past(c)
     rng = sf.sheet.range(row, column)
     assert rng.number_format == "0.0%"
 
@@ -67,6 +67,6 @@ def test_soa(sf: StatsFrame, funcs: list[str], c):
 @pytest.mark.parametrize("o", [0, 16])
 def test_number_format(sf: StatsFrame, funcs: list[str], func, o):
     row = funcs.index(func) + sf.row + o + 1
-    column = sf.index("c")
+    column = sf.index_past("c")
     rng = sf.sheet.range(row, column)
     assert rng.number_format == "0.00"

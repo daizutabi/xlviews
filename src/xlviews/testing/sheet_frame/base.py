@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
@@ -10,17 +8,10 @@ from xlviews.testing.common import FrameContainer, create_sheet
 
 
 class NoIndex(FrameContainer):
-    row: int = 2
-    column: int = 3
-
     @classmethod
     def dataframe(cls) -> DataFrame:
         values = {"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]}
         return DataFrame(values)
-
-    def kwargs(self, **kwargs) -> dict[str, Any]:
-        kwargs["index"] = False
-        return kwargs
 
 
 class Index(FrameContainer):
