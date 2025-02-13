@@ -131,10 +131,6 @@ class SheetFrame:
     def value_columns(self) -> list:
         return self.headers[self.index.nlevels :]
 
-    # @property
-    # def index.names(self) -> list[str | tuple[str, ...] | None]:
-    #     return self.headers[: self.index.nlevels]
-
     def __contains__(self, item: str | tuple) -> bool:
         return item in self.headers
 
