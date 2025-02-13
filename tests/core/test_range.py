@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
@@ -154,3 +155,51 @@ def test_iter_addresses_formula(rng: Range, rng_impl: RangeImpl, external):
     x = list(rng.iter_addresses(external=external, formula=True))
     y = ["=" + r.get_address(external=external) for r in rng_impl]
     assert x == y
+
+
+def test_frame_range_cell(sheet_module: Sheet):
+    rng = Range((1, 1), (1, 1), sheet_module).frame
+    df = rng.get_address()
+    assert df.shape == (1, 1)
+    assert df.index.tolist() == [0]
+    assert df.columns.tolist() == [0]
+    np.testing.assert_array_equal(df, [["$A$1"]])
+
+
+def test_frame_range_row(sheet_module: Sheet):
+    rng = Range((1, 1), (1, 3), sheet_module).frame
+    df = rng.get_address(row_absolute=False)
+    assert df.shape == (1, 3)
+    assert df.index.tolist() == [0]
+    assert df.columns.tolist() == [0, 1, 2]
+    np.testing.assert_array_equal(df, [["$A1", "$B1", "$C1"]])
+
+
+def test_frame_range_column(sheet_module: Sheet):
+    rng = Range((1, 1), (3, 1), sheet_module).frame
+    df = rng.get_address(column_absolute=False)
+    assert df.shape == (3, 1)
+    assert df.index.tolist() == [0, 1, 2]
+    assert df.columns.tolist() == [0]
+    np.testing.assert_array_equal(df, [["A$1"], ["A$2"], ["A$3"]])
+
+
+def test_frame_range_matrix(sheet_module: Sheet):
+    rng = Range((1, 1), (3, 2), sheet_module).frame
+    df = rng.get_address(column_absolute=False, row_absolute=False, formula=True)
+    assert df.shape == (3, 2)
+    assert df.index.tolist() == [0, 1, 2]
+    assert df.columns.tolist() == [0, 1]
+    np.testing.assert_array_equal(df, [["=A1", "=B1"], ["=A2", "=B2"], ["=A3", "=B3"]])
+
+
+def test_frame_range_cell_sheetname(sheet_module: Sheet):
+    rng = Range((1, 1), (1, 1), sheet_module).frame
+    df = rng.get_address(include_sheetname=True)
+    assert df.loc[0, 0] == f"{sheet_module.name}!$A$1"
+
+
+def test_frame_range_cell_external(sheet_module: Sheet):
+    rng = Range((1, 1), (1, 1), sheet_module).frame
+    df = rng.get_address(external=True)
+    assert df.loc[0, 0] == f"[{sheet_module.book.name}]{sheet_module.name}!$A$1"

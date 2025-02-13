@@ -142,6 +142,14 @@ class Range:
     def api(self):  # noqa: ANN201
         return self.impl.api
 
+    @property
+    def frame(self) -> FrameRange:
+        return FrameRange(
+            (self.row, self.column),
+            (self.row_end, self.column_end),
+            sheet=self.sheet,
+        )
+
 
 def iter_addresses(
     ranges: Range | Iterable[Range],
