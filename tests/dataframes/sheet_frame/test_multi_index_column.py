@@ -68,7 +68,7 @@ def test_len(sf: SheetFrame):
     assert len(sf) == 8
 
 
-def test_columns(sf: SheetFrame):
+def test_headers(sf: SheetFrame):
     i = "x", "y", "z"
     c = ("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")
     assert sf.headers == [*i, *c]
