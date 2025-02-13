@@ -47,7 +47,7 @@ class SheetFrame:
         self,
         row: int,
         column: int,
-        data: DataFrame | Series | None = None,
+        data: DataFrame,
         sheet: Sheet | None = None,
     ) -> None:
         """Create a DataFrame on an Excel sheet.
@@ -55,28 +55,11 @@ class SheetFrame:
         Args:
             row (int): The row index of the top-left cell.
             column (int): The column index of the top-left cell.
-            data (DataFrame, optional): The DataFrame to write to the sheet.
-            index (bool, optional): Whether to output the index of the DataFrame.
+            data (DataFrame): The DataFrame to write to the sheet.
             sheet (Sheet, optional): The sheet object.
         """
         self.sheet = sheet or xlwings.sheets.active
         self.cell = self.sheet.range(row, column)
-
-        if data is not None:
-            self.set_data(data)
-        else:
-            self.index = Index([])
-            self.columns = Index([])
-
-    def set_data(self, data: DataFrame | Series) -> None:
-        """Set the data of the SheetFrame.
-
-        Args:
-            data (DataFrame, optional): The DataFrame to write to the sheet.
-            index (bool): Whether to output the index of the DataFrame.
-        """
-        if isinstance(data, Series):
-            data = data.to_frame()
 
         self.index = data.index
         self.columns = data.columns

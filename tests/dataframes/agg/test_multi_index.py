@@ -67,7 +67,7 @@ def test_sf_str(sf: SheetFrame, df: DataFrame, func: str):
     b = df.agg(func)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(20, 2, data=a.to_frame(), sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data[0], b)
 
 
@@ -78,7 +78,7 @@ def test_sf_range(sf: SheetFrame, df: DataFrame, name: str):
     b = df.agg(name)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(20, 2, data=a.to_frame(), sheet=sf.sheet)
     func.value = name
     np.testing.assert_array_equal(sf.data[0], b)
 
@@ -86,14 +86,14 @@ def test_sf_range(sf: SheetFrame, df: DataFrame, name: str):
 def test_sf_str_columns(sf: SheetFrame):
     a = sf.agg("mean", columns="a", formula=True)
     assert len(a) == 1
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(20, 2, data=a.to_frame(), sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data, [[4.5]])
 
 
 def test_sf_str_columns_list(sf: SheetFrame):
     a = sf.agg("mean", columns=["a", "b"], formula=True)
     assert len(a) == 2
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(20, 2, data=a.to_frame(), sheet=sf.sheet)
     df = DataFrame([[4.5], [14.5]], index=["a", "b"], columns=[0.0])
     assert df.equals(sf.data)
 
@@ -104,7 +104,7 @@ def test_sf_dict(sf: SheetFrame, df: DataFrame):
     b = df.agg(func)
     assert isinstance(a, Series)
     assert a.index.to_list() == b.index.to_list()
-    sf = SheetFrame(20, 2, data=a, sheet=sf.sheet)
+    sf = SheetFrame(20, 2, data=a.to_frame(), sheet=sf.sheet)
     np.testing.assert_array_equal(sf.data[0], b)
 
 
