@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import re
 from functools import partial
 from itertools import chain, takewhile
@@ -128,8 +129,9 @@ class SheetFrame:
         return [*idx, *cs]
 
     @property
-    def value_columns(self) -> list:
-        return self.headers[self.index.nlevels :]
+    def value_columns(self) -> list[Any]:
+        it = itertools.chain.from_iterable(self.wide_columns.values())
+        return self.columns.to_list() + list(it)
 
     def __contains__(self, item: str | tuple) -> bool:
         return item in self.headers
