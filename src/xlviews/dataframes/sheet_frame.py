@@ -144,7 +144,7 @@ class SheetFrame:
             rng = self.cell.offset(self.columns.nlevels - 1).expand()
             rng = rng.options(DataFrame, index=self.index.nlevels, header=1)
             df = rng.value
-            df.columns = MultiIndex.from_tuples(self.value_columns)
+            df.columns = self.columns
             return df
 
         rng = self.expand().options(
