@@ -114,12 +114,10 @@ class SheetFrame:
 
         if self.columns_names:
             idx = [tuple(self.columns_names)]
-        elif self.index.nlevels:
+        else:
             start = self.row + self.columns.nlevels - 1, self.column
             end = start[0], start[1] + self.index.nlevels - 1
             idx = self.sheet.range(start, end).value or []
-        else:
-            idx = []
 
         cs = []
         for k in range(self.columns.nlevels):
@@ -180,10 +178,7 @@ class SheetFrame:
         value = [row.Value[0] for row in data.Rows]
         df = DataFrame(value, columns=self.headers)
 
-        if self.index.nlevels:
-            df = df.set_index(list(df.columns[: self.index.nlevels]))
-
-        return df
+        return df.set_index(list(df.columns[: self.index.nlevels]))
 
     @overload
     def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
@@ -569,7 +564,7 @@ class SheetFrame:
         values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
-        if self.index.nlevels and self.index_columns[0]:
+        if self.index_columns[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
                 df.index = Index(index[index.columns[0]])
