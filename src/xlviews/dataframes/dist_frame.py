@@ -103,7 +103,7 @@ class DistFrame(SheetFrame):
             to.value = ref.get_address(row_absolute=False, formula=True)
 
     def const_values(self, parent: SheetFrame) -> None:
-        index = parent.index_columns
+        index = parent.index.names
         array = np.zeros((len(index), 1))
         data = DataFrame(array, columns=["value"], index=index)
 

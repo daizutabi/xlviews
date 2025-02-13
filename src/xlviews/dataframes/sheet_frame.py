@@ -131,9 +131,9 @@ class SheetFrame:
     def value_columns(self) -> list:
         return self.headers[self.index.nlevels :]
 
-    @property
-    def index_columns(self) -> list[str | tuple[str, ...] | None]:
-        return self.headers[: self.index.nlevels]
+    # @property
+    # def index.names(self) -> list[str | tuple[str, ...] | None]:
+    #     return self.headers[: self.index.nlevels]
 
     def __contains__(self, item: str | tuple) -> bool:
         return item in self.headers
@@ -564,7 +564,7 @@ class SheetFrame:
         values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
-        if self.index_columns[0]:
+        if self.index.names[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
                 df.index = Index(index[index.columns[0]])

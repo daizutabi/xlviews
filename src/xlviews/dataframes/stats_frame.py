@@ -82,7 +82,7 @@ def get_func(func: str | list[str] | None) -> list[str]:
 
 def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
     if not by:
-        return [c for c in sf.index_columns if isinstance(c, str)]
+        return [c for c in sf.index.names if isinstance(c, str)]
 
     return list(iter_columns(sf, by))
 
@@ -107,12 +107,12 @@ def get_frame(
     index = df.index.to_frame()
     index = index.rename(columns={index.columns[-1]: func_column_name})
 
-    for c in group.sf.index_columns:
+    for c in group.sf.index.names:
         if c not in group.by:
             index[c] = ""
 
     df = pd.concat([index, df], axis=1)
-    return df.set_index([func_column_name, *group.sf.index_columns])
+    return df.set_index([func_column_name, *group.sf.index.names])
 
 
 def has_header(sf: SheetFrame) -> bool:

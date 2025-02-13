@@ -51,7 +51,7 @@ def test_value_columns(sf: SheetFrame):
 
 
 def test_index_columns(sf: SheetFrame):
-    assert sf.index_columns == ["name"]
+    assert sf.index.names == ["name"]
 
 
 def test_contains(sf: SheetFrame):

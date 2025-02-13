@@ -127,7 +127,7 @@ def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
         ("K14", "values"),
     ],
 )
-def test_frame_style_multi_index_columns(sf_mic: SheetFrame, cell: str, name: str):
+def test_frame_style_multi_index_names(sf_mic: SheetFrame, cell: str, name: str):
     c = rgb(rcParams[f"frame.{name}.fill.color"])
     assert sf_mic.sheet[cell].api.Interior.Color == c
 

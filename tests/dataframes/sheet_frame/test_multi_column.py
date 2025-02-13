@@ -64,8 +64,12 @@ def test_value_columns(sf: SheetFrame):
     assert columns[-1] == ("b", "d", 8, "y")
 
 
-def test_index_columns(sf: SheetFrame):
-    assert sf.index_columns == [("s", "t", "r", "i")]
+def test_index_names(sf: SheetFrame):
+    assert sf.index.names == [None]
+
+
+def test_columns_names(sf: SheetFrame):
+    assert sf.columns.names == ["s", "t", "r", "i"]
 
 
 def test_contains(sf: SheetFrame):
