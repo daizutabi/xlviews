@@ -118,12 +118,12 @@ def test_iter(sf: SheetFrame):
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.index(column) == index
+    assert sf.index_past(column) == index
 
 
 def test_index_error(sf: SheetFrame):
     with pytest.raises(ValueError, match="'a' is not in list"):
-        sf.index("a")
+        sf.index_past("a")
 
 
 def test_data(sf: SheetFrame, df: DataFrame):

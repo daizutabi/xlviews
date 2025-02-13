@@ -83,7 +83,7 @@ def test_iter(sf: SheetFrame):
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.index(column) == index
+    assert sf.index_past(column) == index
     assert sf.column_index(column) == index
 
 

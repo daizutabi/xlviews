@@ -90,13 +90,13 @@ def test_iter(sf: SheetFrame):
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.index(column) == index
+    assert sf.index_past(column) == index
 
 
 @pytest.mark.parametrize("column", ["z", ("u", -1)])
 def test_index_error(sf: SheetFrame, column):
     with pytest.raises(ValueError, match=".* is not in list"):
-        sf.index(column)
+        sf.index_past(column)
 
 
 def test_data(sf: SheetFrame, df: DataFrame):

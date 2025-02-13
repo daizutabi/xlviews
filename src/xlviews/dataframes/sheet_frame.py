@@ -37,6 +37,8 @@ class SheetFrame:
 
     cell: RangeImpl
     sheet: Sheet
+    index: Index
+    columns: Index
     index_level: int
     columns_level: int
     columns_names: list[str] | None = None
@@ -65,6 +67,9 @@ class SheetFrame:
 
         if data is not None:
             self.set_data(data, index=index)
+        else:
+            self.index = Index([])
+            self.columns = Index([])
 
     def set_data(self, data: DataFrame | Series, index: bool = True) -> None:
         """Set the data of the SheetFrame.
@@ -233,21 +238,21 @@ class SheetFrame:
         return df
 
     @overload
-    def index(self, columns: str | tuple) -> int | tuple[int, int]: ...
+    def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
 
     @overload
-    def index(
+    def index_past(
         self,
         columns: Sequence[str | tuple],
     ) -> list[int] | list[tuple[int, int]]: ...
 
-    def index(
+    def index_past(
         self,
         columns: str | tuple | Sequence[str | tuple],
     ) -> int | tuple[int, int] | list[int] | list[tuple[int, int]]:
         """Return the column index (1-indexed)."""
         if isinstance(columns, str | tuple):
-            return self.index([columns])[0]
+            return self.index_past([columns])[0]
 
         if self.columns_names:
             columns_str = [c for c in columns if isinstance(c, str)]
@@ -337,7 +342,7 @@ class SheetFrame:
         if self.columns_names and isinstance(column, str):
             raise NotImplementedError
 
-        index = self.index(column)
+        index = self.index_past(column)
 
         match offset:
             case 0:  # first data row

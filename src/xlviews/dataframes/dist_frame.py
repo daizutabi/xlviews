@@ -197,14 +197,14 @@ class DistFrame(SheetFrame):
         if column_ in self.headers:
             return column_
         self[column_] = 1
-        column = self.index(column_)
+        column = self.index_past(column_)
         sigma_cell = self.sheet.range(self.row - 1, column)
         sigma_cell.value = sigma
         set_font(sigma_cell, size=8, bold=True, italic=True, color="green")
         set_alignment(sigma_cell, "center")
         sigma = sigma_cell.get_address()
         row = self.cell.offset(self.columns_level).row
-        column_ref = self.index(f"{x}_s")
+        column_ref = self.index_past(f"{x}_s")
         cell_ref = self.sheet.range(row, column_ref)
         cell_ref = cell_ref.get_address(row_absolute=False)
         cell = self.sheet.range(row, column)
