@@ -114,12 +114,10 @@ class SheetFrame:
 
         if self.columns_names:
             idx = [tuple(self.columns_names)]
-        elif self.index.nlevels:
+        else:
             start = self.row + self.columns.nlevels - 1, self.column
             end = start[0], start[1] + self.index.nlevels - 1
             idx = self.sheet.range(start, end).value or []
-        else:
-            idx = []
 
         cs = []
         for k in range(self.columns.nlevels):
