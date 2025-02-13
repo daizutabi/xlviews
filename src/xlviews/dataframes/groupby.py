@@ -7,9 +7,9 @@ import numpy as np
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range as RangeImpl
 
-from xlviews.range.formula import Func, aggregate
-from xlviews.range.range import Range
-from xlviews.range.range_collection import RangeCollection
+from xlviews.core.formula import Func, aggregate
+from xlviews.core.range import Range
+from xlviews.core.range_collection import RangeCollection
 from xlviews.utils import iter_columns
 
 if TYPE_CHECKING:

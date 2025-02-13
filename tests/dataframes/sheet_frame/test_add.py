@@ -3,8 +3,8 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
+from xlviews.core.range import Range
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.range.range import Range
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

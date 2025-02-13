@@ -2,7 +2,7 @@ import pytest
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
-from xlviews.range.range import Range
+from xlviews.core.range import Range
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

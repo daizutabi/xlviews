@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import xlwings
+from pandas import DataFrame
 from xlwings import Range as RangeImpl
 
 from .address import index_to_column_name
@@ -11,6 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
     from typing import Any, Self
 
+    from pandas._typing import Axes
     from xlwings import Sheet
 
 
@@ -188,12 +191,14 @@ def _iter_addresses(
         prefix = ""
 
     if cellwise:
-        columns = range(rng.column, rng.column_end + 1)
-        cnames = [index_to_column_name(c) for c in columns]
+        prefix = f"{prefix}{cp}"
+        cindex = range(rng.column, rng.column_end + 1)
+        cnames = [index_to_column_name(c) for c in cindex]
 
-        for row in range(rng.row, rng.row_end + 1):
-            for column in cnames:
-                yield f"{prefix}{cp}{column}{rp}{row}"
+        rows = [f"{rp}{row}" for row in range(rng.row, rng.row_end + 1)]
+        for row in rows:
+            for cn in cnames:
+                yield f"{prefix}{cn}{row}"
 
     elif rng.row == rng.row_end and rng.column == rng.column_end:
         yield f"{prefix}{cp}{index_to_column_name(rng.column)}{rp}{rng.row}"
@@ -202,3 +207,35 @@ def _iter_addresses(
         start = f"{cp}{index_to_column_name(rng.column)}{rp}{rng.row}"
         end = f"{cp}{index_to_column_name(rng.column_end)}{rp}{rng.row_end}"
         yield f"{prefix}{start}:{end}"
+
+
+class FrameRange(Range):
+    def get_address(
+        self,
+        row_absolute: bool = True,
+        column_absolute: bool = True,
+        include_sheetname: bool = False,
+        external: bool = False,
+        formula: bool = False,
+        index: Axes | None = None,
+        columns: Axes | None = None,
+    ) -> DataFrame:
+        rp = "$" if row_absolute else ""
+        cp = "$" if column_absolute else ""
+        f = "=" if formula else ""
+
+        if external:
+            prefix = f"{f}[{self.sheet.book.name}]{self.sheet.name}!{cp}"
+        elif include_sheetname:
+            prefix = f"{f}{self.sheet.name}!{cp}"
+        else:
+            prefix = f"{f}{cp}"
+
+        cindex = range(self.column, self.column_end + 1)
+        cnames = [index_to_column_name(c) for c in cindex]
+
+        rows = [f"{rp}{row}" for row in range(self.row, self.row_end + 1)]
+        values = np.array([f"{prefix}{cn}{row}" for row in rows for cn in cnames])
+        values = values.reshape(len(rows), len(cnames))
+
+        return DataFrame(values, index=index, columns=columns)

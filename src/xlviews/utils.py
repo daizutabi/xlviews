@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from xlwings import Range as RangeImpl
     from xlwings._xlwindows import COMRetryObjectWrapper
 
+    from xlviews.core.range import Range
     from xlviews.dataframes.sheet_frame import SheetFrame
-    from xlviews.range.range import Range
 
 
 def constant(type_: str, name: str | None = None) -> int:

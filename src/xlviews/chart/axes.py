@@ -7,7 +7,7 @@ import xlwings as xw
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
-from xlviews.range.address import reference
+from xlviews.core.address import reference
 
 from .series import Series
 from .style import (
@@ -29,8 +29,8 @@ if TYPE_CHECKING:
     from xlwings import Chart, Sheet
     from xlwings import Range as RangeImpl
 
+    from xlviews.core.range import Range
     from xlviews.dataframes.sheet_frame import SheetFrame
-    from xlviews.range.range import Range
 
 FIRST_POSITION = {"left": 50, "top": 50}
 

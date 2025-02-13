@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from xlwings import Range, Sheet
 
     from xlviews.chart.series import Series
+    from xlviews.core.range_collection import RangeCollection
     from xlviews.dataframes.groupby import GroupBy
-    from xlviews.range.range_collection import RangeCollection
 
 
 def get_range(

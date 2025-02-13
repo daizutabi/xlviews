@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
-    from xlviews.range.range import Range
+    from xlviews.core.range import Range
 
 
 @cache

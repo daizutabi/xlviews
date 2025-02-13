@@ -6,16 +6,16 @@ from pandas import MultiIndex
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.decorators import suspend_screen_updates
-from xlviews.range.formula import aggregate
-from xlviews.range.range import Range
-from xlviews.range.style import (
+from xlviews.core.formula import aggregate
+from xlviews.core.range import Range
+from xlviews.core.style import (
     set_alignment,
     set_border,
     set_color_scale,
     set_font,
     set_number_format,
 )
+from xlviews.decorators import suspend_screen_updates
 from xlviews.utils import iter_group_ranges
 
 from .sheet_frame import SheetFrame
