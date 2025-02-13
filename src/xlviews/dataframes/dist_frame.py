@@ -27,7 +27,7 @@ class DistFrame(SheetFrame):
         dist: str | dict[str, str] = "norm",
     ) -> None:
         if columns is None:
-            columns = parent.columns.to_list()
+            columns = parent.value_columns
         elif isinstance(columns, str):
             columns = [columns]
 
