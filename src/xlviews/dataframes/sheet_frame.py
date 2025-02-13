@@ -39,8 +39,6 @@ class SheetFrame:
     sheet: Sheet
     index: Index
     columns: Index
-    index_level: int
-    columns_level: int
     columns_names: list[str] | None = None
     table: Table | None = None
 
@@ -80,8 +78,8 @@ class SheetFrame:
         if isinstance(data, Series):
             data = data.to_frame()
 
-        self.index_level = data.index.nlevels
-        self.columns_level = data.columns.nlevels
+        self.index = data.index
+        self.columns = data.columns
 
         self.cell.options(DataFrame).value = data
 
@@ -89,36 +87,14 @@ class SheetFrame:
             self.columns_names = list(data.columns.names)
             self.cell.options(transpose=True).value = self.columns_names
 
-    def load(self, index_level: int = 1, columns_level: int = 1) -> Self:
-        """Load the data of the SheetFrame from Excel sheet.
-
-        Args:
-            index_level (int): The depth of the index.
-            columns_level (int): The depth of the columns.
-        """
-        self.index_level = index_level
-        self.columns_level = columns_level
-
-        if self.columns_level > 1 and index_level == 1:
-            start = self.cell
-            end = start.offset(self.columns_level - 1)
-            self.columns_names = self.sheet.range(start, end).value
-
-        for api in self.sheet.api.ListObjects:
-            if api.Range.Row == self.row and api.Range.Column == self.column:
-                self.table = Table(api=api, sheet=self.sheet)
-                break
-
-        return self
-
     def _update_cell(self) -> None:  # important
         self.cell = self.cell.offset()
 
     def expand(self, mode: str = "table") -> RangeImpl:
         self._update_cell()
 
-        if self.cell.value is None and self.columns_level > 1:
-            end = self.cell.offset(self.columns_level - 1).expand(mode)
+        if self.cell.value is None and self.columns.nlevels > 1:
+            end = self.cell.offset(self.columns.nlevels - 1).expand(mode)
             return self.sheet.range(self.cell, end)
 
         return self.cell.expand(mode)
@@ -130,7 +106,7 @@ class SheetFrame:
         return str(self.expand()).replace("<Range ", "<SheetFrame ")
 
     def __len__(self) -> int:
-        start = self.cell.offset(self.columns_level)
+        start = self.cell.offset(self.columns.nlevels)
         cell = start
 
         while cell.value is not None:
@@ -153,21 +129,21 @@ class SheetFrame:
     @property
     def headers(self) -> list:
         """Return the column names."""
-        if self.columns_level == 1:
+        if self.columns.nlevels == 1:
             return self.expand("right").options(ndim=1).value or []
 
         if self.columns_names:
             idx = [tuple(self.columns_names)]
-        elif self.index_level:
-            start = self.row + self.columns_level - 1, self.column
-            end = start[0], start[1] + self.index_level - 1
+        elif self.index.nlevels:
+            start = self.row + self.columns.nlevels - 1, self.column
+            end = start[0], start[1] + self.index.nlevels - 1
             idx = self.sheet.range(start, end).value or []
         else:
             idx = []
 
         cs = []
-        for k in range(self.columns_level):
-            rng = self.cell.offset(k, self.index_level).expand("right")
+        for k in range(self.columns.nlevels):
+            rng = self.cell.offset(k, self.index.nlevels).expand("right")
             cs.append(rng.options(ndim=1).value)
         cs = [tuple(c) for c in zip(*cs, strict=True)]
 
@@ -175,16 +151,16 @@ class SheetFrame:
 
     @property
     def value_columns(self) -> list:
-        return self.headers[self.index_level :]
+        return self.headers[self.index.nlevels :]
 
     @property
     def index_columns(self) -> list[str | tuple[str, ...] | None]:
-        return self.headers[: self.index_level]
+        return self.headers[: self.index.nlevels]
 
     @property
     def wide_columns(self) -> list[str]:
-        start = self.row - 1, self.column + self.index_level
-        end = start[0], start[1] + len(self.headers) - self.index_level - 1
+        start = self.row - 1, self.column + self.index.nlevels
+        end = start[0], start[1] + len(self.headers) - self.index.nlevels - 1
         cs = self.sheet.range(start, end).value or []
         return [c for c in cs if c]
 
@@ -197,17 +173,17 @@ class SheetFrame:
     @property
     def data(self) -> DataFrame:
         """Return the data as a DataFrame."""
-        if self.cell.value is None and self.columns_level > 1:
-            rng = self.cell.offset(self.columns_level - 1).expand()
-            rng = rng.options(DataFrame, index=self.index_level, header=1)
+        if self.cell.value is None and self.columns.nlevels > 1:
+            rng = self.cell.offset(self.columns.nlevels - 1).expand()
+            rng = rng.options(DataFrame, index=self.index.nlevels, header=1)
             df = rng.value
             df.columns = MultiIndex.from_tuples(self.value_columns)
             return df
 
         rng = self.expand().options(
             DataFrame,
-            index=self.index_level,
-            header=self.columns_level,
+            index=self.index.nlevels,
+            header=self.columns.nlevels,
         )
         df = rng.value
 
@@ -231,8 +207,8 @@ class SheetFrame:
         value = [row.Value[0] for row in data.Rows]
         df = DataFrame(value, columns=self.headers)
 
-        if self.index_level:
-            df = df.set_index(list(df.columns[: self.index_level]))
+        if self.index.nlevels:
+            df = df.set_index(list(df.columns[: self.index.nlevels]))
 
         return df
 
@@ -284,7 +260,7 @@ class SheetFrame:
     ) -> tuple[int, int] | int:
         value_columns = self.value_columns
 
-        start = self.row - 1, self.column + self.index_level
+        start = self.row - 1, self.column + self.index.nlevels
         end = start[0], start[1] + len(value_columns) - 1
         names = self.sheet.range(start, end).options(ndim=1).value or []
 
@@ -292,7 +268,7 @@ class SheetFrame:
         start = names.index(name)
         end = len(list(takewhile(lambda n: n is None, names[start + 1 :]))) + start
 
-        offset = self.index_level + self.cell.column
+        offset = self.index.nlevels + self.cell.column
 
         if isinstance(column, str):
             return start + offset, end + offset
@@ -308,7 +284,7 @@ class SheetFrame:
     def column_index(self, columns: list[str] | None) -> list[int]: ...
 
     def column_index(self, columns: str | list[str] | None) -> int | list[int]:
-        if self.columns_level != 1:
+        if self.columns.nlevels != 1:
             raise NotImplementedError
 
         if isinstance(columns, str):
@@ -317,7 +293,7 @@ class SheetFrame:
         column = self.column
         if columns is None:
             columns = self.value_columns
-            start = column + self.index_level
+            start = column + self.index.nlevels
             end = start + len(columns)
             return list(range(start, end))
 
@@ -345,21 +321,21 @@ class SheetFrame:
 
         match offset:
             case 0:  # first data row
-                start = end = self.row + self.columns_level
+                start = end = self.row + self.columns.nlevels
                 if not isinstance(index, tuple):
                     return Range((start, index), sheet=self.sheet)
 
             case -1:  # column row
                 start = end = self.row
-                if isinstance(column, tuple) and self.columns_level == 1:
+                if isinstance(column, tuple) and self.columns.nlevels == 1:
                     start -= 1  # wide column
                 else:
-                    end += self.columns_level - 1
+                    end += self.columns.nlevels - 1
                     if isinstance(index, tuple):
                         start -= 1
 
             case None:  # entire data rows
-                start = self.row + self.columns_level
+                start = self.row + self.columns.nlevels
                 end = start + len(self) - 1
 
             case _:
@@ -392,7 +368,7 @@ class SheetFrame:
         columns: str | list[str] | None,
         offset: Literal[0, -1] | None = None,
     ) -> Range | list[Range]:
-        if self.columns_level != 1:
+        if self.columns.nlevels != 1:
             raise NotImplementedError
 
         if isinstance(columns, str):
@@ -518,7 +494,7 @@ class SheetFrame:
             autofit (bool): Whether to autofit the width.
             style (bool): Whether to style the column.
         """
-        if self.columns_level != 1:
+        if self.columns.nlevels != 1:
             raise NotImplementedError
 
         rng = self.cell.offset(0, len(self.headers))
@@ -611,7 +587,7 @@ class SheetFrame:
         values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
-        if self.index_level and self.index_columns[0]:
+        if self.index.nlevels and self.index_columns[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
                 df.index = Index(index[index.columns[0]])
@@ -621,8 +597,8 @@ class SheetFrame:
         return df[columns[0]] if is_str else df
 
     def _index_frame(self) -> DataFrame:
-        start = self.cell.offset(self.columns_level - 1)
-        end = start.offset(len(self), self.index_level - 1)
+        start = self.cell.offset(self.columns.nlevels - 1)
+        end = start.offset(len(self), self.index.nlevels - 1)
         rng = self.sheet.range(start, end)
         return rng.options(DataFrame).value.reset_index()  # type: ignore
 
@@ -660,7 +636,7 @@ class SheetFrame:
         external: bool = False,
         formula: bool = False,
     ) -> Series | DataFrame:
-        if self.columns_level != 1:
+        if self.columns.nlevels != 1:
             raise NotImplementedError
 
         if isinstance(func, dict):
@@ -706,9 +682,9 @@ class SheetFrame:
 
     def ranges(self) -> Iterator[Range]:
         if self.columns_names is None:
-            start = self.column + self.index_level
+            start = self.column + self.index.nlevels
             end = start + len(self.value_columns) - 1
-            offset = self.row + self.columns_level
+            offset = self.row + self.columns.nlevels
 
             for index in range(len(self)):
                 yield Range(
@@ -718,9 +694,9 @@ class SheetFrame:
                 )
 
         else:
-            start = self.row + self.columns_level
+            start = self.row + self.columns.nlevels
             end = start + len(self) - 1
-            offset = self.column + self.index_level
+            offset = self.column + self.index.nlevels
 
             for index in range(len(self.value_columns)):
                 yield Range(
@@ -818,7 +794,7 @@ class SheetFrame:
         **columns_format,
     ) -> Self:
         if isinstance(number_format, str):
-            start = self.cell.offset(self.columns_level, self.index_level)
+            start = self.cell.offset(self.columns.nlevels, self.index.nlevels)
             rng = self.sheet.range(start, self.expand().last_cell)
             rng.number_format = number_format
             if autofit:
@@ -851,7 +827,7 @@ class SheetFrame:
 
     def autofit(self) -> Self:
         start = self.cell
-        end = start.offset(self.columns_level + len(self), len(self.headers) - 1)
+        end = start.offset(self.columns.nlevels + len(self), len(self.headers) - 1)
         self.sheet.range(start, end).autofit()
         return self
 
@@ -887,7 +863,7 @@ class SheetFrame:
         if self.table:
             return self
 
-        if self.columns_level != 1:
+        if self.columns.nlevels != 1:
             raise NotImplementedError
 
         self.alignment("left")
@@ -900,7 +876,7 @@ class SheetFrame:
             autofit=autofit,
             const_header=const_header,
             style=style,
-            index_level=self.index_level,
+            index_nlevels=self.index.nlevels,
         )
         self.table = table
 

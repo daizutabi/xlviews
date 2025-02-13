@@ -30,8 +30,8 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.row == 3
     assert sf.column == 29
     assert sf.sheet.name == sheet_module.name
-    assert sf.index_level == 2
-    assert sf.columns_level == 1
+    assert sf.index.nlevels == 2
+    assert sf.columns.nlevels == 1
 
 
 def test_expand(sf: SheetFrame):

@@ -141,7 +141,7 @@ def move_down(sf: SheetFrame, length: int) -> int:
 def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
     func_index = sf.index_past(func_column_name)
 
-    start = sf.column + sf.index_level
+    start = sf.column + sf.index.nlevels
     end = sf.column + len(sf.headers)
     idx = [func_index, *range(start, end)]
 

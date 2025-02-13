@@ -117,41 +117,41 @@ def set_frame_style(
         font_size=font_size,
     )
 
-    index_level = sf.index_level
-    columns_level = sf.columns_level
+    index_nlevels = sf.index.nlevels
+    columns_nlevels = sf.columns.nlevels
     length = len(sf)
 
-    if index_level > 0:
+    if index_nlevels > 0:
         start = cell
-        end = cell.offset(columns_level - 1, index_level - 1)
+        end = cell.offset(columns_nlevels - 1, index_nlevels - 1)
         set_style(start, end, "index.name")
 
-        start = cell.offset(columns_level, 0)
-        end = cell.offset(columns_level + length - 1, index_level - 1)
+        start = cell.offset(columns_nlevels, 0)
+        end = cell.offset(columns_nlevels + length - 1, index_nlevels - 1)
         set_style(start, end, "index")
 
         if succession:
             rng = sheet.range(start.offset(1, 0), end)
             hide_succession(rng)
 
-            start = cell.offset(columns_level - 1, 0)
-            end = cell.offset(columns_level - 1, index_level - 1)
+            start = cell.offset(columns_nlevels - 1, 0)
+            end = cell.offset(columns_nlevels - 1, index_nlevels - 1)
             rng = sheet.range(start, end)
             hide_unique(rng, length)
 
     width = len(sf.value_columns)
 
-    if columns_level > 1:
-        start = cell.offset(0, index_level)
-        end = cell.offset(columns_level - 2, index_level + width - 1)
+    if columns_nlevels > 1:
+        start = cell.offset(0, index_nlevels)
+        end = cell.offset(columns_nlevels - 2, index_nlevels + width - 1)
         set_style(start, end, "columns.name")
 
-    start = cell.offset(columns_level - 1, index_level)
-    end = cell.offset(columns_level - 1, index_level + width - 1)
+    start = cell.offset(columns_nlevels - 1, index_nlevels)
+    end = cell.offset(columns_nlevels - 1, index_nlevels + width - 1)
     set_style(start, end, "columns")
 
-    start = cell.offset(columns_level, index_level)
-    end = cell.offset(columns_level + length - 1, index_level + width - 1)
+    start = cell.offset(columns_nlevels, index_nlevels)
+    end = cell.offset(columns_nlevels + length - 1, index_nlevels + width - 1)
     set_style(start, end, "values")
 
     rng = sheet.range(start, end)
@@ -246,23 +246,22 @@ def set_heat_frame_style(
         font_size=font_size,
     )
 
-    index_level = sf.index_level
-    columns_level = sf.columns_level
+    index_nlevels = sf.index.nlevels
+    columns_nlevels = sf.columns.nlevels
     length = len(sf)
 
-    if index_level > 0:
-        start = cell.offset(columns_level, 0)
-        end = cell.offset(columns_level + length - 1, index_level - 1)
-        set_style(start, end, "index")
+    start = cell.offset(columns_nlevels, 0)
+    end = cell.offset(columns_nlevels + length - 1, index_nlevels - 1)
+    set_style(start, end, "index")
 
     width = len(sf.value_columns)
 
-    start = cell.offset(columns_level - 1, index_level)
-    end = cell.offset(columns_level - 1, index_level + width - 1)
+    start = cell.offset(columns_nlevels - 1, index_nlevels)
+    end = cell.offset(columns_nlevels - 1, index_nlevels + width - 1)
     set_style(start, end, "index")
 
-    start = cell.offset(columns_level, index_level)
-    end = cell.offset(columns_level + length - 1, index_level + width - 1)
+    start = cell.offset(columns_nlevels, index_nlevels)
+    end = cell.offset(columns_nlevels + length - 1, index_nlevels + width - 1)
     set_style(start, end, "values")
 
     rng = sheet.range(cell, end)

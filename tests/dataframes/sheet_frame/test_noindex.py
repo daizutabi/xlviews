@@ -28,15 +28,9 @@ def sf(fc: FrameContainer):
 def test_init(sf: SheetFrame, fc: FrameContainer):
     assert sf.row == fc.row
     assert sf.column == fc.column
-    assert sf.index_level == 1
-    assert sf.columns_level == 1
+    assert sf.index.nlevels == 1
+    assert sf.columns.nlevels == 1
     assert sf.columns_names is None
-
-
-def test_load(sf: SheetFrame):
-    sf.load(index_level=1)
-    assert sf.index_level == 1
-    assert sf.value_columns == ["a", "b"]
 
 
 def test_repr(sf: SheetFrame):
