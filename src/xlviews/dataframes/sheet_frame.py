@@ -89,13 +89,7 @@ class SheetFrame:
         return str(self.expand()).replace("<Range ", "<SheetFrame ")
 
     def __len__(self) -> int:
-        start = self.cell.offset(self.columns.nlevels)
-        cell = start
-
-        while cell.value is not None:
-            cell = cell.expand("down")[-1].offset(1)
-
-        return cell.row - start.row
+        return len(self.index)
 
     @property
     def row(self) -> int:
