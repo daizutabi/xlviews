@@ -564,7 +564,7 @@ class SheetFrame:
         values = [list(agg(r)) for r in rngs]
         df = DataFrame(values, index=columns).T
 
-        if self.index.nlevels and self.index_columns[0]:
+        if self.index_columns[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
                 df.index = Index(index[index.columns[0]])
