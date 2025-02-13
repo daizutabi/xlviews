@@ -15,7 +15,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(scope="module")
 def fc(sheet_module: Sheet):
-    return MultiColumn(sheet_module, 2, 2)
+    return MultiColumn(sheet_module)
 
 
 @pytest.fixture(scope="module")
@@ -29,9 +29,9 @@ def sf(fc: FrameContainer):
 
 
 def test_init(sf: SheetFrame, sheet_module: Sheet):
-    assert sf.cell.get_address() == "$B$2"
+    assert sf.cell.get_address() == "$K$2"
     assert sf.row == 2
-    assert sf.column == 2
+    assert sf.column == 11
     assert sf.sheet.name == sheet_module.name
     assert sf.index_level == 1
     assert sf.columns_level == 4
@@ -79,9 +79,9 @@ def test_iter(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("column", "index"),
     [
-        (("s", "t", "r", "i"), 2),
-        (("a", "d", 3, "x"), 7),
-        ([("b", "c", 6, "y"), ("b", "d", 8, "x")], [14, 17]),
+        (("s", "t", "r", "i"), 11),
+        (("a", "d", 3, "x"), 16),
+        ([("b", "c", 6, "y"), ("b", "d", 8, "x")], [23, 26]),
         ("s", 2),
         (["t", "i"], [3, 5]),
     ],
@@ -110,9 +110,9 @@ def test_data(sf: SheetFrame, df: DataFrame):
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
-        (("a", "d", 4, "y"), -1, "$J$2:$J$5"),
-        (("a", "d", 3, "x"), 0, "$G$6"),
-        (("b", "d", 7, "x"), None, "$O$6:$O$11"),
+        (("a", "d", 4, "y"), -1, "$S$2:$S$5"),
+        (("a", "d", 3, "x"), 0, "$P$6"),
+        (("b", "d", 7, "x"), None, "$X$6:$X$11"),
     ],
 )
 def test_range(sf: SheetFrame, column, offset, address):
@@ -120,7 +120,7 @@ def test_range(sf: SheetFrame, column, offset, address):
 
 
 def test_ranges(sf: SheetFrame):
-    for rng, i in zip(sf.ranges(), range(2, 18), strict=True):
+    for rng, i in zip(sf.ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 
@@ -128,26 +128,26 @@ def test_ranges(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("by", "result"),
     [
-        ("s", {("a",): [(3, 10)], ("b",): [(11, 18)]}),
+        ("s", {("a",): [(12, 19)], ("b",): [(20, 27)]}),
         (
             ["s", "t"],
             {
-                ("a", "c"): [(3, 6)],
-                ("a", "d"): [(7, 10)],
-                ("b", "c"): [(11, 14)],
-                ("b", "d"): [(15, 18)],
+                ("a", "c"): [(12, 15)],
+                ("a", "d"): [(16, 19)],
+                ("b", "c"): [(20, 23)],
+                ("b", "d"): [(24, 27)],
             },
         ),
         (
             ["s", "i"],
             {
-                ("a", "x"): [(3, 3), (5, 5), (7, 7), (9, 9)],
-                ("a", "y"): [(4, 4), (6, 6), (8, 8), (10, 10)],
-                ("b", "x"): [(11, 11), (13, 13), (15, 15), (17, 17)],
-                ("b", "y"): [(12, 12), (14, 14), (16, 16), (18, 18)],
+                ("a", "x"): [(12, 12), (14, 14), (16, 16), (18, 18)],
+                ("a", "y"): [(13, 13), (15, 15), (17, 17), (19, 19)],
+                ("b", "x"): [(20, 20), (22, 22), (24, 24), (26, 26)],
+                ("b", "y"): [(21, 21), (23, 23), (25, 25), (27, 27)],
             },
         ),
-        (None, {(): [(3, 18)]}),
+        (None, {(): [(12, 27)]}),
     ],
 )
 def test_groupby(sf: SheetFrame, by, result):
@@ -173,12 +173,12 @@ def test_melt_columns(df_melt: DataFrame):
 @pytest.mark.parametrize(
     ("i", "v"),
     [
-        (0, ["a", "c", 1, "x", "=$C$6:$C$11"]),
-        (1, ["a", "c", 1, "y", "=$D$6:$D$11"]),
-        (2, ["a", "c", 2, "x", "=$E$6:$E$11"]),
-        (7, ["a", "d", 4, "y", "=$J$6:$J$11"]),
-        (14, ["b", "d", 8, "x", "=$Q$6:$Q$11"]),
-        (15, ["b", "d", 8, "y", "=$R$6:$R$11"]),
+        (0, ["a", "c", 1, "x", "=$L$6:$L$11"]),
+        (1, ["a", "c", 1, "y", "=$M$6:$M$11"]),
+        (2, ["a", "c", 2, "x", "=$N$6:$N$11"]),
+        (7, ["a", "d", 4, "y", "=$S$6:$S$11"]),
+        (14, ["b", "d", 8, "x", "=$Z$6:$Z$11"]),
+        (15, ["b", "d", 8, "y", "=$AA$6:$AA$11"]),
     ],
 )
 def test_melt_value(df_melt: DataFrame, i, v):
