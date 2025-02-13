@@ -6,9 +6,9 @@ from xlwings import Range as RangeImpl
 from xlwings.constants import LineStyle
 
 from xlviews.colors import rgb
-from xlviews.range.address import reference
-from xlviews.range.range import Range
-from xlviews.range.range_collection import RangeCollection
+from xlviews.core.address import reference
+from xlviews.core.range import Range
+from xlviews.core.range_collection import RangeCollection
 
 from .style import get_line_style, get_marker_style
 

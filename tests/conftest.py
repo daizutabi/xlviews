@@ -20,7 +20,7 @@ def book(app: App):
 
 @pytest.fixture(scope="module")
 def sheet_module(book: Book):
-    from xlviews.range.style import hide_gridlines
+    from xlviews.core.style import hide_gridlines
 
     sheet = book.sheets.add()
     hide_gridlines(sheet)

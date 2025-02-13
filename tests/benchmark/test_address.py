@@ -1,8 +1,10 @@
+import numpy as np
 import pytest
+from pandas import DataFrame
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
-from xlviews.range.range import Range
+from xlviews.core.range import Range
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -10,7 +12,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 @pytest.fixture(
     scope="module",
-    params=[(10, 10), (20, 10), (50, 10)],
+    params=[(10, 10), (20, 10), (50, 10), (500, 500)],
     ids=lambda x: str(x),
 )
 def shape(request: pytest.FixtureRequest):
@@ -29,6 +31,7 @@ def rng(shape: tuple[int, int], sheet_module: Sheet):
     return Range((1, 1), (nrows, ncolumns), sheet=sheet_module)
 
 
+@pytest.mark.slow
 def test_address_impl(benchmark, rng_impl: RangeImpl, rng: Range, shape):
     x = benchmark(lambda: [r.get_address() for r in rng_impl])
     assert len(x) == shape[0] * shape[1]
@@ -38,3 +41,17 @@ def test_address_impl(benchmark, rng_impl: RangeImpl, rng: Range, shape):
 def test_address(benchmark, rng: Range, shape):
     x = benchmark(lambda: list(rng.iter_addresses()))
     assert len(x) == shape[0] * shape[1]
+
+
+def test_address_frame(benchmark, rng: Range, shape):
+    x = benchmark(lambda: rng.frame.get_address())
+    assert x.shape == (shape[0], shape[1])
+
+
+def test_address_iter_frame(benchmark, rng: Range, shape):
+    def f():
+        x = np.array(list(rng.iter_addresses())).reshape(shape[0], shape[1])
+        return DataFrame(x)
+
+    x = benchmark(f)
+    assert x.shape == (shape[0], shape[1])

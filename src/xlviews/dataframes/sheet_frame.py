@@ -14,10 +14,10 @@ from xlwings import Sheet
 from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
+from xlviews.core.formula import Func, aggregate
+from xlviews.core.range import Range, iter_addresses
+from xlviews.core.style import set_alignment
 from xlviews.decorators import suspend_screen_updates
-from xlviews.range.formula import Func, aggregate
-from xlviews.range.range import Range, iter_addresses
-from xlviews.range.style import set_alignment
 
 from . import modify
 from .groupby import GroupBy

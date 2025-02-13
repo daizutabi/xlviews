@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 import xlwings as xw
 from xlwings import Range
 
-from xlviews.range.formula import const
-from xlviews.range.style import set_alignment, set_font
+from xlviews.core.formula import const
+from xlviews.core.style import set_alignment, set_font
 
 from .style import set_table_style
 

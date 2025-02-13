@@ -7,9 +7,9 @@ import pandas as pd
 from pandas import DataFrame
 
 from xlviews.config import rcParams
+from xlviews.core.range import Range
+from xlviews.core.style import set_alignment, set_font
 from xlviews.decorators import suspend_screen_updates
-from xlviews.range.range import Range
-from xlviews.range.style import set_alignment, set_font
 from xlviews.utils import iter_columns
 
 from .sheet_frame import SheetFrame

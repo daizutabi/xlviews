@@ -9,14 +9,14 @@ from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.range.address import reference
+from xlviews.core.address import reference
 from xlviews.utils import set_font_api
 
 if TYPE_CHECKING:
     from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
-    from xlviews.range.range import Range
+    from xlviews.core.range import Range
 
 
 MARKER_DICT: dict[str, int] = {

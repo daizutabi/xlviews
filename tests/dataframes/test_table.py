@@ -2,8 +2,8 @@ import pytest
 from pandas import DataFrame
 from xlwings import Range, Sheet
 
+from xlviews.core.formula import NONCONST_VALUE
 from xlviews.dataframes.table import Table
-from xlviews.range.formula import NONCONST_VALUE
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")

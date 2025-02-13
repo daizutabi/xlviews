@@ -10,8 +10,7 @@ from xlwings.constants import TableStyleElementType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.decorators import suspend_screen_updates
-from xlviews.range.style import (
+from xlviews.core.style import (
     hide_succession,
     hide_unique,
     set_alignment,
@@ -20,6 +19,7 @@ from xlviews.range.style import (
     set_fill,
     set_font,
 )
+from xlviews.decorators import suspend_screen_updates
 
 if TYPE_CHECKING:
     from xlwings import Range

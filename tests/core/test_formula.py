@@ -4,9 +4,9 @@ from pandas import DataFrame
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
-from xlviews.range.formula import NONCONST_VALUE
-from xlviews.range.range import Range
-from xlviews.range.range_collection import RangeCollection
+from xlviews.core.formula import NONCONST_VALUE
+from xlviews.core.range import Range
+from xlviews.core.range_collection import RangeCollection
 from xlviews.testing import is_excel_installed
 
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
@@ -57,7 +57,7 @@ def test_header(const_header: Range | RangeImpl):
 
 @pytest.mark.parametrize(("k", "value"), [(0, 1), (1, NONCONST_VALUE), (2, 4)])
 def test_const(column: Range | RangeImpl, const_header: Range | RangeImpl, k, value):
-    from xlviews.range.formula import const
+    from xlviews.core.formula import const
 
     const_header.value = "=" + const(column)
     assert const_header.value[k] == value
@@ -84,21 +84,21 @@ def test_ranges(ranges: list[Range]):
 
 
 def test_aggregate_value(ranges: list[Range]):
-    from xlviews.range.formula import aggregate
+    from xlviews.core.formula import aggregate
 
     x = aggregate("count", ranges)
     assert x == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
 
 
 def test_aggregate_none(ranges: list[Range]):
-    from xlviews.range.formula import aggregate
+    from xlviews.core.formula import aggregate
 
     x = aggregate(None, ranges)
     assert x == "$B$100:$B$110,$C$100:$C$110"
 
 
 def test_aggregate_formula(ranges: list[Range]):
-    from xlviews.range.formula import aggregate
+    from xlviews.core.formula import aggregate
 
     x = aggregate("max", ranges, formula=True)
     assert x == "=AGGREGATE(4,7,$B$100:$B$110,$C$100:$C$110)"
@@ -118,7 +118,7 @@ FUNC_VALUES = [
 
 @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
 def test_aggregate_str(ranges: list[Range], func, value):
-    from xlviews.range.formula import aggregate
+    from xlviews.core.formula import aggregate
 
     cell = ranges[0].sheet.range("D100")
     cell.value = aggregate(func, ranges, formula=True)
@@ -128,7 +128,7 @@ def test_aggregate_str(ranges: list[Range], func, value):
 @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
 @pytest.mark.parametrize("apply", [lambda x: x, Range.from_range])
 def test_aggregate_range(ranges: list[Range], func, value, apply):
-    from xlviews.range.formula import aggregate
+    from xlviews.core.formula import aggregate
 
     ref = apply(ranges[0].sheet.range("E100"))
     ref.value = func

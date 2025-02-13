@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from xlviews.range.range import Range
+from xlviews.core.range import Range
 from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.common import HeatFrameContainer
 from xlviews.testing.sheet_frame.pivot import MultiIndex

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from xlwings.constants import Direction
 
-from xlviews.range.address import index_to_column_name
+from xlviews.core.address import index_to_column_name
 
 if TYPE_CHECKING:
     from xlwings import Range

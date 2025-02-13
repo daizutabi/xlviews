@@ -16,7 +16,7 @@ from xlwings.constants import (
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.range.range import Range
+from xlviews.core.range import Range
 from xlviews.utils import constant, set_font_api
 
 if TYPE_CHECKING:
