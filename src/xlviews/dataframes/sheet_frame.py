@@ -50,7 +50,6 @@ class SheetFrame:
         row: int,
         column: int,
         data: DataFrame | Series | None = None,
-        index: bool = True,
         sheet: Sheet | None = None,
     ) -> None:
         """Create a DataFrame on an Excel sheet.
@@ -66,12 +65,12 @@ class SheetFrame:
         self.cell = self.sheet.range(row, column)
 
         if data is not None:
-            self.set_data(data, index=index)
+            self.set_data(data)
         else:
             self.index = Index([])
             self.columns = Index([])
 
-    def set_data(self, data: DataFrame | Series, index: bool = True) -> None:
+    def set_data(self, data: DataFrame | Series) -> None:
         """Set the data of the SheetFrame.
 
         Args:
@@ -81,12 +80,12 @@ class SheetFrame:
         if isinstance(data, Series):
             data = data.to_frame()
 
-        self.index_level = data.index.nlevels if index else 0
+        self.index_level = data.index.nlevels
         self.columns_level = data.columns.nlevels
 
-        self.cell.options(DataFrame, index=index).value = data
+        self.cell.options(DataFrame).value = data
 
-        if index and data.columns.nlevels > 1 and data.index.nlevels == 1:
+        if data.columns.nlevels > 1 and data.index.nlevels == 1:
             self.columns_names = list(data.columns.names)
             self.cell.options(transpose=True).value = self.columns_names
 

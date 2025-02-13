@@ -55,8 +55,7 @@ class StatsFrame(SheetFrame):
         gp = GroupBy(parent, by)
         data = get_frame(gp, funcs, func_column_name)
 
-        index = bool(parent.index_level)
-        super().__init__(row, column, data, index, sheet=parent.sheet)
+        super().__init__(row, column, data, parent.sheet)
 
         self.as_table(autofit=False, const_header=True)
         self.style()

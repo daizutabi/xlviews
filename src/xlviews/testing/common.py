@@ -43,11 +43,10 @@ def create_sheet_frame(
     sheet: Sheet,
     row: int,
     column: int,
-    index: bool = True,
     style: bool = False,
     table: bool = False,
 ) -> SheetFrame:
-    sf = SheetFrame(row, column, data=df, index=index, sheet=sheet)
+    sf = SheetFrame(row, column, df, sheet)
     if style:
         sf.style()
         sf.autofit()

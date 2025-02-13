@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 
 def test_groupby(sheet: Sheet):
     df = DataFrame({"a": [1, 1, 1, 2, 2, 1, 1], "b": [1, 2, 3, 4, 5, 6, 7]})
-    sf = SheetFrame(2, 2, data=df, index=False, sheet=sheet)
+    sf = SheetFrame(2, 2, df, sheet)
 
     g = groupby(sf, "a")
     assert len(g) == 2
