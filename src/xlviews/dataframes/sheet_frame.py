@@ -15,8 +15,6 @@ from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.decorators import suspend_screen_updates
-from xlviews.element import Bar, Plot, Scatter
-from xlviews.grid import FacetGrid
 from xlviews.range.formula import Func, aggregate
 from xlviews.range.range import Range, iter_addresses
 from xlviews.range.style import set_alignment
@@ -928,14 +926,14 @@ class SheetFrame:
     def set_chart_position(self, pos: str = "right") -> None:
         set_first_position(self, pos=pos)
 
-    def scatter(self, *args, **kwargs) -> Scatter:
-        return Scatter(*args, data=self, **kwargs)
+    # def scatter(self, *args, **kwargs) -> Scatter:
+    #     return Scatter(*args, data=self, **kwargs)
 
-    def plot(self, *args, **kwargs) -> Plot:
-        return Plot(*args, data=self, **kwargs)
+    # def plot(self, *args, **kwargs) -> Plot:
+    #     return Plot(*args, data=self, **kwargs)
 
-    def bar(self, *args, **kwargs) -> Bar:
-        return Bar(*args, data=self, **kwargs)
+    # def bar(self, *args, **kwargs) -> Bar:
+    #     return Bar(*args, data=self, **kwargs)
 
-    def grid(self, *args, **kwargs) -> FacetGrid:
-        return FacetGrid(self, *args, **kwargs)
+    # def grid(self, *args, **kwargs) -> FacetGrid:
+    #     return FacetGrid(self, *args, **kwargs)
