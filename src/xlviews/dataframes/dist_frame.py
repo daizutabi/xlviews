@@ -40,7 +40,7 @@ class DistFrame(SheetFrame):
         data = get_init_data(parent, columns, by)
 
         row = parent.row
-        column = parent.column + len(parent.columns) + 1
+        column = parent.column + len(parent.headers) + 1
 
         super().__init__(row, column, data, index=by is not None, sheet=parent.sheet)
 
@@ -194,7 +194,7 @@ class DistFrame(SheetFrame):
             フィッティングに用いるσ値の範囲
         """
         column_ = f"{x}_sf"
-        if column_ in self.columns:
+        if column_ in self.headers:
             return column_
         self[column_] = 1
         column = self.index(column_)

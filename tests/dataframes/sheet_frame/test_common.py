@@ -18,7 +18,7 @@ def sf(sheet: Sheet):
 def test_index_false(sheet: Sheet):
     df = DataFrame({"a": [1, 2], "b": [2, 4]})
     sf = SheetFrame(2, 3, data=df, index=False, sheet=sheet)
-    assert sf.columns == ["a", "b"]
+    assert sf.headers == ["a", "b"]
     assert sf.index_level == 0
 
 
@@ -33,7 +33,7 @@ def test_column_one(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3]})
     sf = SheetFrame(2, 2, data=df, index=False, sheet=sheet)
     assert len(sf) == 3
-    assert sf.columns == ["a"]
+    assert sf.headers == ["a"]
     np.testing.assert_array_equal(sf.data["a"], [1, 2, 3])
 
 

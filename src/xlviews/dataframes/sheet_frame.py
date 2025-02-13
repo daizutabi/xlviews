@@ -147,7 +147,7 @@ class SheetFrame:
         return self.cell.column
 
     @property
-    def columns(self) -> list:
+    def headers(self) -> list:
         """Return the column names."""
         if self.columns_level == 1:
             return self.expand("right").options(ndim=1).value or []
@@ -171,24 +171,24 @@ class SheetFrame:
 
     @property
     def value_columns(self) -> list:
-        return self.columns[self.index_level :]
+        return self.headers[self.index_level :]
 
     @property
     def index_columns(self) -> list[str | tuple[str, ...] | None]:
-        return self.columns[: self.index_level]
+        return self.headers[: self.index_level]
 
     @property
     def wide_columns(self) -> list[str]:
         start = self.row - 1, self.column + self.index_level
-        end = start[0], start[1] + len(self.columns) - self.index_level - 1
+        end = start[0], start[1] + len(self.headers) - self.index_level - 1
         cs = self.sheet.range(start, end).value or []
         return [c for c in cs if c]
 
     def __contains__(self, item: str | tuple) -> bool:
-        return item in self.columns
+        return item in self.headers
 
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
-        return iter(self.columns)
+        return iter(self.headers)
 
     @property
     def data(self) -> DataFrame:
@@ -220,12 +220,12 @@ class SheetFrame:
     def visible_data(self) -> DataFrame:
         """Return the visible data as a DataFrame."""
         start = self.row + 1, self.column
-        end = start[0] + len(self) - 1, start[1] + len(self.columns) - 1
+        end = start[0] + len(self) - 1, start[1] + len(self.headers) - 1
 
         rng = self.sheet.range(start, end)
         data = rng.api.SpecialCells(CellType.xlCellTypeVisible)
         value = [row.Value[0] for row in data.Rows]
-        df = DataFrame(value, columns=self.columns)
+        df = DataFrame(value, columns=self.headers)
 
         if self.index_level:
             df = df.set_index(list(df.columns[: self.index_level]))
@@ -255,7 +255,7 @@ class SheetFrame:
                 return self._index_row(columns_str)
 
         idx = []
-        columns_ = self.columns
+        columns_ = self.headers
         offset = self.column
 
         for column in columns:
@@ -317,7 +317,7 @@ class SheetFrame:
             end = start + len(columns)
             return list(range(start, end))
 
-        cs = self.columns
+        cs = self.headers
         return [cs.index(c) + column for c in columns]
 
     def range(
@@ -418,7 +418,7 @@ class SheetFrame:
         autofit: bool = False,
         style: bool = False,
     ) -> RangeImpl:
-        column_int = self.column + len(self.columns)
+        column_int = self.column + len(self.headers)
         self.sheet.range(self.row, column_int).value = column
 
         rng = self.range(column).impl
@@ -453,7 +453,7 @@ class SheetFrame:
             number_format (str, optional): The number format.
             autofit (bool): Whether to autofit the width.
         """
-        columns = self.columns
+        columns = self.headers
         wide_columns = self.wide_columns
 
         if isinstance(rng, str):
@@ -517,7 +517,7 @@ class SheetFrame:
         if self.columns_level != 1:
             raise NotImplementedError
 
-        rng = self.cell.offset(0, len(self.columns))
+        rng = self.cell.offset(0, len(self.headers))
         values_list = list(values)
         rng.value = values_list
 
@@ -824,7 +824,7 @@ class SheetFrame:
         if isinstance(number_format, dict):
             columns_format.update(number_format)
 
-        for column in chain(self.columns, self.wide_columns):
+        for column in chain(self.headers, self.wide_columns):
             if not column:
                 continue
 
@@ -847,25 +847,25 @@ class SheetFrame:
 
     def autofit(self) -> Self:
         start = self.cell
-        end = start.offset(self.columns_level + len(self), len(self.columns) - 1)
+        end = start.offset(self.columns_level + len(self), len(self.headers) - 1)
         self.sheet.range(start, end).autofit()
         return self
 
     def alignment(self, alignment: str) -> Self:
         start = self.cell
-        end = start.offset(0, len(self.columns) - 1)
+        end = start.offset(0, len(self.headers) - 1)
         rng = self.sheet.range(start, end)
         set_alignment(rng, alignment)
         return self
 
     def set_adjacent_column_width(self, width: float) -> None:
         """Set the width of the adjacent empty column."""
-        column = self.column + len(self.columns)
+        column = self.column + len(self.headers)
         self.sheet.range(1, column).column_width = width
 
     def get_adjacent_cell(self, offset: int = 0) -> RangeImpl:
         """Get the adjacent cell of the SheetFrame."""
-        return self.cell.offset(0, len(self.columns) + offset + 1)
+        return self.cell.offset(0, len(self.headers) + offset + 1)
 
     def move(self, count: int, direction: str = "down", width: int = 0) -> RangeImpl:
         return modify.move(self, count, direction, width)
@@ -888,7 +888,7 @@ class SheetFrame:
 
         self.alignment("left")
 
-        end = self.cell.offset(len(self), len(self.columns) - 1)
+        end = self.cell.offset(len(self), len(self.headers) - 1)
         rng = self.sheet.range(self.cell, end)
 
         table = Table(

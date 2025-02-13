@@ -15,7 +15,7 @@ def test_add_column(sheet: Sheet):
     sf = SheetFrame(2, 2, data=df, sheet=sheet)
     rng = sf.add_column("c", autofit=True, style=True)
     assert rng.get_address() == "$E$3:$E$5"
-    assert sf.columns == [None, "a", "b", "c"]
+    assert sf.headers == [None, "a", "b", "c"]
 
 
 def test_add_column_value(sheet: Sheet):

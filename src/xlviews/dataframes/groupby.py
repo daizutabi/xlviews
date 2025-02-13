@@ -191,7 +191,7 @@ class GroupBy:
             values = self.keys()
             return DataFrame(values, columns=self.by)
 
-        cs = self.sf.columns
+        cs = self.sf.headers
         column = self.sf.column
         idx = [cs.index(c) + column for c in self.by]
 

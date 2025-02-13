@@ -50,7 +50,7 @@ def test_len(benchmark, sf: SheetFrame, shape):
 
 
 def test_columns(benchmark, sf: SheetFrame, shape):
-    assert benchmark(lambda: len(sf.columns)) == shape[1] + 1
+    assert benchmark(lambda: len(sf.headers)) == shape[1] + 1
 
 
 def test_data(benchmark, sf: SheetFrame, shape):

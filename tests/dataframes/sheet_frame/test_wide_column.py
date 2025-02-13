@@ -51,7 +51,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.columns == ["x", "y", "a", "b", *range(3), *range(4)]
+    assert sf.headers == ["x", "y", "a", "b", *range(3), *range(4)]
 
 
 def test_value_columns(sf: SheetFrame):

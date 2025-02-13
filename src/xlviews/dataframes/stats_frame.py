@@ -118,7 +118,7 @@ def get_frame(
 
 def has_header(sf: SheetFrame) -> bool:
     start = sf.cell.offset(-1)
-    end = start.offset(0, len(sf.columns))
+    end = start.offset(0, len(sf.headers))
     value = sf.sheet.range(start, end).options(ndim=1).value
 
     if not isinstance(value, list):
@@ -143,7 +143,7 @@ def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None
     func_index = sf.index(func_column_name)
 
     start = sf.column + sf.index_level
-    end = sf.column + len(sf.columns)
+    end = sf.column + len(sf.headers)
     idx = [func_index, *range(start, end)]
 
     get_fmt = parent.get_number_format

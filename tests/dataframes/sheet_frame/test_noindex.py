@@ -60,7 +60,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    assert sf.columns == ["a", "b"]
+    assert sf.headers == ["a", "b"]
 
 
 def test_value_columns(sf: SheetFrame):
@@ -134,7 +134,7 @@ def test_setitem_new_column(sheet: Sheet):
     sf = SheetFrame(2, 2, data=df, sheet=sheet)
     x = [10, 20, 30]
     sf["c"] = x
-    assert sf.columns == [None, "a", "b", "c"]
+    assert sf.headers == [None, "a", "b", "c"]
     np.testing.assert_array_equal(sf.data["c"], x)
 
 

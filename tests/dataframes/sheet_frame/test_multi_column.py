@@ -52,7 +52,7 @@ def test_len(sf: SheetFrame):
 
 
 def test_columns(sf: SheetFrame):
-    columns = sf.columns
+    columns = sf.headers
     assert columns[0] == ("s", "t", "r", "i")
     assert columns[1] == ("a", "c", 1, "x")
     assert columns[-1] == ("b", "d", 8, "y")
