@@ -96,26 +96,35 @@ class WideColumn(FrameContainer):
         return df.set_index(["x", "y"])
 
     def init(self) -> None:
-        self.sf.add_wide_column("u", range(3))
-        self.sf.add_wide_column("v", range(4), style=True)
+        self.sf.add_wide_column("u", list(range(3)))
+        self.sf.add_wide_column("v", list(range(4)), style=True)
 
 
 if __name__ == "__main__":
     sheet = create_sheet()
 
-    classes: list[type[FrameContainer]] = [
-        NoIndex,
-        Index,
-        MultiIndex,
-        MultiColumn,
-        MultiIndexColumn,
-        WideColumn,
-    ]
+    # classes: list[type[FrameContainer]] = [
+    #     NoIndex,
+    #     Index,
+    #     MultiIndex,
+    #     MultiColumn,
+    #     MultiIndexColumn,
+    #     WideColumn,
+    # ]
 
-    fcs = [cls(sheet, style=True) for cls in classes]
-    for fc in fcs:
-        fc.sf.set_adjacent_column_width(1)
+    # fcs = [cls(sheet, style=True) for cls in classes]
+    # for fc in fcs:
+    #     fc.sf.set_adjacent_column_width(1)
 
-    sf = fcs[-1].sf
-    sf.add_formula_column("u", "={u}+{a}")
-    sf.add_formula_column("v", "={v}+{b}")
+    # sf = fcs[-1].sf
+    # sf.add_formula_column("u", "={u}+{a}")
+    # sf.add_formula_column("v", "={v}+{b}")
+
+    fc = MultiIndex(sheet, row=15, style=True)
+    sf = fc.sf
+    sf.add_column("c", 10)
+    sf.add_column("d", list(range(8)))
+    # sf.add_formula_column("e", "={c}+{d}")
+    sf.add_wide_column("u", list(range(3)))
+    sf.add_wide_column("v", list(range(4)), number_format="0.0")
+    sf.style().autofit()

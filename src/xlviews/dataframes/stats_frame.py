@@ -139,11 +139,11 @@ def move_down(sf: SheetFrame, length: int) -> int:
 
 
 def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
-    func_index = sf.index_past(func_column_name)
-
-    start = sf.column + sf.index.nlevels
-    end = sf.column + len(sf.headers)
-    idx = [func_index, *range(start, end)]
+    # start = sf.column + sf.index.nlevels
+    # end = sf.column + len(sf.headers)
+    # print(start, sf.headers)
+    # idx = [sf.column, *range(start, end)]
+    idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
 
     get_fmt = parent.get_number_format
     formats = [get_fmt(column) for column in sf.value_columns]
@@ -160,7 +160,7 @@ def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None
             italic = rcParams.get(f"stats.{func}.italic")
             set_font(rc, color=color, italic=italic)
 
-            if func == "soa" and col != func_index:
+            if func == "soa" and col != idx[0]:
                 set_number_format(rc, "0.0%")
 
     rng = sf.column_range(func_column_name)

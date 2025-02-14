@@ -367,13 +367,16 @@ class SheetFrame:
         number_format: str | None = None,
         autofit: bool = False,
         style: bool = False,
-    ) -> RangeImpl:
-        column_int = self.column + self.index.nlevels + len(self.columns)
-        self.sheet.range(self.row, column_int).value = column
+    ) -> None:
+        if self.columns.nlevels != 1:
+            raise NotImplementedError
 
-        start = self.row + self.columns.nlevels
-        end = start + len(self.index) - 1
-        rng = self.sheet.range((start, column_int), (end, column_int))
+        index = self.column + self.index.nlevels + len(self.columns)
+        self.sheet.range(self.row, index).value = column
+        self.columns.append(column)
+
+        end = self.row + len(self.index)
+        rng = self.sheet.range((self.row + 1, index), (end, index))
 
         if value is not None:
             rng.options(transpose=True).value = value
@@ -381,12 +384,49 @@ class SheetFrame:
                 rng.number_format = number_format
 
         if autofit:
-            self.sheet.range(rng.offset(-1), rng.last_cell).autofit()
+            rng = self.sheet.range((self.row, index), (end, index))
+            rng.autofit()
 
         if style:
             self.style()
 
-        return rng
+    def add_wide_column(
+        self,
+        column: str,
+        values: Any,
+        *,
+        number_format: str | None = None,
+        autofit: bool = False,
+        style: bool = False,
+    ) -> None:
+        """Add a wide column.
+
+        Args:
+            column (str): The name of the wide column.
+            values (iterable): The values to be expanded horizontally.
+            number_format (str, optional): The number format.
+            autofit (bool): Whether to autofit the width.
+            style (bool): Whether to style the column.
+        """
+        if self.columns.nlevels != 1:
+            raise NotImplementedError
+
+        index = self.column + self.index.nlevels + len(self.columns)
+        rng = self.sheet.range(self.row - 1, index)
+        rng.value = column
+        set_alignment(rng, horizontal_alignment="left")
+        self.columns.append(column, values)
+
+        rng = self.sheet.range((self.row, index), (self.row, index + len(values)))
+        rng.value = values
+        if number_format:
+            rng.number_format = number_format
+
+        if autofit:
+            rng.autofit()
+
+        if style:
+            self.style()
 
     def add_formula_column(
         self,
@@ -409,7 +449,7 @@ class SheetFrame:
         wide_columns = list(self.wide_columns)
 
         if isinstance(rng, str):
-            if rng not in columns + wide_columns:
+            if rng not in self.columns:
                 rng = self.add_column(rng)
             else:
                 rng = self.range(rng)
@@ -447,57 +487,6 @@ class SheetFrame:
             self.style()
 
         return rng
-
-    def add_wide_column(
-        self,
-        column: str,
-        values: Iterable[Any],
-        *,
-        number_format: str | None = None,
-        autofit: bool = True,
-        style: bool = False,
-    ) -> RangeImpl:
-        """Add a wide column.
-
-        Args:
-            column (str): The name of the wide column.
-            values (iterable): The values to be expanded horizontally.
-            number_format (str, optional): The number format.
-            autofit (bool): Whether to autofit the width.
-            style (bool): Whether to style the column.
-        """
-        if self.columns.nlevels != 1:
-            raise NotImplementedError
-
-        values = list(values)
-
-        if self.wide_columns is None:
-            self.wide_columns = WideIndex({column: values})
-        elif column in self.wide_columns:
-            msg = f"column {column} already exists"
-            raise ValueError(msg)
-        else:
-            self.wide_columns[column] = values
-
-        rng = self.cell.offset(0, len(self.headers))
-        rng.value = values
-
-        header = rng.offset(-1)
-        header.value = column
-
-        set_alignment(header, horizontal_alignment="left")
-
-        rng = self.sheet.range(rng, rng.offset(0, len(values)))
-        if number_format:
-            rng.number_format = number_format
-
-        if autofit:
-            self.range(column, -1).impl.autofit()
-
-        if style:
-            self.style()
-
-        return rng[0].offset(1)
 
     def __setitem__(self, column: str | tuple, value: Any) -> RangeImpl:
         if column in self:
