@@ -121,25 +121,24 @@ def set_frame_style(
     columns_nlevels = sf.columns.nlevels
     length = len(sf)
 
-    if index_nlevels > 0:
-        start = cell
+    start = cell
+    end = cell.offset(columns_nlevels - 1, index_nlevels - 1)
+    set_style(start, end, "index.name")
+
+    start = cell.offset(columns_nlevels, 0)
+    end = cell.offset(columns_nlevels + length - 1, index_nlevels - 1)
+    set_style(start, end, "index")
+
+    if succession:
+        rng = sheet.range(start.offset(1, 0), end)
+        hide_succession(rng)
+
+        start = cell.offset(columns_nlevels - 1, 0)
         end = cell.offset(columns_nlevels - 1, index_nlevels - 1)
-        set_style(start, end, "index.name")
+        rng = sheet.range(start, end)
+        hide_unique(rng, length)
 
-        start = cell.offset(columns_nlevels, 0)
-        end = cell.offset(columns_nlevels + length - 1, index_nlevels - 1)
-        set_style(start, end, "index")
-
-        if succession:
-            rng = sheet.range(start.offset(1, 0), end)
-            hide_succession(rng)
-
-            start = cell.offset(columns_nlevels - 1, 0)
-            end = cell.offset(columns_nlevels - 1, index_nlevels - 1)
-            rng = sheet.range(start, end)
-            hide_unique(rng, length)
-
-    width = len(sf.value_columns)
+    width = len(sf.columns)
 
     if columns_nlevels > 1:
         start = cell.offset(0, index_nlevels)
@@ -171,23 +170,27 @@ def set_frame_style(
 
 
 def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
-    wide_columns = list(sf.wide_columns)
     edge_color = rcParams["frame.gray.border.color"] if gray else 0
 
-    for wide_column in wide_columns:
-        rng = sf.range(wide_column, 0).offset(-1).impl
+    columns = list(sf.columns.wide_index)
 
-        er = 3 if wide_column == wide_columns[-1] else 2
+    for column in columns:
+        loc = sf.columns.get_loc(column, sf.column + sf.index.nlevels)
+        if not isinstance(loc, tuple):
+            raise NotImplementedError
+
+        rng = sf.sheet.range((sf.row, loc[0]), (sf.row, loc[1]))
+
+        er = 3 if column == columns[-1] else 2
         edge_weight = (1, er - 1, 1, 1) if gray else (2, er, 2, 2)
         set_border(rng, edge_weight, inside_weight=1, edge_color=edge_color)
 
         _set_style_fill(rng, "wide-columns", gray=gray)
         _set_style_font(rng, "wide-columns", gray=gray)
 
-    for wide_column in wide_columns:
-        rng = sf.range(wide_column, 0).offset(-2).impl
+        rng = sf.sheet.range((sf.row - 1, loc[0]), (sf.row - 1, loc[1]))
 
-        el = 3 if wide_column == wide_columns[0] else 2
+        el = 3 if column == columns[0] else 2
         edge_weight = (el - 1, 2, 2, 1) if gray else (el, 3, 3, 2)
         set_border(rng, edge_weight, inside_weight=0, edge_color=edge_color)
 
