@@ -77,7 +77,13 @@ def test_index_to_list(index: Index):
     assert index.to_list() == x + y
 
 
-def test_a():
-    index = pd.Index(["x", "y", "z"])
-    print(index.get_indexer(["x"]))
-    # assert 0
+def test_index_append():
+    index = Index(["a"])
+    index.append("b")
+    assert index.to_list() == ["a", "b"]
+
+
+def test_index_append_wide():
+    index = Index(["a"])
+    index.append("b", [1, 2, 3])
+    assert index.to_list() == ["a", ("b", 1), ("b", 2), ("b", 3)]

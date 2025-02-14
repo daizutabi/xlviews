@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, overload
 import pandas as pd
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     from pandas._typing import Axes
 
@@ -51,9 +51,19 @@ class Index:
     index: pd.Index
     wide_index: WideIndex
 
-    def __init__(self, index: Axes, wide_index: WideIndex | None = None) -> None:
+    def __init__(
+        self,
+        index: Axes,
+        wide_index: WideIndex | dict[str, Any] | None = None,
+    ) -> None:
         self.index = index if isinstance(index, pd.Index) else pd.Index(index)
-        self.wide_index = wide_index or WideIndex()
+
+        if wide_index is None:
+            wide_index = WideIndex()
+        elif not isinstance(wide_index, WideIndex):
+            wide_index = WideIndex(wide_index)
+
+        self.wide_index = wide_index
 
     def __len__(self) -> int:
         return len(self.index) + len(self.wide_index)
@@ -64,16 +74,80 @@ class Index:
 
     @property
     def nlevels(self) -> int:
+        """Get the number of levels in the index.
+
+        Examples:
+            >>> index = Index(["a"], {"b": [1, 2, 3]})
+            >>> index.nlevels
+            1
+
+            >>> index = Index(pd.MultiIndex.from_tuples([("a", 1), ("a", 2)]))
+            >>> index.nlevels
+            2
+        """
         return self.index.nlevels
 
     def to_list(self) -> list[Any]:
+        """Convert the index to a list.
+
+        Examples:
+            >>> index = Index(["a"], {"b": [1, 2, 3]})
+            >>> index.to_list()
+            ['a', ('b', 1), ('b', 2), ('b', 3)]
+        """
         return [*self.index.to_list(), *self.wide_index.to_list()]
 
-    def append(self, key: str, values: Iterable[Any]) -> None:
-        if self.wide_index:
-            self.wide_index.append(key, values)
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over the index.
+
+        Examples:
+            >>> index = Index(["a"], {"b": [1, 2, 3]})
+            >>> list(index)
+            ['a', 'b']
+        """
+        yield from self.index.to_list()
+        yield from self.wide_index
+
+    def __contains__(self, key: Any) -> bool:
+        """Check if the index contains a key.
+
+        Examples:
+            >>> index = Index(["a"], {"b": [1, 2, 3]})
+            >>> "a" in index
+            True
+            >>> "b" in index
+            True
+            >>> "c" in index
+            False
+            >>> ("b", 1) in index
+            False
+        """
+        if not isinstance(key, str):
+            return False
+
+        return any(key in k for k in self)
+
+    def append(self, key: str, values: Iterable[Any] | None = None) -> None:
+        """Append a key to the index.
+
+        Args:
+            key (str): The key to append.
+            values (Iterable[Any], optional): The values to append.
+
+        Examples:
+            >>> index = Index(["a"])
+            >>> index.append("b")
+            >>> index.to_list()
+            ['a', 'b']
+
+            >>> index.append("c", [1, 2, 3])
+            >>> index.to_list()
+            ['a', 'b', ('c', 1), ('c', 2), ('c', 3)]
+        """
+        if values is None:
+            self.index = self.index.append(pd.Index([key]))
         else:
-            self.index = self.index.append(values)
+            self.wide_index.append(key, values)
 
     # def get_loc(self, key: str | tuple) -> int | tuple[int, int]:
     #     if key not in self.index:
