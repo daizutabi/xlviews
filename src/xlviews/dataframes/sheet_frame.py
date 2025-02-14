@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import re
 from functools import partial
 from itertools import chain, takewhile
@@ -107,9 +108,17 @@ class SheetFrame:
         return self.cell.column
 
     @property
-    def headers(self) -> list:
+    def value_columns(self) -> list[Any]:
+        it = itertools.chain.from_iterable(self.wide_columns.values())
+        return self.columns.to_list() + list(it)
+
+    @property
+    def headers(self) -> list[Any]:
         """Return the column names."""
         if self.columns.nlevels == 1:
+            print("A", [*self.index.names, *self.value_columns])
+            print("B", self.expand("right").options(ndim=1).value or [])
+            # return [*self.index.names, *self.value_columns]
             return self.expand("right").options(ndim=1).value or []
 
         if self.columns_names:
@@ -126,14 +135,6 @@ class SheetFrame:
         cs = [tuple(c) for c in zip(*cs, strict=True)]
 
         return [*idx, *cs]
-
-    @property
-    def value_columns(self) -> list:
-        return self.headers[self.index.nlevels :]
-
-    # @property
-    # def index.names(self) -> list[str | tuple[str, ...] | None]:
-    #     return self.headers[: self.index.nlevels]
 
     def __contains__(self, item: str | tuple) -> bool:
         return item in self.headers
