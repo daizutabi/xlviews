@@ -375,7 +375,7 @@ class SheetFrame:
         self.sheet.range(self.row, index).value = column
         self.columns.append(column)
 
-        end = self.row + len(self.index)
+        end = self.row + len(self)
         rng = self.sheet.range((self.row + 1, index), (end, index))
 
         if value is not None:
@@ -430,13 +430,13 @@ class SheetFrame:
 
     def add_formula_column(
         self,
-        rng: Range | RangeImpl | str,
+        column: str,
         formula: str,
         *,
         number_format: str | None = None,
         autofit: bool = False,
         style: bool = False,
-    ) -> RangeImpl:
+    ) -> None:
         """Add a formula column.
 
         Args:
@@ -445,33 +445,28 @@ class SheetFrame:
             number_format (str, optional): The number format.
             autofit (bool): Whether to autofit the width.
         """
-        columns = self.headers
-        wide_columns = list(self.wide_columns)
+        if self.columns.nlevels != 1:
+            raise NotImplementedError
 
-        if isinstance(rng, str):
-            if rng not in self.columns:
-                rng = self.add_column(rng)
-            else:
-                rng = self.range(rng)
+        if isinstance(column, str) and column not in self.columns:
+            self.add_column(column)
 
-        if isinstance(rng, Range):
-            rng = rng.impl
+        offset = self.column + self.index.nlevels
+        start, end = self.columns.get_range(column, offset)
+        rng = self.sheet.range((self.row + 1, start), (self.row + len(self), end))
 
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
             column = m.group(1)
+            loc = self.columns.get_loc(column, offset)
 
-            if column in columns:
-                ref = self.range(column, 0)
+            if isinstance(loc, int):
+                ref = Range(self.row + 1, loc, self.sheet)
                 addr = ref.get_address(row_absolute=False)
 
-            elif column in wide_columns:
-                ref = self.range(column, -1)[0].offset(1)
-                addr = ref.get_address(column_absolute=False)
-
             else:
-                ref = self.range(column, 0)[0]
-                addr = ref.get_address(column_absolute=False, row_absolute=False)
+                ref = Range((self.row, loc[0]), (self.row, loc[0]), self.sheet)
+                addr = ref.get_address(column_absolute=False)
 
             refs[column] = addr
 
@@ -485,22 +480,6 @@ class SheetFrame:
 
         if style:
             self.style()
-
-        return rng
-
-    def __setitem__(self, column: str | tuple, value: Any) -> RangeImpl:
-        if column in self:
-            rng = self.range(column).impl
-        elif isinstance(column, str):
-            rng = self.add_column(column)
-        else:
-            raise NotImplementedError
-
-        if isinstance(value, str) and value.startswith("="):
-            return self.add_formula_column(rng, value)
-
-        rng.options(transpose=True).value = value
-        return rng
 
     @overload
     def get_address(

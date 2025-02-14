@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -23,19 +23,8 @@ class WideIndex(dict[str, list[Any]]):
     def to_list(self) -> list[tuple[str, Any]]:
         return [(key, value) for key in self for value in self[key]]
 
-    @overload
-    def get_loc(self, key: tuple[str, Any]) -> int: ...
-
-    @overload
-    def get_loc(self, key: str) -> tuple[int, int]: ...
-
-    def get_loc(self, key: str | tuple[str, Any]) -> int | tuple[int, int]:
-        lst = self.to_list()
-
-        if not isinstance(key, str):
-            return lst.index(key)
-
-        start = [k for k, _ in lst].index(key)
+    def get_loc(self, key: str) -> tuple[int, int]:
+        start = [k for k, _ in self.to_list()].index(key)
         stop = start + len(self[key])
         return start, stop
 
@@ -149,8 +138,48 @@ class Index:
         else:
             self.wide_index.append(key, values)
 
-    # def get_loc(self, key: str | tuple) -> int | tuple[int, int]:
-    #     if key not in self.index:
-    #         return self.wide_index.get_loc(key)
+    def get_loc(self, key: str, offset: int = 0) -> int | tuple[int, int]:
+        """Get the location of a key.
 
-    #     return self.index.get_loc(key)
+        The end is inclusive.
+
+        Examples:
+            >>> index = Index(["a", "b"], {"c": [1, 2, 3], "d": [4, 5]})
+            >>> index.get_loc("a")
+            0
+            >>> index.get_loc("b", offset=10)
+            11
+            >>> index.get_loc("c")
+            (2, 4)
+            >>> index.get_loc("d", offset=20)
+            (25, 26)
+        """
+        if key not in self.index:
+            offset = len(self.index) + offset
+            loc = self.wide_index.get_loc(key)
+            return loc[0] + offset, loc[1] + offset - 1
+
+        loc = self.index.get_loc(key)
+        if isinstance(loc, int):
+            return loc + offset
+
+        raise NotImplementedError
+
+    def get_range(self, key: str, offset: int = 0) -> tuple[int, int]:
+        """Get the range of a key. The range is the start and end of the key.
+
+        The end is inclusive.
+
+        Examples:
+            >>> index = Index(["a", "b"], {"c": [1, 2, 3], "d": [4, 5]})
+            >>> index.get_range("a")
+            (0, 0)
+
+            >>> index.get_range("c", offset=4)
+            (6, 8)
+        """
+        loc = self.get_loc(key)
+        if isinstance(loc, int):
+            return loc + offset, loc + offset
+
+        return loc[0] + offset, loc[1] + offset

@@ -27,17 +27,7 @@ def test_wide_to_list(wide_index: WideIndex):
     assert wide_index.to_list() == x
 
 
-@pytest.mark.parametrize(
-    ("key", "loc"),
-    [
-        ("A", (0, 3)),
-        ("B", (3, 7)),
-        (("A", 1), 0),
-        (("A", 3), 2),
-        (("B", 4), 3),
-        (("B", 7), 6),
-    ],
-)
+@pytest.mark.parametrize(("key", "loc"), [("A", (0, 3)), ("B", (3, 7))])
 def test_wide_loc(wide_index: WideIndex, key, loc):
     assert wide_index.get_loc(key) == loc
 
