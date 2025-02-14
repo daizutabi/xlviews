@@ -8,15 +8,16 @@ from functools import partial
 from itertools import chain, takewhile
 from typing import TYPE_CHECKING, overload
 
+import pandas as pd
 import xlwings
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.core.formula import Func, aggregate
-from xlviews.core.index import WideIndex
+from xlviews.core.index import Index, WideIndex
 from xlviews.core.range import Range, iter_addresses
 from xlviews.core.style import set_alignment
 from xlviews.decorators import suspend_screen_updates
@@ -64,8 +65,8 @@ class SheetFrame:
         self.sheet = sheet or xlwings.sheets.active
         self.cell = self.sheet.range(row, column)
 
-        self.index = data.index
-        self.columns = data.columns
+        self.index = Index(data.index)
+        self.columns = Index(data.columns)
         self.wide_columns = WideIndex()
 
         self.cell.options(DataFrame).value = data
@@ -110,14 +111,14 @@ class SheetFrame:
     @property
     def value_columns(self) -> list[Any]:
         it = itertools.chain.from_iterable(self.wide_columns.values())
-        return self.columns.to_list() + list(it)
+        return self.columns.to_list()  # + list(it)
 
     @property
     def headers(self) -> list[Any]:
         """Return the column names."""
         if self.columns.nlevels == 1:
-            print("A", [*self.index.names, *self.value_columns])
-            print("B", self.expand("right").options(ndim=1).value or [])
+            # print("A", [*self.index.names, *self.value_columns])
+            # print("B", self.expand("right").options(ndim=1).value or [])
             # return [*self.index.names, *self.value_columns]
             return self.expand("right").options(ndim=1).value or []
 
@@ -367,10 +368,12 @@ class SheetFrame:
         autofit: bool = False,
         style: bool = False,
     ) -> RangeImpl:
-        column_int = self.column + len(self.headers)
+        column_int = self.column + self.index.nlevels + len(self.columns)
         self.sheet.range(self.row, column_int).value = column
 
-        rng = self.range(column).impl
+        start = self.row + self.columns.nlevels
+        end = start + len(self.index) - 1
+        rng = self.sheet.range((start, column_int), (end, column_int))
 
         if value is not None:
             rng.options(transpose=True).value = value
@@ -568,7 +571,7 @@ class SheetFrame:
         if self.index.names[0]:
             index = self._index_frame()
             if len(index.columns) == 1:
-                df.index = Index(index[index.columns[0]])
+                df.index = pd.Index(index[index.columns[0]])
             else:
                 df.index = MultiIndex.from_frame(index)
 
@@ -661,7 +664,7 @@ class SheetFrame:
     def ranges(self) -> Iterator[Range]:
         if self.columns_names is None:
             start = self.column + self.index.nlevels
-            end = start + len(self.value_columns) - 1
+            end = start + len(self.columns) - 1
             offset = self.row + self.columns.nlevels
 
             for index in range(len(self)):
@@ -676,7 +679,7 @@ class SheetFrame:
             end = start + len(self) - 1
             offset = self.column + self.index.nlevels
 
-            for index in range(len(self.value_columns)):
+            for index in range(len(self.columns)):
                 yield Range(
                     (start, index + offset),
                     (end, index + offset),
