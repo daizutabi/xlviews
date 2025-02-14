@@ -28,7 +28,7 @@ from .style import set_frame_style, set_wide_column_style
 from .table import Table
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
+    from collections.abc import Iterator, Sequence
     from typing import Any, Literal, Self
 
     from .dist_frame import DistFrame
@@ -143,44 +143,44 @@ class SheetFrame:
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
         return iter(self.headers)
 
-    @property
-    def data(self) -> DataFrame:
-        """Return the data as a DataFrame."""
-        if self.cell.value is None and self.columns.nlevels > 1:
-            rng = self.cell.offset(self.columns.nlevels - 1).expand()
-            rng = rng.options(DataFrame, index=self.index.nlevels, header=1)
-            df = rng.value
-            df.columns = MultiIndex.from_tuples(self.value_columns)
-            return df
+    # @property
+    # def data(self) -> DataFrame:
+    #     """Return the data as a DataFrame."""
+    #     if self.cell.value is None and self.columns.nlevels > 1:
+    #         rng = self.cell.offset(self.columns.nlevels - 1).expand()
+    #         rng = rng.options(DataFrame, index=self.index.nlevels, header=1)
+    #         df = rng.value
+    #         df.columns = MultiIndex.from_tuples(self.value_columns)
+    #         return df
 
-        rng = self.expand().options(
-            DataFrame,
-            index=self.index.nlevels,
-            header=self.columns.nlevels,
-        )
-        df = rng.value
+    #     rng = self.expand().options(
+    #         DataFrame,
+    #         index=self.index.nlevels,
+    #         header=self.columns.nlevels,
+    #     )
+    #     df = rng.value
 
-        if not isinstance(df, DataFrame):
-            raise NotImplementedError
+    #     if not isinstance(df, DataFrame):
+    #         raise NotImplementedError
 
-        if self.columns_names:
-            df.index.name = None
-            df.columns.names = self.columns_names
+    #     if self.columns_names:
+    #         df.index.name = None
+    #         df.columns.names = self.columns_names
 
-        return df
+    #     return df
 
-    @property
-    def visible_data(self) -> DataFrame:
-        """Return the visible data as a DataFrame."""
-        start = self.row + 1, self.column
-        end = start[0] + len(self) - 1, start[1] + len(self.headers) - 1
+    # @property
+    # def visible_data(self) -> DataFrame:
+    #     """Return the visible data as a DataFrame."""
+    #     start = self.row + 1, self.column
+    #     end = start[0] + len(self) - 1, start[1] + len(self.headers) - 1
 
-        rng = self.sheet.range(start, end)
-        data = rng.api.SpecialCells(CellType.xlCellTypeVisible)
-        value = [row.Value[0] for row in data.Rows]
-        df = DataFrame(value, columns=self.headers)
+    #     rng = self.sheet.range(start, end)
+    #     data = rng.api.SpecialCells(CellType.xlCellTypeVisible)
+    #     value = [row.Value[0] for row in data.Rows]
+    #     df = DataFrame(value, columns=self.headers)
 
-        return df.set_index(list(df.columns[: self.index.nlevels]))
+    #     return df.set_index(list(df.columns[: self.index.nlevels]))
 
     @overload
     def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...

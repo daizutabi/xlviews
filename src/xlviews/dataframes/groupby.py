@@ -59,32 +59,21 @@ def groupby(
     sort: bool = True,
 ) -> dict[tuple, list[tuple[int, int]]]:
     """Group by the specified column and return the group key and row number."""
-    if not by:
-        if sf.columns_names is None:
-            start = sf.row + sf.columns.nlevels
-            end = start + len(sf) - 1
-            return {(): [(start, end)]}
+    if sf.columns.nlevels != 1:
+        raise NotImplementedError
 
-        start = sf.column + 1
-        end = start + len(sf.value_columns) - 1
+    if not by:
+        start = sf.row + sf.columns.nlevels
+        end = start + len(sf) - 1
         return {(): [(start, end)]}
 
-    if sf.columns_names is None:
-        if isinstance(by, list) or ":" in by:
-            by = list(iter_columns(sf, by))
-        values = sf.data.reset_index()[by]
-
-    else:
-        df = DataFrame(sf.value_columns, columns=sf.columns_names)
-        values = df[by]
+    if isinstance(by, list) or ":" in by:
+        by = list(iter_columns(sf, by))
+    values = sf.index.to_frame()[by]
 
     index = create_group_index(values, sort=sort)
 
-    if sf.columns_names is None:
-        offset = sf.row + sf.columns.nlevels  # vertical
-    else:
-        offset = sf.column + sf.index.nlevels  # horizontal
-
+    offset = sf.row + sf.columns.nlevels
     return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
 
 

@@ -93,7 +93,7 @@ def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
     if not by:
         return n
 
-    return len(sf.data.reset_index()[by].drop_duplicates()) * n
+    return len(sf.index.to_frame()[by].drop_duplicates()) * n
 
 
 def get_frame(
@@ -117,7 +117,7 @@ def get_frame(
 
 def has_header(sf: SheetFrame) -> bool:
     start = sf.cell.offset(-1)
-    end = start.offset(0, len(sf.headers))
+    end = start.offset(0, sf.index.nlevels)
     value = sf.sheet.range(start, end).options(ndim=1).value
 
     if not isinstance(value, list):
@@ -139,15 +139,10 @@ def move_down(sf: SheetFrame, length: int) -> int:
 
 
 def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
-    # start = sf.column + sf.index.nlevels
-    # end = sf.column + len(sf.headers)
-    # print(start, sf.headers)
-    # idx = [sf.column, *range(start, end)]
     idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
 
-    get_fmt = parent.get_number_format
-    formats = [get_fmt(column) for column in sf.value_columns]
-    formats = [None, *formats]
+    columns = (*parent.index.names, *parent.columns)
+    formats = [None, *[parent.get_number_format(column) for column in columns]]
 
     for (func,), rows in sf.groupby(func_column_name).items():
         for col, fmt in zip(idx, formats, strict=True):

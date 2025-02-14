@@ -7,6 +7,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
+    from pandas import DataFrame
     from pandas._typing import Axes
 
 
@@ -183,3 +184,6 @@ class Index:
             return loc + offset, loc + offset
 
         return loc[0] + offset, loc[1] + offset
+
+    def to_frame(self) -> DataFrame:
+        return self.index.to_frame()
