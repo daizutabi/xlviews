@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from functools import partial
-from itertools import chain, takewhile
+from itertools import takewhile
 from typing import TYPE_CHECKING, overload
 
 import pandas as pd
@@ -28,6 +28,9 @@ from .table import Table
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any, Literal, Self
+
+    import numpy as np
+    from numpy.typing import NDArray
 
 
 class SheetFrame:
@@ -116,6 +119,12 @@ class SheetFrame:
     def get_range(self, column: str) -> tuple[int, int]:
         loc = self.get_loc(column)
         return loc if isinstance(loc, tuple) else (loc, loc)
+
+    def get_indexer(self, columns: dict[str, Any]) -> NDArray[np.intp]:
+        if self.columns.nlevels == 1:
+            raise NotImplementedError
+
+        return self.columns.get_indexer(columns, self.column + self.index.nlevels)
 
     @overload
     def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
@@ -670,41 +679,42 @@ class SheetFrame:
         idx = self.column_index(column)
         return self.sheet.range(self.row + self.columns.nlevels, idx).number_format
 
-    def number_format(
+    def number_format(  # noqa: C901
         self,
         number_format: str | dict | None = None,
         *,
         autofit: bool = False,
         **columns_format,
     ) -> Self:
-        if isinstance(number_format, str):
-            start = self.row + self.columns.nlevels, self.column + self.index.nlevels
-            end = self.row + self.height - 1, self.column + self.width - 1
-            rng = self.sheet.range(start, end)
-            rng.number_format = number_format
-            if autofit:
-                rng.autofit()
-            return self
-
         if isinstance(number_format, dict):
             columns_format.update(number_format)
 
-        # offset = self.column + self.index.nlevels
-        # start, end = self.columns.get_range(column, offset)
-        # if self.columns.nlevels == 1:
-        for column in chain(self.index.names, self.columns):
-            if not column:
-                continue
+        row_start = self.row + self.columns.nlevels
+        row_end = row_start + len(self) - 1
 
-            for pattern, number_format in columns_format.items():
-                column_name = column if isinstance(column, str) else column[0]
+        if self.columns.nlevels == 1:
+            for column in [*self.index.names, *self.columns]:
+                if not column:
+                    continue
 
-                if re.match(pattern, column_name):
-                    rng = self.range(column).impl
-                    rng.number_format = number_format
-                    if autofit:
-                        rng.autofit()
-                    break
+                for pattern, number_format in columns_format.items():
+                    if re.match(pattern, column):
+                        start, end = self.get_range(column)
+                        rng = self.sheet.range((row_start, start), (row_end, end))
+                        rng.number_format = number_format
+                        if autofit:
+                            rng.autofit()
+                        break
+
+        elif isinstance(number_format, str):
+            for i in self.get_indexer(columns_format):
+                rng = self.sheet.range((row_start, i), (row_end, i))
+                rng.number_format = number_format
+                if autofit:
+                    rng.autofit()
+
+        else:
+            raise NotImplementedError
 
         return self
 
@@ -737,9 +747,6 @@ class SheetFrame:
 
     def move(self, count: int, direction: str = "down", width: int = 0) -> None:
         return move(self, count, direction, width)
-
-    # def delete(self, direction: str = "up", *, entire: bool = False) -> None:
-    #     return modify.delete(self, direction, entire=entire)
 
     def as_table(
         self,

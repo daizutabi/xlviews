@@ -116,6 +116,8 @@ if __name__ == "__main__":
     for fc in fcs:
         fc.sf.set_adjacent_column_width(1)
 
+    fcs[3].sf.number_format("0.0", s="a", r=3)
+
     sf = fcs[-1].sf
     sf.autofit()
 
@@ -129,5 +131,4 @@ if __name__ == "__main__":
     sf.add_wide_column("v", list(range(4)), number_format="0.0")
     sf.add_formula_column("u", "={u}+{a}")
     sf.add_formula_column("v", "={v}+{b}", style=True, autofit=True)
-
-    print(fcs[3].sf.columns.get_indexer(s="a", i="x"))
+    sf.number_format(autofit=True, a="0.0", x="0.00")
