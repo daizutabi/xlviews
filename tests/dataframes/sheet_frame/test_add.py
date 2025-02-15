@@ -32,7 +32,7 @@ def test_add_formula_column(formula, value, sheet: Sheet):
     sf.add_formula_column("c", formula)
     assert sheet.range("F3:F6").value == value
 
-    sf.add_formula_column("c", formula + "+1")
+    sf.add_formula_column("c", formula + "+1", style=True)
     assert sheet.range("F3:F6").value == [v + 1 for v in value]
 
 

@@ -134,10 +134,15 @@ class SheetFrame:
 
     def get_indexer(
         self,
-        columns: list[str] | dict[str, Any] | None,
+        columns: list[str] | dict[str, Any] | None = None,
+        **kwargs,
     ) -> list[int] | NDArray[np.intp]:
-        if isinstance(columns, dict):
-            return self.columns.get_indexer(columns, self.column + self.index.nlevels)
+        if isinstance(columns, dict) or (columns is None and kwargs):
+            return self.columns.get_indexer(
+                columns,
+                self.column + self.index.nlevels,
+                **kwargs,
+            )
 
         column = self.column
         if columns is None:
@@ -442,7 +447,7 @@ class SheetFrame:
 
         if isinstance(func, Range | RangeImpl):
             if func.sheet.book.name != self.sheet.book.name:
-                raise ValueError("Range is from a different workbook")
+                raise ValueError("Range is from a different book")
             if func.sheet.name != self.sheet.name:
                 raise ValueError("Range is from a different sheet")
 
@@ -516,13 +521,30 @@ class SheetFrame:
         values: str | list[str] | None = None,
         index: str | list[str] | None = None,
         columns: str | list[str] | None = None,
-        aggfunc: Func = None,
+        aggfunc: Func | list[Func] = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
         include_sheetname: bool = False,
         external: bool = False,
         formula: bool = False,
     ) -> DataFrame:
+        if isinstance(aggfunc, list):
+            dfs = [
+                self.pivot_table(
+                    values,
+                    index,
+                    columns,
+                    f,
+                    row_absolute,
+                    column_absolute,
+                    include_sheetname,
+                    external,
+                    formula,
+                )
+                for f in aggfunc
+            ]
+            return pd.concat(dfs, axis=1, keys=aggfunc)
+
         if aggfunc is None:
             data = self.get_address(
                 [values] if isinstance(values, str) else values,
@@ -533,26 +555,26 @@ class SheetFrame:
                 formula=formula,
             )
 
+        if index is None:
+            by = []
         else:
-            if index is None:
-                by = []
-            else:
-                by = [index] if isinstance(index, str) else index
-            if columns is None:
-                if not by:
-                    raise ValueError("index and columns cannot be None")
-            else:
-                by = [*by, columns] if isinstance(columns, str) else by + columns
+            by = [index] if isinstance(index, str) else index
 
-            data = self.groupby(by).agg(
-                aggfunc,
-                values,
-                row_absolute=row_absolute,
-                column_absolute=column_absolute,
-                include_sheetname=include_sheetname,
-                external=external,
-                formula=formula,
-            )
+        if columns is None:
+            if not by:
+                raise ValueError("No group keys passed!")
+        else:
+            by = [*by, columns] if isinstance(columns, str) else by + columns
+
+        data = self.groupby(by).agg(
+            aggfunc,
+            values,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
 
         return data.pivot_table(values, index, columns, aggfunc=lambda x: x)
 
@@ -639,9 +661,9 @@ class SheetFrame:
         const_header: bool = True,
         autofit: bool = True,
         style: bool = True,
-    ) -> Self:
+    ) -> Table:
         if self.table:
-            return self
+            return self.table
 
         if self.columns.nlevels != 1:
             raise NotImplementedError
@@ -660,7 +682,7 @@ class SheetFrame:
         )
         self.table = table
 
-        return self
+        return table
 
     def unlist(self) -> Self:
         if self.table:

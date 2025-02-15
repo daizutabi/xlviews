@@ -51,7 +51,27 @@ def test_iter(sf: SheetFrame):
     assert list(sf)[-1] == ("b", "d", 8, "y")
 
 
-def test_ranges(sf: SheetFrame):
+def test_value(sf: SheetFrame, df: DataFrame):
+    df_sf = sf.value
+    assert df_sf.equals(df.astype(float))
+    assert df_sf.index.equals(df.index)
+    assert df_sf.columns.equals(df.columns)
+
+
+@pytest.mark.parametrize(
+    ("columns", "indexer"),
+    [
+        ({"s": "a", "t": "c"}, [12, 13, 14, 15]),
+        ({"r": 4, "i": "x"}, [18]),
+        ({"t": "c", "i": "x"}, [12, 14, 20, 22]),
+    ],
+)
+def test_get_indexer(sf: SheetFrame, columns, indexer):
+    assert all(sf.get_indexer(columns) == indexer)
+    assert all(sf.get_indexer(**columns) == indexer)
+
+
+def test_iter_ranges(sf: SheetFrame):
     for rng, i in zip(sf.iter_ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
@@ -83,3 +103,12 @@ def test_melt_columns(df_melt: DataFrame):
 )
 def test_melt_value(df_melt: DataFrame, i, v):
     assert df_melt.iloc[i].to_list() == v
+
+
+def test_agg(sf: SheetFrame):
+    df_sf = sf.agg()
+    df_melt = sf.melt()
+    assert isinstance(df_sf, DataFrame)
+    assert df_sf.equals(df_melt)
+    assert df_sf.index.equals(df_melt.index)
+    assert df_sf.columns.equals(df_melt.columns)

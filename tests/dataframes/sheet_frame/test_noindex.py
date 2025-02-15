@@ -1,6 +1,6 @@
 import pytest
 from pandas import DataFrame, Series
-from xlwings import Sheet
+from xlwings import App, Sheet
 
 from xlviews.core.range import Range
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -44,9 +44,9 @@ def test_len(sf: SheetFrame):
     assert len(sf) == 4
 
 
-def test_contains(sf: SheetFrame):
-    assert "a" in sf
-    assert "x" not in sf
+@pytest.mark.parametrize(("x", "b"), [("a", True), ("x", False), (0, False)])
+def test_contains(sf: SheetFrame, x, b):
+    assert (x in sf) is b
 
 
 def test_iter(sf: SheetFrame):
@@ -54,7 +54,10 @@ def test_iter(sf: SheetFrame):
 
 
 def test_value(sf: SheetFrame, df: DataFrame):
-    assert sf.value.equals(df.astype(float))
+    df_sf = sf.value
+    assert df_sf.equals(df.astype(float))
+    assert df_sf.index.equals(df.index)
+    assert df_sf.columns.equals(df.columns)
 
 
 @pytest.mark.parametrize(("column", "loc"), [("a", 3), ("b", 4)])
@@ -83,6 +86,11 @@ def test_get_range(sf: SheetFrame, column: str, offset, address):
     assert sf.get_range(column, offset).get_address() == address
 
 
+def test_get_range_error(sf: SheetFrame):
+    with pytest.raises(ValueError, match="invalid offset"):
+        sf.get_range(None, offset=1)  # type: ignore
+
+
 @pytest.mark.parametrize(
     ("axis", "v0", "v1"),
     [(0, [1, 2, 3, 4], [5, 6, 7, 8]), (1, [1, 5], [2, 6])],
@@ -91,6 +99,11 @@ def test_iter_ranges(sf: SheetFrame, axis, v0, v1):
     values = list(sf.iter_ranges(axis))
     assert values[0].value == v0
     assert values[1].value == v1
+
+
+def test_iter_ranges_error(sf: SheetFrame):
+    with pytest.raises(ValueError, match="axis must be 0 or 1"):
+        list(sf.iter_ranges(axis=2))  # type: ignore
 
 
 @pytest.mark.parametrize("columns", [["a", "b"], None])
@@ -144,10 +157,20 @@ def test_agg_range(sf: SheetFrame):
     assert 'IF(GR100="soa"' in s["a"]
 
 
-def test_agg_range_error(sf: SheetFrame, sheet: Sheet):
+def test_agg_range_error_sheet(sf: SheetFrame, sheet: Sheet):
     func = Range(100, 200, sheet)
     with pytest.raises(ValueError, match="Range is from a different sheet"):
         sf.agg(func)
+
+
+def test_agg_range_error_book(sf: SheetFrame, app: App):
+    book = app.books.add()
+
+    func = Range(100, 200, book.sheets[0])
+    with pytest.raises(ValueError, match="Range is from a different book"):
+        sf.agg(func)
+
+    book.close()
 
 
 def test_agg_list(sf: SheetFrame):
@@ -162,6 +185,13 @@ def test_agg_first(sf: SheetFrame):
     s = sf.agg("first")
     assert s.name == "first"
     assert s.to_list() == ["$C$3", "$D$3"]
+
+
+def test_agg_columns_str(sf: SheetFrame):
+    s = sf.agg(None, "a")
+    assert s.name is None
+    assert s.index.to_list() == ["a"]
+    assert s.to_list() == ["$C$3:$C$6"]
 
 
 def test_melt_none(sf: SheetFrame):

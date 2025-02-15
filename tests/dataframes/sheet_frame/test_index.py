@@ -1,4 +1,5 @@
 import pytest
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -42,14 +43,20 @@ def test_index_names(sf: SheetFrame):
     assert sf.index.names == ["name"]
 
 
-def test_contains(sf: SheetFrame):
-    assert "name" not in sf
-    assert "a" in sf
-    assert "x" not in sf
+@pytest.mark.parametrize(("x", "b"), [("name", False), ("a", True)])
+def test_contains(sf: SheetFrame, x, b):
+    assert (x in sf) is b
 
 
 def test_iter(sf: SheetFrame):
     assert list(sf) == ["a", "b"]
+
+
+def test_value(sf: SheetFrame, df: DataFrame):
+    df_sf = sf.value
+    assert df_sf.equals(df.astype(float))
+    assert df_sf.index.equals(df.index)
+    assert df_sf.columns.equals(df.columns)
 
 
 @pytest.mark.parametrize(("column", "index"), [("name", 2), ("a", 3), ("b", 4)])
