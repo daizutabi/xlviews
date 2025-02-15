@@ -16,8 +16,8 @@ def sf(sheet: Sheet):
 
 def test_number_format_kwargs(sf: SheetFrame):
     sf.number_format(autofit=False, a="0", b="0.0")
-    assert sf.range("a").impl.number_format == "0"
-    assert sf.range("b").impl.number_format == "0.0"
+    assert sf.sheet.range("D4:D7").number_format == "0"
+    assert sf.sheet.range("E4:E7").number_format == "0.0"
 
 
 def test_number_format_dict(sf: SheetFrame):

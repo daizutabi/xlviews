@@ -51,23 +51,6 @@ def test_iter(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ("a", 8),
-        ("b", 9),
-        (["y", "b"], [7, 9]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
-    assert sf.index_past(column) == index
-
-
-def test_index_error(sf: SheetFrame):
-    with pytest.raises(ValueError, match="'z' is not in list"):
-        sf.index_past("z")
-
-
-@pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
         ("x", -1, "$F$2"),
@@ -77,8 +60,8 @@ def test_index_error(sf: SheetFrame):
         ("y", None, "$G$3:$G$10"),
     ],
 )
-def test_range(sf: SheetFrame, column, offset, address):
-    assert sf.range(column, offset).get_address() == address
+def test_column_range(sf: SheetFrame, column, offset, address):
+    assert sf.column_range(column, offset).get_address() == address
 
 
 @pytest.mark.parametrize(
