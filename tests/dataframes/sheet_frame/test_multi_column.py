@@ -69,18 +69,6 @@ def test_index_row(sf: SheetFrame, column):
     assert sf.sheet.range(r, sf.column).value == column
 
 
-@pytest.mark.parametrize(
-    ("column", "offset", "address"),
-    [
-        (("a", "d", 4, "y"), -1, "$S$2:$S$5"),
-        (("a", "d", 3, "x"), 0, "$P$6"),
-        (("b", "d", 7, "x"), None, "$X$6:$X$11"),
-    ],
-)
-def test_range(sf: SheetFrame, column, offset, address):
-    assert sf.range(column, offset).get_address() == address
-
-
 def test_ranges(sf: SheetFrame):
     for rng, i in zip(sf.ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]

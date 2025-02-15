@@ -74,11 +74,6 @@ def test_index_list(benchmark, sf: SheetFrame, columns):
     assert x == list(range(4, len(columns) + 4))
 
 
-def test_range(benchmark, sf: SheetFrame, shape):
-    x = benchmark(lambda: sf.range("A"))
-    assert len(x) == shape[0]
-
-
 def test_ranges(benchmark, sf: SheetFrame, shape):
     x = benchmark(lambda: list(sf.ranges()))
     assert len(x) == shape[0]

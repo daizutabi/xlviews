@@ -212,55 +212,6 @@ class SheetFrame:
         cs = [*self.index.names, *self.columns]
         return [cs.index(c) + column for c in columns]
 
-    def range(
-        self,
-        column: str | tuple,
-        offset: Literal[0, -1] | None = None,
-    ) -> Range:
-        """Return the range of the column.
-
-        Args:
-            column (str or tuple): The name of the column.
-            offset (int, optional):
-                - None: entire row data without column row
-                - 0: first row
-                - -1: column row
-        """
-        if self.columns_names and isinstance(column, str):
-            raise NotImplementedError
-
-        index = self.index_past(column)
-
-        match offset:
-            case 0:  # first data row
-                start = end = self.row + self.columns.nlevels
-                if not isinstance(index, tuple):
-                    return Range((start, index), sheet=self.sheet)
-
-            case -1:  # column row
-                start = end = self.row
-                if isinstance(column, tuple) and self.columns.nlevels == 1:
-                    start -= 1  # wide column
-                else:
-                    end += self.columns.nlevels - 1
-                    if isinstance(index, tuple):
-                        start -= 1
-
-            case None:  # entire data rows
-                start = self.row + self.columns.nlevels
-                end = start + len(self) - 1
-
-            case _:
-                msg = f"invalid offset: {offset}"
-                raise ValueError(msg)
-
-        if isinstance(index, tuple):  # wide column
-            column_start, column_end = index
-        else:
-            column_start = column_end = index
-
-        return Range((start, column_start), (end, column_end), sheet=self.sheet)
-
     @overload
     def column_range(
         self,

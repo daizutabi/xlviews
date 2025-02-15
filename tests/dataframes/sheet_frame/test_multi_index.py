@@ -77,8 +77,8 @@ def test_index_error(sf: SheetFrame):
         ("y", None, "$G$3:$G$10"),
     ],
 )
-def test_range(sf: SheetFrame, column, offset, address):
-    assert sf.range(column, offset).get_address() == address
+def test_column_range(sf: SheetFrame, column, offset, address):
+    assert sf.column_range(column, offset).get_address() == address
 
 
 @pytest.mark.parametrize(

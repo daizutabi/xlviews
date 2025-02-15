@@ -20,7 +20,8 @@ def sf(sf_parent: SheetFrame, funcs: list[str]):
 
 
 def test_func(sf: StatsFrame, funcs: list[str]):
-    assert sf.range("func").value == np.tile(funcs, 4).tolist()
+    rng = sf.sheet.range((sf.row + 1, sf.column), (sf.row + len(sf), sf.column))
+    assert rng.value == np.tile(funcs, 4).tolist()
 
 
 @pytest.mark.parametrize(
