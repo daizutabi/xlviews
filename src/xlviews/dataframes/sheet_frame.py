@@ -16,7 +16,7 @@ from xlwings.constants import Direction
 
 from xlviews.core.address import index_to_column_name
 from xlviews.core.formula import Func, aggregate
-from xlviews.core.index import Index, WideIndex
+from xlviews.core.index import Index
 from xlviews.core.range import Range, iter_addresses
 from xlviews.core.style import set_alignment
 from xlviews.decorators import suspend_screen_updates
@@ -40,7 +40,6 @@ class SheetFrame:
     sheet: Sheet
     index: Index
     columns: Index
-    wide_columns: WideIndex
     columns_names: list[str] | None = None
     table: Table | None = None
 
@@ -65,7 +64,6 @@ class SheetFrame:
 
         self.index = Index(data.index)
         self.columns = Index(data.columns)
-        self.wide_columns = WideIndex()
 
         self.cell.options(DataFrame).value = data
 
