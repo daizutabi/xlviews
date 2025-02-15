@@ -54,7 +54,7 @@ class HeatFrame(SheetFrame):
         self.set_colorbar()
         set_style(self)
 
-    def data_range(self) -> Range:
+    def value_range(self) -> Range:
         start = self.row + 1, self.column + 1
         end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
         return Range(start, end, self.sheet)
@@ -73,7 +73,7 @@ class HeatFrame(SheetFrame):
 
     @vmin.setter
     def vmin(self, value: float | str | None) -> None:
-        rng = self.data_range()
+        rng = self.value_range()
 
         if value is None:
             value = aggregate("min", rng, formula=True)
@@ -82,7 +82,7 @@ class HeatFrame(SheetFrame):
 
     @vmax.setter
     def vmax(self, value: float | str | None) -> None:
-        rng = self.data_range()
+        rng = self.value_range()
 
         if value is None:
             value = aggregate("max", rng, formula=True)
@@ -148,7 +148,7 @@ def clean_data(data: DataFrame) -> DataFrame:
 
 
 def set_style(sf: HeatFrame) -> None:
-    set_color_scale(sf.data_range(), sf.vmin, sf.vmax)
+    set_color_scale(sf.value_range(), sf.vmin, sf.vmax)
     _merge_index(sf.columns, sf.row, sf.column, 1, sf.sheet)
     _merge_index(sf.index, sf.row, sf.column, 0, sf.sheet)
     _set_border(sf)
