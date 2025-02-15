@@ -1,6 +1,4 @@
-import numpy as np
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
@@ -35,31 +33,8 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_names is None
 
 
-def test_expand(sf: SheetFrame):
-    v = sf.expand().options(ndim=2).value
-    assert v
-    assert len(v) == 9
-    assert v[0] == ["x", "y", "a", "b"]
-    assert v[1] == [1, 1, 1, 11]
-    assert v[2] == [1, 1, 2, 12]
-    assert v[3] == [1, 2, 3, 13]
-    assert v[4] == [1, 2, 4, 14]
-    assert v[5] == [2, 1, 5, 15]
-    assert v[6] == [2, 1, 6, 16]
-    assert v[7] == [2, 2, 7, 17]
-    assert v[8] == [2, 2, 8, 18]
-
-
 def test_len(sf: SheetFrame):
     assert len(sf) == 8
-
-
-def test_headers(sf: SheetFrame):
-    assert sf.headers == ["x", "y", "a", "b"]
-
-
-def test_value_columns(sf: SheetFrame):
-    assert sf.value_columns == ["a", "b"]
 
 
 def test_index_names(sf: SheetFrame):
@@ -67,12 +42,12 @@ def test_index_names(sf: SheetFrame):
 
 
 def test_contains(sf: SheetFrame):
-    assert "x" in sf
+    assert "x" not in sf
     assert "a" in sf
 
 
 def test_iter(sf: SheetFrame):
-    assert list(sf) == ["x", "y", "a", "b"]
+    assert list(sf) == ["a", "b"]
 
 
 @pytest.mark.parametrize(
@@ -90,17 +65,6 @@ def test_index(sf: SheetFrame, column, index):
 def test_index_error(sf: SheetFrame):
     with pytest.raises(ValueError, match="'z' is not in list"):
         sf.index_past("z")
-
-
-def test_data(sf: SheetFrame, df: DataFrame):
-    df_ = sf.data
-    np.testing.assert_array_equal(df_.index, df.index)
-    np.testing.assert_array_equal(df_.index.names, df.index.names)
-    np.testing.assert_array_equal(df_.columns, df.columns)
-    np.testing.assert_array_equal(df_.columns.names, df.columns.names)
-    np.testing.assert_array_equal(df_, df)
-    assert df_.index.name == df.index.name
-    assert df_.columns.name == df.columns.name
 
 
 @pytest.mark.parametrize(

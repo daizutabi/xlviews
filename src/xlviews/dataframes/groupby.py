@@ -34,7 +34,10 @@ def create_group_index(
     a: Sequence | Series | DataFrame,
     sort: bool = True,
 ) -> dict[tuple, list[tuple[int, int]]]:
-    df = a.reset_index(drop=True) if isinstance(a, DataFrame) else DataFrame(a)
+    if isinstance(a, DataFrame):
+        df = a.reset_index(drop=True)
+    else:
+        df = DataFrame(a).reset_index(drop=True)
 
     dup = df[df.ne(df.shift()).any(axis=1)]
 
@@ -59,32 +62,21 @@ def groupby(
     sort: bool = True,
 ) -> dict[tuple, list[tuple[int, int]]]:
     """Group by the specified column and return the group key and row number."""
-    if not by:
-        if sf.columns_names is None:
-            start = sf.row + sf.columns.nlevels
-            end = start + len(sf) - 1
-            return {(): [(start, end)]}
+    if sf.columns.nlevels != 1:
+        raise NotImplementedError
 
-        start = sf.column + 1
-        end = start + len(sf.value_columns) - 1
+    if not by:
+        start = sf.row + sf.columns.nlevels
+        end = start + len(sf) - 1
         return {(): [(start, end)]}
 
-    if sf.columns_names is None:
-        if isinstance(by, list) or ":" in by:
-            by = list(iter_columns(sf, by))
-        values = sf.data.reset_index()[by]
-
-    else:
-        df = DataFrame(sf.value_columns, columns=sf.columns_names)
-        values = df[by]
+    if isinstance(by, list) or ":" in by:
+        by = list(iter_columns(sf.index.names, by))
+    values = sf.index.to_frame()[by]
 
     index = create_group_index(values, sort=sort)
 
-    if sf.columns_names is None:
-        offset = sf.row + sf.columns.nlevels  # vertical
-    else:
-        offset = sf.column + sf.index.nlevels  # horizontal
-
+    offset = sf.row + sf.columns.nlevels
     return {k: [(x + offset, y + offset) for x, y in v] for k, v in index.items()}
 
 
@@ -101,7 +93,7 @@ class GroupBy:
         sort: bool = True,
     ) -> None:
         self.sf = sf
-        self.by = list(iter_columns(sf, by)) if by else []
+        self.by = list(iter_columns(sf.index.names, by)) if by else []
         self.group = groupby(sf, self.by, sort=sort)
 
     def __len__(self) -> int:
@@ -191,7 +183,9 @@ class GroupBy:
             values = self.keys()
             return DataFrame(values, columns=self.by)
 
-        cs = self.sf.headers
+        # cs = self.sf.headers
+        # cs = [*self.sf.index.names, *self.sf.columns]
+        cs = self.sf.index.names
         column = self.sf.column
         idx = [cs.index(c) + column for c in self.by]
 
@@ -230,7 +224,7 @@ class GroupBy:
         idx = self.sf.column_index(columns)
 
         if columns is None:
-            columns = self.sf.value_columns
+            columns = self.sf.columns.to_list()
 
         index_df = self.index(
             as_address=as_address,

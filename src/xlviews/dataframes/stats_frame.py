@@ -82,9 +82,9 @@ def get_func(func: str | list[str] | None) -> list[str]:
 
 def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
     if not by:
-        return [c for c in sf.index.names if isinstance(c, str)]
+        return sf.index.names
 
-    return list(iter_columns(sf, by))
+    return list(iter_columns(sf.index.names, by))
 
 
 def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
@@ -93,7 +93,7 @@ def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
     if not by:
         return n
 
-    return len(sf.data.reset_index()[by].drop_duplicates()) * n
+    return len(sf.index.to_frame()[by].drop_duplicates()) * n
 
 
 def get_frame(
@@ -101,7 +101,7 @@ def get_frame(
     funcs: list[str],
     func_column_name: str = "func",
 ) -> DataFrame:
-    df = group.agg(funcs, group.sf.value_columns, formula=True, as_address=True)
+    df = group.agg(funcs, group.sf.columns.to_list(), formula=True, as_address=True)
     df = df.stack(level=1, future_stack=True)  # noqa: PD013
 
     index = df.index.to_frame()
@@ -117,7 +117,7 @@ def get_frame(
 
 def has_header(sf: SheetFrame) -> bool:
     start = sf.cell.offset(-1)
-    end = start.offset(0, len(sf.headers))
+    end = start.offset(0, sf.index.nlevels)
     value = sf.sheet.range(start, end).options(ndim=1).value
 
     if not isinstance(value, list):
@@ -139,15 +139,10 @@ def move_down(sf: SheetFrame, length: int) -> int:
 
 
 def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
-    func_index = sf.index_past(func_column_name)
+    idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
 
-    start = sf.column + sf.index.nlevels
-    end = sf.column + len(sf.headers)
-    idx = [func_index, *range(start, end)]
-
-    get_fmt = parent.get_number_format
-    formats = [get_fmt(column) for column in sf.value_columns]
-    formats = [None, *formats]
+    columns = (*parent.index.names, *parent.columns)
+    formats = [None, *[parent.get_number_format(column) for column in columns]]
 
     for (func,), rows in sf.groupby(func_column_name).items():
         for col, fmt in zip(idx, formats, strict=True):
@@ -160,7 +155,7 @@ def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None
             italic = rcParams.get(f"stats.{func}.italic")
             set_font(rc, color=color, italic=italic)
 
-            if func == "soa" and col != func_index:
+            if func == "soa" and col != idx[0]:
                 set_number_format(rc, "0.0%")
 
     rng = sf.column_range(func_column_name)

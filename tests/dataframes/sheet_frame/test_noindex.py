@@ -1,6 +1,4 @@
-import numpy as np
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -45,14 +43,6 @@ def test_len(sf: SheetFrame):
     assert len(sf) == 4
 
 
-def test_headers(sf: SheetFrame):
-    assert sf.headers == [None, "a", "b"]
-
-
-def test_value_columns(sf: SheetFrame):
-    assert sf.value_columns == ["a", "b"]
-
-
 def test_index_names(sf: SheetFrame):
     assert sf.index.names == [None]
 
@@ -63,7 +53,7 @@ def test_contains(sf: SheetFrame):
 
 
 def test_iter(sf: SheetFrame):
-    assert list(sf) == [None, "a", "b"]
+    assert list(sf) == ["a", "b"]
 
 
 @pytest.mark.parametrize(
@@ -76,17 +66,6 @@ def test_iter(sf: SheetFrame):
 )
 def test_index(sf: SheetFrame, column, index):
     assert sf.index_past(column) == index
-
-
-def test_data(sf: SheetFrame, df: DataFrame):
-    df_ = sf.data
-    np.testing.assert_array_equal(df_.index, df.index)
-    np.testing.assert_array_equal(df_.index.names, df.index.names)
-    np.testing.assert_array_equal(df_.columns, df.columns)
-    np.testing.assert_array_equal(df_.columns.names, df.columns.names)
-    np.testing.assert_array_equal(df_, df)
-    assert df_.index.name == df.index.name
-    assert df_.columns.name == df.columns.name
 
 
 @pytest.mark.parametrize(
@@ -105,23 +84,6 @@ def test_range(sf: SheetFrame, column, offset, address):
 def test_range_error(sf: SheetFrame):
     with pytest.raises(ValueError, match="invalid offset"):
         sf.range("a", 1)  # type: ignore
-
-
-def test_setitem(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(2, 2, data=df, sheet=sheet)
-    x = [10, 20, 30]
-    sf["a"] = x
-    np.testing.assert_array_equal(sf.data["a"], x)
-
-
-def test_setitem_new_column(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    sf = SheetFrame(2, 2, data=df, sheet=sheet)
-    x = [10, 20, 30]
-    sf["c"] = x
-    assert sf.headers == [None, "a", "b", "c"]
-    np.testing.assert_array_equal(sf.data["c"], x)
 
 
 def test_get_address(sf: SheetFrame):

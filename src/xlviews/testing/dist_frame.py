@@ -27,4 +27,5 @@ if __name__ == "__main__":
     sheet = create_sheet()
     fc = Parent(sheet, 3, 2, style=True)
     fc.sf.set_adjacent_column_width(1)
+    fc.sf.number_format(b="0.0")
     DistFrame(fc.sf, ["a", "b"], by=["x", "y"])

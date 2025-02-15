@@ -67,37 +67,37 @@ def move(sf: SheetFrame, count: int, direction: str = "down", width: int = 0) ->
     raise ValueError("direction must be 'down' or 'right'")
 
 
-def delete(sf: SheetFrame, direction: str = "up", *, entire: bool = False) -> None:
-    """Delete the SheetFrame.
+# def delete(sf: SheetFrame, direction: str = "up", *, entire: bool = False) -> None:
+#     """Delete the SheetFrame.
 
-    Args:
-        direction (str): 'up' or 'left'
-        entire (bool): Whether to delete the entire row/column.
-    """
-    rng = sf.expand()
-    start = rng[0].offset(-1, -1)
-    end = rng[-1].offset(1, 1)
+#     Args:
+#         direction (str): 'up' or 'left'
+#         entire (bool): Whether to delete the entire row/column.
+#     """
+#     rng = sf.expand()
+#     start = rng[0].offset(-1, -1)
+#     end = rng[-1].offset(1, 1)
 
-    if sf.wide_columns:
-        start = start.offset(-1)
+#     if sf.wide_columns:
+#         start = start.offset(-1)
 
-    api = sf.sheet.range(start, end).api
+#     api = sf.sheet.range(start, end).api
 
-    match direction:
-        case "up":
-            if entire:
-                api.EntireRow.Delete()
-            else:
-                api.Delete(Shift=Direction.xlUp)
+#     match direction:
+#         case "up":
+#             if entire:
+#                 api.EntireRow.Delete()
+#             else:
+#                 api.Delete(Shift=Direction.xlUp)
 
-        case "left":
-            if entire:
-                api.EntireColumn.Delete()
-            else:
-                api.Delete(Shift=Direction.xlToLeft)
+#         case "left":
+#             if entire:
+#                 api.EntireColumn.Delete()
+#             else:
+#                 api.Delete(Shift=Direction.xlToLeft)
 
-        case _:
-            raise ValueError("direction must be 'up' or 'left'")
+#         case _:
+#             raise ValueError("direction must be 'up' or 'left'")
 
 
 # @wait_updating

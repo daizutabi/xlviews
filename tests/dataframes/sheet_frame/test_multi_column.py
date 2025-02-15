@@ -1,11 +1,9 @@
 import string
 
-import numpy as np
 import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
 from xlviews.testing.sheet_frame.base import MultiColumn
@@ -38,30 +36,8 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.columns_names == ["s", "t", "r", "i"]
 
 
-def test_expand(sf: SheetFrame):
-    v = sf.expand().options(ndim=2).value
-    assert v
-    assert len(v) == 10
-    assert v[2][:5] == ["r", 1, 1, 2, 2]
-    assert v[3][:5] == ["i", "x", "y", "x", "y"]
-    assert v[-1][:5] == [5, 5, 11, 17, 23]
-
-
 def test_len(sf: SheetFrame):
     assert len(sf) == 6
-
-
-def test_headers(sf: SheetFrame):
-    headers = sf.headers
-    assert headers[0] == ("s", "t", "r", "i")
-    assert headers[1] == ("a", "c", 1, "x")
-    assert headers[-1] == ("b", "d", 8, "y")
-
-
-def test_value_columns(sf: SheetFrame):
-    columns = sf.value_columns
-    assert columns[0] == ("a", "c", 1, "x")
-    assert columns[-1] == ("b", "d", 8, "y")
 
 
 def test_index_names(sf: SheetFrame):
@@ -72,10 +48,6 @@ def test_columns_names(sf: SheetFrame):
     assert sf.columns.names == ["s", "t", "r", "i"]
 
 
-def test_contains(sf: SheetFrame):
-    assert ("s", "t", "r", "i") in sf
-
-
 def test_iter(sf: SheetFrame):
     assert list(sf)[-1] == ("b", "d", 8, "y")
 
@@ -83,11 +55,8 @@ def test_iter(sf: SheetFrame):
 @pytest.mark.parametrize(
     ("column", "index"),
     [
-        (("s", "t", "r", "i"), 11),
         (("a", "d", 3, "x"), 16),
         ([("b", "c", 6, "y"), ("b", "d", 8, "x")], [23, 26]),
-        ("s", 2),
-        (["t", "i"], [3, 5]),
     ],
 )
 def test_index(sf: SheetFrame, column, index):
@@ -98,17 +67,6 @@ def test_index(sf: SheetFrame, column, index):
 def test_index_row(sf: SheetFrame, column):
     r = sf.index_past(column)
     assert sf.sheet.range(r, sf.column).value == column
-
-
-def test_data(sf: SheetFrame, df: DataFrame):
-    df_ = sf.data
-    np.testing.assert_array_equal(df_.index, df.index)
-    np.testing.assert_array_equal(df_.index.names, df.index.names)
-    np.testing.assert_array_equal(df_.columns, df.columns)
-    np.testing.assert_array_equal(df_.columns.names, df.columns.names)
-    np.testing.assert_array_equal(df_, df)
-    assert df_.index.name == df.index.name
-    assert df_.columns.name == df.columns.name
 
 
 @pytest.mark.parametrize(
@@ -127,38 +85,6 @@ def test_ranges(sf: SheetFrame):
     for rng, i in zip(sf.ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
-
-
-@pytest.mark.parametrize(
-    ("by", "result"),
-    [
-        ("s", {("a",): [(12, 19)], ("b",): [(20, 27)]}),
-        (
-            ["s", "t"],
-            {
-                ("a", "c"): [(12, 15)],
-                ("a", "d"): [(16, 19)],
-                ("b", "c"): [(20, 23)],
-                ("b", "d"): [(24, 27)],
-            },
-        ),
-        (
-            ["s", "i"],
-            {
-                ("a", "x"): [(12, 12), (14, 14), (16, 16), (18, 18)],
-                ("a", "y"): [(13, 13), (15, 15), (17, 17), (19, 19)],
-                ("b", "x"): [(20, 20), (22, 22), (24, 24), (26, 26)],
-                ("b", "y"): [(21, 21), (23, 23), (25, 25), (27, 27)],
-            },
-        ),
-        (None, {(): [(12, 27)]}),
-    ],
-)
-def test_groupby(sf: SheetFrame, by, result):
-    g = groupby(sf, by)
-    assert len(g) == len(result)
-    for k, v in g.items():
-        assert result[k] == v
 
 
 @pytest.fixture(scope="module")
