@@ -543,9 +543,10 @@ class SheetFrame:
                 by = []
             else:
                 by = [index] if isinstance(index, str) else index
+
             if columns is None:
                 if not by:
-                    raise ValueError("index and columns cannot be None")
+                    raise ValueError("No group keys passed!")
             else:
                 by = [*by, columns] if isinstance(columns, str) else by + columns
 
@@ -559,7 +560,15 @@ class SheetFrame:
                 formula=formula,
             )
 
-        return data.pivot_table(values, index, columns, aggfunc=lambda x: x)
+        df = data.pivot_table(values, index, columns, aggfunc=lambda x: x)
+
+        if not isinstance(aggfunc, list):
+            return df
+
+        if isinstance(values, list):
+            df = df.swaplevel(0, 1, axis=1).loc[:, aggfunc]
+
+        return df
 
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)

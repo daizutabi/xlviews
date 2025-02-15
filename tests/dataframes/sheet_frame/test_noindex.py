@@ -54,7 +54,10 @@ def test_iter(sf: SheetFrame):
 
 
 def test_value(sf: SheetFrame, df: DataFrame):
-    assert sf.value.equals(df.astype(float))
+    df_sf = sf.value
+    assert df_sf.equals(df.astype(float))
+    assert df_sf.index.equals(df.index)
+    assert df_sf.columns.equals(df.columns)
 
 
 @pytest.mark.parametrize(("column", "loc"), [("a", 3), ("b", 4)])

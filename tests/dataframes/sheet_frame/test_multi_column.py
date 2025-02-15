@@ -52,7 +52,10 @@ def test_iter(sf: SheetFrame):
 
 
 def test_value(sf: SheetFrame, df: DataFrame):
-    assert sf.value.equals(df.astype(float))
+    df_sf = sf.value
+    assert df_sf.equals(df.astype(float))
+    assert df_sf.index.equals(df.index)
+    assert df_sf.columns.equals(df.columns)
 
 
 @pytest.mark.parametrize(
@@ -103,4 +106,9 @@ def test_melt_value(df_melt: DataFrame, i, v):
 
 
 def test_agg(sf: SheetFrame):
-    assert sf.agg().equals(sf.melt())  # type: ignore
+    df_sf = sf.agg()
+    df_melt = sf.melt()
+    assert isinstance(df_sf, DataFrame)
+    assert df_sf.equals(df_melt)
+    assert df_sf.index.equals(df_melt.index)
+    assert df_sf.columns.equals(df_melt.columns)
