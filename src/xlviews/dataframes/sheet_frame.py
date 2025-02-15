@@ -37,7 +37,7 @@ class SheetFrame:
 
     cell: RangeImpl
     sheet: Sheet
-    index: Index
+    index: pd.Index
     columns: Index
     table: Table | None = None
 
@@ -60,7 +60,7 @@ class SheetFrame:
         self.sheet = sheet or xlwings.sheets.active
         self.cell = self.sheet.range(row, column)
 
-        self.index = Index(data.index)
+        self.index = data.index
         self.columns = Index(data.columns)
 
         self.cell.options(DataFrame).value = data
@@ -498,14 +498,6 @@ class SheetFrame:
 
         df[value_name] = list(map(agg, self.ranges(axis=0)))
         return df
-
-    def _iter_row_ranges(self) -> Iterator[Range]:
-        start = self.row + self.columns.nlevels
-        end = start + len(self) - 1
-        offset = self.column + self.index.nlevels
-
-        for index in range(len(self.columns)):
-            yield Range((start, index + offset), (end, index + offset), self.sheet)
 
     def pivot_table(
         self,

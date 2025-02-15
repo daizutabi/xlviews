@@ -198,7 +198,7 @@ class DistFrame(SheetFrame):
 def get_init_data(sf: SheetFrame, columns: list[str]) -> DataFrame:
     columns = [f"{c}_{suffix}" for c, suffix in product(columns, ["n", "v", "s"])]
     array = np.zeros((len(sf), len(columns)))
-    return DataFrame(array, index=sf.index.index, columns=columns)
+    return DataFrame(array, index=sf.index, columns=columns)
 
 
 def get_dist_func(dist: str | dict[str, str], columns: list[str]) -> dict[str, str]:
