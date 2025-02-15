@@ -134,10 +134,15 @@ class SheetFrame:
 
     def get_indexer(
         self,
-        columns: list[str] | dict[str, Any] | None,
+        columns: list[str] | dict[str, Any] | None = None,
+        **kwargs,
     ) -> list[int] | NDArray[np.intp]:
-        if isinstance(columns, dict):
-            return self.columns.get_indexer(columns, self.column + self.index.nlevels)
+        if isinstance(columns, dict) or (columns is None and kwargs):
+            return self.columns.get_indexer(
+                columns,
+                self.column + self.index.nlevels,
+                **kwargs,
+            )
 
         column = self.column
         if columns is None:
