@@ -147,7 +147,7 @@ class GroupBy:
 
     def agg(
         self,
-        func: Func | dict | Sequence[Func],
+        func: Func | dict | Sequence[Func] = None,
         columns: str | list[str] | None = None,
         as_address: bool = False,
         row_absolute: bool = True,

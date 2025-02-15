@@ -81,6 +81,15 @@ class SheetFrame:
     def __len__(self) -> int:
         return len(self.index)
 
+    def __contains__(self, item: Any) -> bool:
+        if not isinstance(item, str | tuple):
+            return False
+
+        return item in self.columns
+
+    def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
+        return iter(self.columns)
+
     @property
     def row(self) -> int:
         """Return the row of the top-left cell."""
@@ -99,11 +108,17 @@ class SheetFrame:
     def width(self) -> int:
         return self.index.nlevels + len(self.columns)
 
-    def __contains__(self, item: str | tuple) -> bool:
-        return item in self.columns
+    @property
+    def value(self) -> DataFrame:
+        rng = self.expand().impl
+        index = self.index.nlevels
+        header = self.columns.nlevels
+        df = rng.options(DataFrame, index=index, header=header).value
 
-    def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
-        return iter(self.columns)
+        if not isinstance(df, DataFrame):
+            raise NotImplementedError
+
+        return df
 
     def get_loc(self, column: str) -> int | tuple[int, int]:
         if column in self.index.names:
@@ -376,7 +391,7 @@ class SheetFrame:
     @overload
     def agg(
         self,
-        func: Func | dict,
+        func: Func | dict = None,
         columns: str | list[str] | None = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
@@ -399,7 +414,7 @@ class SheetFrame:
 
     def agg(
         self,
-        func: Func | dict | Sequence[Func],
+        func: Func | dict | Sequence[Func] = None,
         columns: str | list[str] | None = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
@@ -408,12 +423,28 @@ class SheetFrame:
         formula: bool = False,
     ) -> Series | DataFrame:
         if self.columns.nlevels != 1:
+            if isinstance(func, Func) and columns is None:
+                return self.melt(
+                    func,
+                    row_absolute=row_absolute,
+                    column_absolute=column_absolute,
+                    include_sheetname=include_sheetname,
+                    external=external,
+                    formula=formula,
+                )
+
             raise NotImplementedError
 
         if isinstance(func, dict):
             columns = list(func.keys())
         elif isinstance(columns, str):
             columns = [columns]
+
+        if isinstance(func, Range | RangeImpl):
+            if func.sheet.book.name != self.sheet.book.name:
+                raise ValueError("Range is from a different workbook")
+            if func.sheet.name != self.sheet.name:
+                raise ValueError("Range is from a different sheet")
 
         rngs = self.get_range(columns)
 
@@ -434,7 +465,8 @@ class SheetFrame:
             return Series([agg(f, r) for r, f in it], index=columns)
 
         if func is None or isinstance(func, str | Range | RangeImpl):
-            return Series([agg(func, r) for r in rngs], index=columns)
+            name = func if isinstance(func, str) else None
+            return Series([agg(func, r) for r in rngs], index=columns, name=name)
 
         values = [[agg(f, r) for r in rngs] for f in func]
         return DataFrame(values, index=list(func), columns=columns)
@@ -455,10 +487,8 @@ class SheetFrame:
         include_sheetname: bool = False,
         external: bool = False,
         formula: bool = False,
-    ) -> DataFrame:
+    ) -> Series | DataFrame:
         """Unpivot a SheetFrame from wide to long format."""
-        df = self.columns.to_frame()
-
         agg = partial(
             aggregate,
             func,
@@ -469,7 +499,16 @@ class SheetFrame:
             formula=formula,
         )
 
+        index = self.columns.nlevels == 1
+        df = self.columns.to_frame(index=index)
         df[value_name] = list(map(agg, self.iter_ranges(axis=0)))
+
+        if index:
+            s = df[value_name]
+            if isinstance(func, str | None):
+                s.name = func
+            return s
+
         return df
 
     def pivot_table(
