@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import xlwings as xw
-from pandas import Series
+from pandas import DataFrame, Series
 from xlwings.constants import DVType, FormatConditionOperator
 
 from xlviews.colors import rgb
@@ -44,7 +44,10 @@ def constant(type_: str, name: str | None = None) -> int:
     return getattr(type_, name)
 
 
-def iter_columns(iterable: Iterable[str], columns: str | list[str]) -> Iterator[str]:
+def iter_columns(
+    iterable: Iterable | DataFrame,
+    columns: str | list[str],
+) -> Iterator[str]:
     """Yield the columns in the order of appearance with colon notation.
 
     Examples:
@@ -60,7 +63,7 @@ def iter_columns(iterable: Iterable[str], columns: str | list[str]) -> Iterator[
     if isinstance(columns, str):
         columns = [columns]
 
-    lst = list(iterable)
+    lst = [x for x in iterable if isinstance(x, str)]
 
     for c in columns:
         if c.startswith("::"):
