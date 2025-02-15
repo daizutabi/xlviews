@@ -78,6 +78,7 @@ ignore = [
     "ANN401",
     "ARG001",
     "ARG002",
+    "C901",
     "D",
     "D105",
     "D107",
@@ -100,3 +101,4 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN", "ARG", "D", "FBT", "PLR", "RUF", "S", "SLF"]
+"src/xlviews/testing/*" = ["T201"]
