@@ -1,4 +1,5 @@
 import pytest
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.dist_frame import DistFrame
@@ -29,4 +30,5 @@ def sf(sf_parent: SheetFrame):
 
 @pytest.fixture(scope="module")
 def df(sf: DistFrame):
-    return sf.data
+    rng = sf.expand().impl
+    return rng.options(DataFrame, index=sf.index.nlevels).value

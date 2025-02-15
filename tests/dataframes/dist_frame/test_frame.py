@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 def test_init_data(sf_parent: SheetFrame):
     from xlviews.dataframes.dist_frame import get_init_data
 
-    df = get_init_data(sf_parent, ["a", "b"], ["x", "y"])
+    df = get_init_data(sf_parent, ["a", "b"])
     c = ["a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]
     assert df.columns.to_list() == c
     assert df.index.names == ["x", "y"]

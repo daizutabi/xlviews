@@ -14,15 +14,15 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 @pytest.mark.parametrize(
     ("columns", "values"),
     [
-        (None, ["x", "y", "a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]),
-        ("a", ["x", "y", "a_n", "a_v", "a_s"]),
-        ("b", ["x", "y", "b_n", "b_v", "b_s"]),
+        (None, ["a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]),
+        ("a", ["a_n", "a_v", "a_s"]),
+        ("b", ["b_n", "b_v", "b_s"]),
     ],
 )
 def test_columns(columns, values, sheet: Sheet):
     fc = Parent(sheet, 3, 2)
     sf = DistFrame(fc.sf, columns, by=["x", "y"])
-    assert sf.headers == values
+    assert sf.columns.to_list() == values
 
 
 def test_group_error(sheet: Sheet):
