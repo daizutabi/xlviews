@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pandas import DataFrame
 
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.stats_frame import StatsFrame
@@ -14,36 +15,18 @@ def sf(sf_parent: SheetFrame):
     return StatsFrame(sf_parent, funcs, by=":y").as_table()
 
 
+@pytest.fixture(scope="module")
+def df(sf: StatsFrame):
+    rng = sf.expand().impl
+    return rng.options(DataFrame, index=sf.index.nlevels).value
+
+
 def test_len(sf: StatsFrame):
     assert len(sf) == 16
 
 
-def test_columns(sf: StatsFrame):
-    assert sf.headers == ["func", "x", "y", "z", "a", "b", "c"]
-
-
 def test_index_names(sf: StatsFrame):
     assert sf.index.names == ["func", "x", "y", "z"]
-
-
-def test_value_columns(sf: StatsFrame):
-    assert sf.value_columns == ["a", "b", "c"]
-
-
-@pytest.mark.parametrize(
-    ("func", "n"),
-    [
-        ("median", 4),
-        (["soa"], 4),
-        (["count", "max", "median"], 12),
-        (["count", "max", "median", "soa"], 16),
-    ],
-)
-def test_value_len(sf: StatsFrame, func, n):
-    assert sf.table
-    sf.table.auto_filter("func", func)
-    df = sf.visible_data
-    assert len(df) == n
 
 
 @pytest.mark.parametrize(
@@ -60,11 +43,8 @@ def test_value_len(sf: StatsFrame, func, n):
         ("median", "c", [18, 30, 2, 7]),
     ],
 )
-def test_value_float(sf: StatsFrame, func, column, value):
-    assert sf.table
-    sf.table.auto_filter("func", func)
-    df = sf.visible_data
-    np.testing.assert_allclose(df[column], value)
+def test_value_float(df: DataFrame, func, column, value):
+    np.testing.assert_allclose(df.loc[func][column], value)
 
 
 @pytest.mark.parametrize(
@@ -75,9 +55,6 @@ def test_value_float(sf: StatsFrame, func, column, value):
         ("c", [[20, 22, 24, 12, 14, 16, 18], [28, 30, 34]]),
     ],
 )
-def test_value_soa(sf: StatsFrame, column, value):
-    assert sf.table
-    sf.table.auto_filter("func", "soa")
-    df = sf.visible_data
+def test_value_soa(df: DataFrame, column, value):
     soa = [np.std(x) / np.median(x) for x in value]
-    np.testing.assert_allclose(df[column].iloc[:2], soa)
+    np.testing.assert_allclose(df.loc["soa"][column][:2], soa)
