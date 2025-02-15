@@ -566,7 +566,8 @@ class SheetFrame:
             return df
 
         if isinstance(values, list):
-            df = df.swaplevel(0, 1, axis=1).loc[:, aggfunc]
+            if index is not None:
+                df = df.swaplevel(0, 1, axis=1).loc[:, aggfunc]
 
         return df
 

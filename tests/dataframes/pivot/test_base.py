@@ -24,28 +24,34 @@ def sf_parent(fc_parent: Base):
     return fc_parent.sf
 
 
-@pytest.fixture(scope="module", params=["u", "v", None, ["v", "u"]])
+@pytest.fixture(params=["u", "v", None, ["v", "u"]])
 def values(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(scope="module", params=["y", ["y"]])
+@pytest.fixture(params=["y", ["y"]])
 def index(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(scope="module", params=["x", ["x"]])
+@pytest.fixture(params=["x", ["x"]])
 def columns(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(scope="module")
-def sf(sf_parent: SheetFrame, values, index, columns):
-    df = sf_parent.pivot_table(values, index, columns, formula=True)
-    return SheetFrame(100 if values is None else 80, 2, df)
+@pytest.fixture
+def sf(sf_parent: SheetFrame, values, index, columns, sheet):
+    df = sf_parent.pivot_table(
+        values,
+        index,
+        columns,
+        include_sheetname=True,
+        formula=True,
+    )
+    return SheetFrame(2, 2, df, sheet=sheet)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def df(df_parent: DataFrame, values, index, columns):
     return df_parent.pivot_table(values, index, columns, aggfunc=lambda x: x)
 
@@ -62,36 +68,51 @@ def test_values(sf: SheetFrame, df: DataFrame):
     assert sf.value.equals(df)
 
 
-# @pytest.fixture(scope="module", params=[("y", "x"), ("y", None), (None, "x")])
-# def index_columns(request: pytest.FixtureRequest):
-#     return request.param
+@pytest.fixture(params=[("y", "x"), ("y", None), (None, "x")])
+def index_columns_agg(request: pytest.FixtureRequest):
+    return request.param
 
 
-# @pytest.fixture(scope="module", params=["mean", ["sum", "count"]])
-# def aggfunc(request: pytest.FixtureRequest):
-#     return request.param
+@pytest.fixture(params=["mean", ["sum", "count"]])
+def aggfunc(request: pytest.FixtureRequest):
+    return request.param
 
 
-# @pytest.fixture(scope="module")
-# def sf_agg(sf_parent: SheetFrame, values, index_columns, aggfunc):
-#     index, columns = index_columns
-#     df = sf_parent.pivot_table(values, index, columns, aggfunc, formula=True)
-#     return SheetFrame(100 if values is None else 80, 100, df)
+@pytest.fixture
+def sf_agg(sf_parent: SheetFrame, values, index_columns_agg, aggfunc, sheet):
+    index, columns = index_columns_agg
+    df = sf_parent.pivot_table(
+        values,
+        index,
+        columns,
+        aggfunc,
+        include_sheetname=True,
+        formula=True,
+    )
+    return SheetFrame(2, 2, df, sheet=sheet)
 
 
-# @pytest.fixture(scope="module")
-# def df_agg(df_parent: DataFrame, values, index_columns, aggfunc):
-#     index, columns = index_columns
-#     return df_parent.pivot_table(values, index, columns, aggfunc)
+@pytest.fixture
+def df_agg(df_parent: DataFrame, values, index_columns_agg, aggfunc):
+    index, columns = index_columns_agg
+    return df_parent.pivot_table(values, index, columns, aggfunc)
 
 
-# def test_agg_values(sf_agg: SheetFrame, df_agg: DataFrame):
-#     print(sf_agg.value)
-#     print(df_agg)
-#     assert sf_agg.value.equals(df_agg)
+def test_agg_index(sf_agg: SheetFrame, df_agg: DataFrame):
+    assert sf_agg.value.index.equals(df_agg.index)
 
 
-# @pytest.mark.parametrize("aggfunc", [None, "mean"])
-# def test_error(sf_parent: SheetFrame, aggfunc):
-#     with pytest.raises(ValueError, match="No group keys passed!"):
-#         sf_parent.pivot_table(None, None, None, aggfunc, formula=True)
+def test_agg_columns(sf_agg: SheetFrame, df_agg: DataFrame):
+    assert sf_agg.value.columns.equals(df_agg.columns)
+
+
+def test_agg_values(sf_agg: SheetFrame, df_agg: DataFrame):
+    print(sf_agg.value)
+    print(df_agg)
+    assert sf_agg.value.equals(df_agg)
+
+
+@pytest.mark.parametrize("aggfunc", [None, "mean"])
+def test_error(sf_parent: SheetFrame, aggfunc):
+    with pytest.raises(ValueError, match="No group keys passed!"):
+        sf_parent.pivot_table(None, None, None, aggfunc, formula=True)
