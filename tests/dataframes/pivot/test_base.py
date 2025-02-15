@@ -69,7 +69,7 @@ def test_values(sf: SheetFrame, df: DataFrame):
 
 
 @pytest.fixture(params=[("y", "x"), ("y", None), (None, "x")])
-def index_columns_agg(request: pytest.FixtureRequest):
+def index_columns(request: pytest.FixtureRequest):
     return request.param
 
 
@@ -79,8 +79,8 @@ def aggfunc(request: pytest.FixtureRequest):
 
 
 @pytest.fixture
-def sf_agg(sf_parent: SheetFrame, values, index_columns_agg, aggfunc, sheet):
-    index, columns = index_columns_agg
+def sf_agg(sf_parent: SheetFrame, values, index_columns, aggfunc, sheet):
+    index, columns = index_columns
     df = sf_parent.pivot_table(
         values,
         index,
@@ -93,9 +93,13 @@ def sf_agg(sf_parent: SheetFrame, values, index_columns_agg, aggfunc, sheet):
 
 
 @pytest.fixture
-def df_agg(df_parent: DataFrame, values, index_columns_agg, aggfunc):
-    index, columns = index_columns_agg
+def df_agg(df_parent: DataFrame, values, index_columns, aggfunc):
+    index, columns = index_columns
     return df_parent.pivot_table(values, index, columns, aggfunc)
+
+
+def test_agg_shape(sf_agg: SheetFrame, df_agg: DataFrame):
+    assert sf_agg.value.shape == df_agg.shape
 
 
 def test_agg_index(sf_agg: SheetFrame, df_agg: DataFrame):
@@ -107,9 +111,7 @@ def test_agg_columns(sf_agg: SheetFrame, df_agg: DataFrame):
 
 
 def test_agg_values(sf_agg: SheetFrame, df_agg: DataFrame):
-    print(sf_agg.value)
-    print(df_agg)
-    assert sf_agg.value.equals(df_agg)
+    assert sf_agg.value.equals(df_agg.astype(float))
 
 
 @pytest.mark.parametrize("aggfunc", [None, "mean"])

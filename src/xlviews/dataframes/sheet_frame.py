@@ -521,13 +521,30 @@ class SheetFrame:
         values: str | list[str] | None = None,
         index: str | list[str] | None = None,
         columns: str | list[str] | None = None,
-        aggfunc: Func = None,
+        aggfunc: Func | list[Func] = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
         include_sheetname: bool = False,
         external: bool = False,
         formula: bool = False,
     ) -> DataFrame:
+        if isinstance(aggfunc, list):
+            dfs = [
+                self.pivot_table(
+                    values,
+                    index,
+                    columns,
+                    f,
+                    row_absolute,
+                    column_absolute,
+                    include_sheetname,
+                    external,
+                    formula,
+                )
+                for f in aggfunc
+            ]
+            return pd.concat(dfs, axis=1, keys=aggfunc)
+
         if aggfunc is None:
             data = self.get_address(
                 [values] if isinstance(values, str) else values,
@@ -538,38 +555,28 @@ class SheetFrame:
                 formula=formula,
             )
 
+        if index is None:
+            by = []
         else:
-            if index is None:
-                by = []
-            else:
-                by = [index] if isinstance(index, str) else index
+            by = [index] if isinstance(index, str) else index
 
-            if columns is None:
-                if not by:
-                    raise ValueError("No group keys passed!")
-            else:
-                by = [*by, columns] if isinstance(columns, str) else by + columns
+        if columns is None:
+            if not by:
+                raise ValueError("No group keys passed!")
+        else:
+            by = [*by, columns] if isinstance(columns, str) else by + columns
 
-            data = self.groupby(by).agg(
-                aggfunc,
-                values,
-                row_absolute=row_absolute,
-                column_absolute=column_absolute,
-                include_sheetname=include_sheetname,
-                external=external,
-                formula=formula,
-            )
+        data = self.groupby(by).agg(
+            aggfunc,
+            values,
+            row_absolute=row_absolute,
+            column_absolute=column_absolute,
+            include_sheetname=include_sheetname,
+            external=external,
+            formula=formula,
+        )
 
-        df = data.pivot_table(values, index, columns, aggfunc=lambda x: x)
-
-        if not isinstance(aggfunc, list):
-            return df
-
-        if isinstance(values, list):
-            if index is not None:
-                df = df.swaplevel(0, 1, axis=1).loc[:, aggfunc]
-
-        return df
+        return data.pivot_table(values, index, columns, aggfunc=lambda x: x)
 
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)
