@@ -183,8 +183,6 @@ class GroupBy:
             values = self.keys()
             return DataFrame(values, columns=self.by)
 
-        # cs = self.sf.headers
-        # cs = [*self.sf.index.names, *self.sf.columns]
         cs = self.sf.index.names
         column = self.sf.column
         idx = [cs.index(c) + column for c in self.by]
