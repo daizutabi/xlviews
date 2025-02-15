@@ -447,7 +447,7 @@ class SheetFrame:
 
         if isinstance(func, Range | RangeImpl):
             if func.sheet.book.name != self.sheet.book.name:
-                raise ValueError("Range is from a different workbook")
+                raise ValueError("Range is from a different book")
             if func.sheet.name != self.sheet.name:
                 raise ValueError("Range is from a different sheet")
 

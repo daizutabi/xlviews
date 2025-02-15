@@ -1,4 +1,5 @@
 import pytest
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
@@ -40,13 +41,17 @@ def test_index_names(sf: SheetFrame):
     assert sf.index.names == ["x", "y"]
 
 
-def test_contains(sf: SheetFrame):
-    assert "x" not in sf
-    assert "a" in sf
+@pytest.mark.parametrize(("x", "b"), [("x", False), ("b", True)])
+def test_contains(sf: SheetFrame, x, b):
+    assert (x in sf) is b
 
 
 def test_iter(sf: SheetFrame):
     assert list(sf) == ["a", "b"]
+
+
+def test_value(sf: SheetFrame, df: DataFrame):
+    assert sf.value.equals(df.astype(float))
 
 
 @pytest.mark.parametrize(

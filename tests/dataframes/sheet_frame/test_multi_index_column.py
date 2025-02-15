@@ -1,4 +1,5 @@
 import pytest
+from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -67,3 +68,7 @@ def test_contains(sf: SheetFrame):
 
 def test_iter(sf: SheetFrame):
     assert list(sf) == [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
+
+
+def test_value(sf: SheetFrame, df: DataFrame):
+    assert sf.value.equals(df.astype(float))
