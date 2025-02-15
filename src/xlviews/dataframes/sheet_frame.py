@@ -565,7 +565,7 @@ class SheetFrame:
             idx = idx[0]
         return self.sheet.range(self.row + self.columns.nlevels, idx).number_format
 
-    def number_format(  # noqa: C901
+    def number_format(
         self,
         number_format: str | dict | None = None,
         *,
