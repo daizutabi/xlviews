@@ -532,7 +532,9 @@ class SheetFrame:
         return GroupBy(self, by, sort=sort)
 
     def get_number_format(self, column: str) -> str:
-        idx = self.get_indexer(column)
+        idx = self.get_loc(column)
+        if isinstance(idx, tuple):
+            idx = idx[0]
         return self.sheet.range(self.row + self.columns.nlevels, idx).number_format
 
     def number_format(  # noqa: C901

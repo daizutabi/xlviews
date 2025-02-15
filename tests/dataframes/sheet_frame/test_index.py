@@ -52,16 +52,13 @@ def test_iter(sf: SheetFrame):
     assert list(sf) == ["a", "b"]
 
 
-@pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ("name", 2),
-        ("a", 3),
-        ("b", 4),
-        (["name", "b"], [2, 4]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
+@pytest.mark.parametrize(("column", "index"), [("name", 2), ("a", 3), ("b", 4)])
+def test_loc(sf: SheetFrame, column, index):
+    assert sf.get_loc(column) == index
+
+
+@pytest.mark.parametrize(("column", "index"), [(["name", "b"], [2, 4])])
+def test_indexer(sf: SheetFrame, column, index):
     assert sf.get_indexer(column) == index
 
 
