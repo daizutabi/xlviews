@@ -23,30 +23,36 @@ def sf(fc: FrameContainer):
     return sf
 
 
-# @pytest.fixture(scope="module")
-# def df(sf: SheetFrame):
-#     return sf.data
+def get_df(sf: SheetFrame) -> DataFrame:
+    rng = sf.expand().impl
+    df = rng.options(DataFrame, index=sf.index.nlevels, header=sf.columns.nlevels).value
+    assert isinstance(df, DataFrame)
+    return df
 
 
-# @pytest.mark.parametrize("func", ["sum", "max", "mean"])
-# def test_str(sf: SheetFrame, df: DataFrame, func: str):
-#     a = sf.agg(func, formula=True)
-#     b = df.agg(func)
-#     assert isinstance(a, Series)
-#     assert a.index.to_list() == b.index.to_list()
-#     sf = SheetFrame(20, 2, a.to_frame(), sf.sheet)
-#     np.testing.assert_array_equal(sf.data[0], b)
+@pytest.fixture(scope="module")
+def df(sf: SheetFrame):
+    return get_df(sf)
 
 
-# def test_list(sf: SheetFrame, df: DataFrame):
-#     func = ["min", "max", "median", "sum"]
-#     a = sf.agg(func, formula=True)
-#     b = df.agg(func)  # type: ignore
-#     assert isinstance(a, DataFrame)
-#     assert a.index.to_list() == b.index.to_list()
-#     assert a.columns.to_list() == b.columns.to_list()
-#     sf = SheetFrame(50, 2, a, sf.sheet)
-#     np.testing.assert_array_equal(sf.data, b)
+@pytest.mark.parametrize("func", ["sum", "max", "mean"])
+def test_str(sf: SheetFrame, df: DataFrame, func: str):
+    a = sf.agg(func, formula=True)
+    b = df.agg(func)
+    assert isinstance(a, Series)
+    sf = SheetFrame(20, 2, a.to_frame(), sf.sheet)
+    np.testing.assert_array_equal(get_df(sf)[0], b)
+
+
+def test_list(sf: SheetFrame, df: DataFrame):
+    func = ["min", "max", "median", "sum"]
+    a = sf.agg(func, formula=True)
+    b = df.agg(func)  # type: ignore
+    assert isinstance(a, DataFrame)
+    assert isinstance(b, DataFrame)
+    assert a.index.to_list() == b.index.to_list()
+    sf = SheetFrame(50, 2, a, sf.sheet)
+    np.testing.assert_array_equal(get_df(sf), b)
 
 
 def test_sf_none(sf: SheetFrame):
