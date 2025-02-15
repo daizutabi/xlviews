@@ -128,7 +128,7 @@ class GroupBy:
         if isinstance(columns, str):
             return self.range([columns], key)[0]
 
-        idx = self.sf.column_index(columns)
+        idx = self.sf.get_indexer(columns)
         row = self[key]
 
         return [RangeCollection(row, i, self.sf.sheet) for i in idx]
@@ -147,7 +147,7 @@ class GroupBy:
         if isinstance(columns, str):
             return self.first_range([columns], key)[0]
 
-        idx = self.sf.column_index(columns)
+        idx = self.sf.get_indexer(columns)
         row = self[key][0][0]
 
         return [Range((row, i), sheet=self.sf.sheet) for i in idx]
@@ -221,7 +221,7 @@ class GroupBy:
         elif isinstance(columns, str):
             columns = [columns]
 
-        idx = self.sf.column_index(columns)
+        idx = self.sf.get_indexer(columns)
 
         if columns is None:
             columns = self.sf.columns.to_list()

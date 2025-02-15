@@ -62,7 +62,7 @@ def test_iter(sf: SheetFrame):
     ],
 )
 def test_index(sf: SheetFrame, column, index):
-    assert sf.column_index(column) == index
+    assert sf.get_indexer(column) == index
 
 
 @pytest.mark.parametrize(

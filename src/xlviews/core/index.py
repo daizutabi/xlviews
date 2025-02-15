@@ -199,10 +199,7 @@ class Index:
         if columns is not None:
             kwargs.update(columns)
 
-        idx = [
-            self.index.get_level_values(level) == value
-            for level, value in kwargs.items()
-        ]
+        idx = [self.index.get_level_values(k) == v for k, v in kwargs.items()]
 
         return np.where(np.all(idx, axis=0))[0] + offset
 

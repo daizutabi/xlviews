@@ -115,24 +115,24 @@ class SheetFrame:
         loc = self.get_loc(column)
         return loc if isinstance(loc, tuple) else (loc, loc)
 
-    def get_indexer(self, columns: dict[str, Any]) -> NDArray[np.intp]:
-        if self.columns.nlevels == 1:
-            raise NotImplementedError
-
-        return self.columns.get_indexer(columns, self.column + self.index.nlevels)
+    @overload
+    def get_indexer(self, columns: str) -> int: ...
 
     @overload
-    def column_index(self, columns: str) -> int: ...
+    def get_indexer(self, columns: list[str] | None) -> list[int]: ...
 
     @overload
-    def column_index(self, columns: list[str] | None) -> list[int]: ...
+    def get_indexer(self, columns: dict[str, Any]) -> NDArray[np.intp]: ...
 
-    def column_index(self, columns: str | list[str] | None) -> int | list[int]:
-        if self.columns.nlevels != 1:
-            raise NotImplementedError
+    def get_indexer(
+        self,
+        columns: str | list[str] | dict[str, Any] | None,
+    ) -> int | list[int] | NDArray[np.intp]:
+        if isinstance(columns, dict):
+            return self.columns.get_indexer(columns, self.column + self.index.nlevels)
 
         if isinstance(columns, str):
-            return self.column_index([columns])[0]
+            return self.get_indexer([columns])[0]
 
         column = self.column
         if columns is None:
@@ -181,7 +181,7 @@ class SheetFrame:
                 msg = f"invalid offset: {offset}"
                 raise ValueError(msg)
 
-        idx = self.column_index(columns)
+        idx = self.get_indexer(columns)
         return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
 
     def add_column(
@@ -535,7 +535,7 @@ class SheetFrame:
         return GroupBy(self, by, sort=sort)
 
     def get_number_format(self, column: str) -> str:
-        idx = self.column_index(column)
+        idx = self.get_indexer(column)
         return self.sheet.range(self.row + self.columns.nlevels, idx).number_format
 
     def number_format(  # noqa: C901
