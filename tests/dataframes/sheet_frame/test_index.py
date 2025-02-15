@@ -75,8 +75,8 @@ def test_index(sf: SheetFrame, column, index):
         ("a", None, "$C$9:$C$12"),
     ],
 )
-def test_column_range(sf: SheetFrame, column: str, offset, address):
-    assert sf.column_range(column, offset).get_address() == address
+def test_get_range(sf: SheetFrame, column: str, offset, address):
+    assert sf.get_range(column, offset).get_address() == address
 
 
 def test_get_address(sf: SheetFrame):

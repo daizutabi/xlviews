@@ -59,8 +59,8 @@ def test_iter(sf: SheetFrame):
         ("y", None, "$G$3:$G$10"),
     ],
 )
-def test_column_range(sf: SheetFrame, column, offset, address):
-    assert sf.column_range(column, offset).get_address() == address
+def test_get_range(sf: SheetFrame, column, offset, address):
+    assert sf.get_range(column, offset).get_address() == address
 
 
 @pytest.mark.parametrize(

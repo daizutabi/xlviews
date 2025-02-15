@@ -141,20 +141,20 @@ class SheetFrame:
         return [cs.index(c) + column for c in columns]
 
     @overload
-    def column_range(
+    def get_range(
         self,
         columns: str,
         offset: Literal[0, -1] | None = None,
     ) -> Range: ...
 
     @overload
-    def column_range(
+    def get_range(
         self,
         columns: list[str] | None,
         offset: Literal[0, -1] | None = None,
     ) -> list[Range]: ...
 
-    def column_range(
+    def get_range(
         self,
         columns: str | list[str] | None,
         offset: Literal[0, -1] | None = None,
@@ -290,7 +290,7 @@ class SheetFrame:
         if isinstance(column, str) and column not in self.columns:
             self.add_column(column)
 
-        rng = self.column_range(column).impl
+        rng = self.get_range(column).impl
         rng.value = formula.format(**refs)
 
         if number_format:
@@ -339,7 +339,7 @@ class SheetFrame:
         else:
             is_str = False
 
-        rngs = self.column_range(columns)
+        rngs = self.get_range(columns)
 
         if columns is None:
             columns = self.columns.to_list()
@@ -401,7 +401,7 @@ class SheetFrame:
         elif isinstance(columns, str):
             columns = [columns]
 
-        rngs = self.column_range(columns)
+        rngs = self.get_range(columns)
 
         if columns is None:
             columns = self.columns.to_list()
@@ -555,7 +555,7 @@ class SheetFrame:
 
                 for pattern, number_format in columns_format.items():
                     if re.match(pattern, column):
-                        rng = self.column_range(column).impl
+                        rng = self.get_range(column).impl
                         rng.number_format = number_format
                         if autofit:
                             rng.autofit()
