@@ -34,7 +34,10 @@ def create_group_index(
     a: Sequence | Series | DataFrame,
     sort: bool = True,
 ) -> dict[tuple, list[tuple[int, int]]]:
-    df = a.reset_index(drop=True) if isinstance(a, DataFrame) else DataFrame(a)
+    if isinstance(a, DataFrame):
+        df = a.reset_index(drop=True)
+    else:
+        df = DataFrame(a).reset_index(drop=True)
 
     dup = df[df.ne(df.shift()).any(axis=1)]
 
