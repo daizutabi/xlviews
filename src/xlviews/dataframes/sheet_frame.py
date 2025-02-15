@@ -101,6 +101,10 @@ class SheetFrame:
         return self.cell.column
 
     @property
+    def shape(self) -> tuple[int, int]:
+        return len(self), len(self.columns)
+
+    @property
     def height(self) -> int:
         return self.columns.nlevels + len(self)
 

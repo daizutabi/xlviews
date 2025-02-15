@@ -6,7 +6,7 @@ from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import create_sheet
 from xlviews.testing.heat_frame.common import HeatFrameContainer
 from xlviews.testing.sheet_frame.pivot import Pivot
-from xlviews.utils import iter_group_ranges
+from xlviews.utils import iter_group_locs
 
 if TYPE_CHECKING:
     from pandas import DataFrame

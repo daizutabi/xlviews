@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pandas import MultiIndex
+from pandas import Index, MultiIndex
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
@@ -16,7 +16,7 @@ from xlviews.core.style import (
     set_number_format,
 )
 from xlviews.decorators import suspend_screen_updates
-from xlviews.utils import iter_group_ranges
+from xlviews.utils import iter_group_locs
 
 from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
@@ -30,7 +30,8 @@ if TYPE_CHECKING:
 
 
 class HeatFrame(SheetFrame):
-    _data: DataFrame
+    index: Index
+    columns: Index
 
     @suspend_screen_updates
     def __init__(
@@ -40,9 +41,11 @@ class HeatFrame(SheetFrame):
         data: DataFrame,
         sheet: Sheet | None = None,
     ) -> None:
-        self.data = clean_data(data)
+        data = clean_data(data)
 
-        super().__init__(row, column, self.data, sheet)
+        super().__init__(row, column, data, sheet)
+
+        self.columns = data.columns
 
         set_heat_frame_style(self)
         self.set_adjacent_column_width(1, offset=-1)
@@ -50,21 +53,6 @@ class HeatFrame(SheetFrame):
         self.vmax = None
         self.set_colorbar()
         set_style(self)
-
-    @property
-    def data(self) -> DataFrame:
-        return self._data
-
-    @data.setter
-    def data(self, value: DataFrame) -> None:
-        self._data = value
-
-    @property
-    def shape(self) -> tuple[int, int]:
-        return self.data.shape
-
-    def __len__(self) -> int:
-        return self.shape[0]
 
     def data_range(self) -> Range:
         start = self.row + 1, self.column + 1
@@ -161,13 +149,13 @@ def clean_data(data: DataFrame) -> DataFrame:
 
 def set_style(sf: HeatFrame) -> None:
     set_color_scale(sf.data_range(), sf.vmin, sf.vmax)
-    _merge_index(sf.data.columns, sf.row, sf.column, 1, sf.sheet)
-    _merge_index(sf.data.index, sf.row, sf.column, 0, sf.sheet)
+    _merge_index(sf.columns, sf.row, sf.column, 1, sf.sheet)
+    _merge_index(sf.index, sf.row, sf.column, 0, sf.sheet)
     _set_border(sf)
 
 
 def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
-    for start, end in iter_group_ranges(index):
+    for start, end in iter_group_locs(index):
         if start == end:
             continue
         if axis == 0:
@@ -182,15 +170,13 @@ def _set_border(sf: HeatFrame) -> None:
 
     ec = rcParams["heat.border.color"]
 
-    for row in iter_group_ranges(sf.data.index):
+    for row in iter_group_locs(sf.index, offset=r):
         if row[0] == row[1]:
             continue
 
-        for col in iter_group_ranges(sf.data.columns):
+        for col in iter_group_locs(sf.columns, offset=c):
             if col[0] == col[1]:
                 continue
 
-            start = (r + row[0], c + col[0])
-            end = (r + row[1], c + col[1])
-            rng = sf.sheet.range(start, end)
+            rng = sf.sheet.range((row[0], col[0]), (row[1], col[1]))
             set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)

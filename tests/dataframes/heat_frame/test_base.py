@@ -24,16 +24,16 @@ def test_index(sf: HeatFrame):
     assert sf.sheet.range("G3:G8").value == [1, 2, 3, 4, 5, 6]
 
 
-def test_index_from_df(sf: HeatFrame):
-    assert sf.data.index.to_list() == [1, 2, 3, 4, 5, 6]
+def test_index_from_sf(sf: HeatFrame):
+    assert sf.index.to_list() == [1, 2, 3, 4, 5, 6]
 
 
 def test_columns(sf: HeatFrame):
     assert sf.sheet.range("H2:K2").value == [1, 2, 3, 4]
 
 
-def test_columns_from_df(sf: HeatFrame):
-    assert sf.data.columns.to_list() == [1, 2, 3, 4]
+def test_columns_from_sf(sf: HeatFrame):
+    assert sf.columns.to_list() == [1, 2, 3, 4]
 
 
 @pytest.mark.parametrize(
