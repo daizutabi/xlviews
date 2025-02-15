@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from functools import partial
-from itertools import takewhile
 from typing import TYPE_CHECKING, overload
 
 import pandas as pd
@@ -123,71 +122,6 @@ class SheetFrame:
             raise NotImplementedError
 
         return self.columns.get_indexer(columns, self.column + self.index.nlevels)
-
-    @overload
-    def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
-
-    @overload
-    def index_past(
-        self,
-        columns: Sequence[str | tuple],
-    ) -> list[int] | list[tuple[int, int]]: ...
-
-    def index_past(
-        self,
-        columns: str | tuple | Sequence[str | tuple],
-    ) -> int | tuple[int, int] | list[int] | list[tuple[int, int]]:
-        """Return the column index (1-indexed)."""
-        if isinstance(columns, str | tuple):
-            return self.index_past([columns])[0]
-
-        if self.columns_names:
-            columns_str = [c for c in columns if isinstance(c, str)]
-            if len(columns_str) == len(columns):
-                return self._index_row(columns_str)
-
-        idx = []
-        columns_ = [*self.index.names, *self.columns]
-        offset = self.column
-
-        for column in columns:
-            if column in columns_:
-                idx.append(columns_.index(column) + offset)
-            else:
-                idx.append(self._index_wide(column))
-
-        return idx
-
-    def _index_row(self, columns: list[str]) -> list[int]:
-        if not self.columns_names:
-            raise ValueError("columns names are not specified")
-
-        columns_names = self.columns_names
-        offset = self.row
-        return [columns_names.index(c) + offset for c in columns]
-
-    def _index_wide(
-        self,
-        column: str | tuple[str, str | float],
-    ) -> tuple[int, int] | int:
-        value_columns = self.columns.to_list()
-
-        start = self.row - 1, self.column + self.index.nlevels
-        end = start[0], start[1] + len(value_columns) - 1
-        names = self.sheet.range(start, end).options(ndim=1).value or []
-
-        name = column[0] if isinstance(column, tuple) else column
-        start = names.index(name)
-        end = len(list(takewhile(lambda n: n is None, names[start + 1 :]))) + start
-
-        offset = self.index.nlevels + self.cell.column
-
-        if isinstance(column, str):
-            return start + offset, end + offset
-
-        values = value_columns[start : end + 1]
-
-        return values.index(column[1]) + start + offset
 
     @overload
     def column_index(self, columns: str) -> int: ...

@@ -68,20 +68,3 @@ def test_contains(sf: SheetFrame):
 
 def test_iter(sf: SheetFrame):
     assert list(sf) == [("a1", "b1"), ("a1", "b2"), ("a2", "b1"), ("a2", "b2")]
-
-
-@pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ("z", 23),
-        (("a1", "b1"), 24),
-        (["x", ("a2", "b2")], [21, 27]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
-    assert sf.index_past(column) == index
-
-
-def test_index_error(sf: SheetFrame):
-    with pytest.raises(ValueError, match="'a' is not in list"):
-        sf.index_past("a")

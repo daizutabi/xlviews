@@ -57,18 +57,6 @@ def test_iter(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ("a", 3),
-        ("b", 4),
-        (["a", "b"], [3, 4]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
-    assert sf.index_past(column) == index
-
-
-@pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
         ("a", 0, "$C$3"),

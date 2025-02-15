@@ -52,23 +52,6 @@ def test_iter(sf: SheetFrame):
     assert list(sf)[-1] == ("b", "d", 8, "y")
 
 
-@pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        (("a", "d", 3, "x"), 16),
-        ([("b", "c", 6, "y"), ("b", "d", 8, "x")], [23, 26]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
-    assert sf.index_past(column) == index
-
-
-@pytest.mark.parametrize("column", ["s", "t", "r", "i"])
-def test_index_row(sf: SheetFrame, column):
-    r = sf.index_past(column)
-    assert sf.sheet.range(r, sf.column).value == column
-
-
 def test_ranges(sf: SheetFrame):
     for rng, i in zip(sf.ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]
