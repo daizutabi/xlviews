@@ -51,20 +51,13 @@ def df(df_parent: DataFrame, values, index, columns):
     return df_parent.pivot_table(values, index, columns, aggfunc=lambda x: x)
 
 
-def get_df(sf: SheetFrame) -> DataFrame:
-    rng = sf.expand().impl
-    df = rng.options(DataFrame, index=sf.index.nlevels, header=sf.columns.nlevels).value
-    assert isinstance(df, DataFrame)
-    return df
-
-
 def test_index(sf: SheetFrame, df: DataFrame):
-    assert get_df(sf).index.equals(df.index)
+    assert sf.value.index.equals(df.index)
 
 
 def test_columns(sf: SheetFrame, df: DataFrame):
-    np.testing.assert_array_equal(get_df(sf).columns, df.columns)
+    assert sf.value.columns.equals(df.columns)
 
 
 def test_values(sf: SheetFrame, df: DataFrame):
-    np.testing.assert_array_equal(get_df(sf), df)
+    assert sf.value.equals(df)
