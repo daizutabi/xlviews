@@ -51,8 +51,8 @@ class DistFrame(SheetFrame):
         by: str | list[str] | None,
     ) -> None:
         group = parent.groupby(by)
-        parent_columns = parent.column_index(columns)
-        self_columns = self.column_index([c + "_n" for c in columns])
+        parent_columns = parent.get_indexer(columns)
+        self_columns = self.get_indexer([c + "_n" for c in columns])
 
         it = zip(parent_columns, self_columns, columns, strict=True)
         for parent_column, self_column, column in it:
@@ -77,7 +77,7 @@ class DistFrame(SheetFrame):
                 formula = sigma_value(self_cell, length, dist)
                 set_formula(self_cell.offset(0, 2), length, formula)
 
-        idx = parent.column_index(columns)
+        idx = parent.get_indexer(columns)
         for column, i in zip(columns, idx, strict=True):
             fmt = parent.sheet.range(parent.row + 1, i).number_format
             self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
@@ -198,7 +198,7 @@ class DistFrame(SheetFrame):
 def get_init_data(sf: SheetFrame, columns: list[str]) -> DataFrame:
     columns = [f"{c}_{suffix}" for c, suffix in product(columns, ["n", "v", "s"])]
     array = np.zeros((len(sf), len(columns)))
-    return DataFrame(array, index=sf.index.index, columns=columns)
+    return DataFrame(array, index=sf.index, columns=columns)
 
 
 def get_dist_func(dist: str | dict[str, str], columns: list[str]) -> dict[str, str]:

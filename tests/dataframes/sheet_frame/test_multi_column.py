@@ -33,7 +33,6 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.sheet.name == sheet_module.name
     assert sf.index.nlevels == 1
     assert sf.columns.nlevels == 4
-    assert sf.columns_names == ["s", "t", "r", "i"]
 
 
 def test_len(sf: SheetFrame):
@@ -53,7 +52,7 @@ def test_iter(sf: SheetFrame):
 
 
 def test_ranges(sf: SheetFrame):
-    for rng, i in zip(sf.ranges(), range(11, 26), strict=False):
+    for rng, i in zip(sf.iter_ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 

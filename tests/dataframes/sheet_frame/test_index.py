@@ -28,7 +28,6 @@ def test_init(sf: SheetFrame):
     assert sf.column == 2
     assert sf.index.nlevels == 1
     assert sf.columns.nlevels == 1
-    assert sf.columns_names is None
 
 
 def test_len(sf: SheetFrame):
@@ -53,17 +52,14 @@ def test_iter(sf: SheetFrame):
     assert list(sf) == ["a", "b"]
 
 
-@pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ("name", 2),
-        ("a", 3),
-        ("b", 4),
-        (["name", "b"], [2, 4]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
-    assert sf.column_index(column) == index
+@pytest.mark.parametrize(("column", "index"), [("name", 2), ("a", 3), ("b", 4)])
+def test_loc(sf: SheetFrame, column, index):
+    assert sf.get_loc(column) == index
+
+
+@pytest.mark.parametrize(("column", "index"), [(["name", "b"], [2, 4])])
+def test_indexer(sf: SheetFrame, column, index):
+    assert sf.get_indexer(column) == index
 
 
 @pytest.mark.parametrize(
@@ -76,8 +72,8 @@ def test_index(sf: SheetFrame, column, index):
         ("a", None, "$C$9:$C$12"),
     ],
 )
-def test_column_range(sf: SheetFrame, column: str, offset, address):
-    assert sf.column_range(column, offset).get_address() == address
+def test_get_range(sf: SheetFrame, column: str, offset, address):
+    assert sf.get_range(column, offset).get_address() == address
 
 
 def test_get_address(sf: SheetFrame):

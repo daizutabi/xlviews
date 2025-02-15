@@ -128,7 +128,7 @@ class GroupBy:
         if isinstance(columns, str):
             return self.range([columns], key)[0]
 
-        idx = self.sf.column_index(columns)
+        idx = self.sf.get_indexer(columns)
         row = self[key]
 
         return [RangeCollection(row, i, self.sf.sheet) for i in idx]
@@ -147,7 +147,7 @@ class GroupBy:
         if isinstance(columns, str):
             return self.first_range([columns], key)[0]
 
-        idx = self.sf.column_index(columns)
+        idx = self.sf.get_indexer(columns)
         row = self[key][0][0]
 
         return [Range((row, i), sheet=self.sf.sheet) for i in idx]
@@ -190,7 +190,7 @@ class GroupBy:
         idx = [cs.index(c) + column for c in self.by]
 
         agg = partial(
-            self._agg_column,
+            self._agg,
             "first",
             row_absolute=row_absolute,
             column_absolute=column_absolute,
@@ -221,7 +221,7 @@ class GroupBy:
         elif isinstance(columns, str):
             columns = [columns]
 
-        idx = self.sf.column_index(columns)
+        idx = self.sf.get_indexer(columns)
 
         if columns is None:
             columns = self.sf.columns.to_list()
@@ -237,7 +237,7 @@ class GroupBy:
         index = MultiIndex.from_frame(index_df)
 
         agg = partial(
-            self._agg_column,
+            self._agg,
             row_absolute=row_absolute,
             column_absolute=column_absolute,
             include_sheetname=include_sheetname,
@@ -258,12 +258,7 @@ class GroupBy:
         m_columns = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
         return DataFrame(values, index=index, columns=m_columns)
 
-    def _agg_column(
-        self,
-        func: Func,
-        column: int,
-        **kwargs,
-    ) -> Iterator[str]:
+    def _agg(self, func: Func, column: int, **kwargs) -> Iterator[str]:
         if func == "first":
             func = None
             for row in self.values():
