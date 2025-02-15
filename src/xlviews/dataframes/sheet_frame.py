@@ -76,10 +76,13 @@ class SheetFrame:
     def _update_cell(self) -> None:  # important
         self.cell = self.cell.offset()
 
-    def __repr__(self) -> str:
+    def expand(self) -> Range:
         start = self.row, self.column
         end = start[0] + self.height - 1, start[1] + self.width - 1
-        rng = Range(start, end, sheet=self.sheet)
+        return Range(start, end, sheet=self.sheet)
+
+    def __repr__(self) -> str:
+        rng = self.expand()
         cls = self.__class__.__name__
         return f"<{cls} {rng.get_address(external=True)}>"
 

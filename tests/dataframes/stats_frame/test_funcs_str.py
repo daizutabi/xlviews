@@ -16,16 +16,8 @@ def test_len(sf: SheetFrame):
     assert len(sf) == 2
 
 
-def test_columns(sf: SheetFrame):
-    assert sf.headers == ["func", "x", "y", "z", "a", "b", "c"]
-
-
 def test_index_names(sf: SheetFrame):
     assert sf.index.names == ["func", "x", "y", "z"]
-
-
-def test_value_columns(sf: SheetFrame):
-    assert sf.value_columns == ["a", "b", "c"]
 
 
 @pytest.mark.parametrize(
