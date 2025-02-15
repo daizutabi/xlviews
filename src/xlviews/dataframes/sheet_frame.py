@@ -106,79 +106,11 @@ class SheetFrame:
     def width(self) -> int:
         return self.index.nlevels + len(self.columns)
 
-    # @property
-    # def value_columns(self) -> list[Any]:
-    #     it = itertools.chain.from_iterable(self.wide_columns.values())
-    #     return self.columns.to_list()  # + list(it)
-
-    # @property
-    # def headers(self) -> list[Any]:
-    #     """Return the column names."""
-    #     if self.columns.nlevels == 1:
-    #         # print("A", [*self.index.names, *self.value_columns])
-    #         # print("B", self.expand("right").options(ndim=1).value or [])
-    #         # return [*self.index.names, *self.value_columns]
-    #         return self.expand("right").options(ndim=1).value or []
-
-    #     if self.columns_names:
-    #         idx = [tuple(self.columns_names)]
-    #     else:
-    #         start = self.row + self.columns.nlevels - 1, self.column
-    #         end = start[0], start[1] + self.index.nlevels - 1
-    #         idx = self.sheet.range(start, end).value or []
-
-    #     cs = []
-    #     for k in range(self.columns.nlevels):
-    #         rng = self.cell.offset(k, self.index.nlevels).expand("right")
-    #         cs.append(rng.options(ndim=1).value)
-    #     cs = [tuple(c) for c in zip(*cs, strict=True)]
-
-    #     return [*idx, *cs]
-
     def __contains__(self, item: str | tuple) -> bool:
         return item in self.columns
 
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
         return iter(self.columns)
-
-    # @property
-    # def data(self) -> DataFrame:
-    #     """Return the data as a DataFrame."""
-    #     if self.cell.value is None and self.columns.nlevels > 1:
-    #         rng = self.cell.offset(self.columns.nlevels - 1).expand()
-    #         rng = rng.options(DataFrame, index=self.index.nlevels, header=1)
-    #         df = rng.value
-    #         df.columns = MultiIndex.from_tuples(self.value_columns)
-    #         return df
-
-    #     rng = self.expand().options(
-    #         DataFrame,
-    #         index=self.index.nlevels,
-    #         header=self.columns.nlevels,
-    #     )
-    #     df = rng.value
-
-    #     if not isinstance(df, DataFrame):
-    #         raise NotImplementedError
-
-    #     if self.columns_names:
-    #         df.index.name = None
-    #         df.columns.names = self.columns_names
-
-    #     return df
-
-    # @property
-    # def visible_data(self) -> DataFrame:
-    #     """Return the visible data as a DataFrame."""
-    #     start = self.row + 1, self.column
-    #     end = start[0] + len(self) - 1, start[1] + len(self.headers) - 1
-
-    #     rng = self.sheet.range(start, end)
-    #     data = rng.api.SpecialCells(CellType.xlCellTypeVisible)
-    #     value = [row.Value[0] for row in data.Rows]
-    #     df = DataFrame(value, columns=self.headers)
-
-    #     return df.set_index(list(df.columns[: self.index.nlevels]))
 
     @overload
     def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
