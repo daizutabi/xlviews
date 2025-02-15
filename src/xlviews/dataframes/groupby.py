@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 from pandas import DataFrame, MultiIndex, Series
@@ -72,8 +72,8 @@ def groupby(
 
     if isinstance(by, list) or ":" in by:
         by = list(iter_columns(sf.index.names, by))
-    values = sf.index.to_frame()[by]
 
+    values = sf.index.to_frame()[by]
     index = create_group_index(values, sort=sort)
 
     offset = sf.row + sf.columns.nlevels
@@ -109,65 +109,10 @@ class GroupBy:
         yield from self.group.items()
 
     def __iter__(self) -> Iterator[tuple]:
-        yield from self.keys()
+        return self.keys()
 
     def __getitem__(self, key: tuple) -> list[tuple[int, int]]:
         return self.group[key]
-
-    @overload
-    def range(self, columns: str, key: tuple) -> RangeCollection: ...
-
-    @overload
-    def range(self, columns: list[str] | None, key: tuple) -> list[RangeCollection]: ...
-
-    def range(
-        self,
-        columns: str | list[str] | None,
-        key: tuple,
-    ) -> RangeCollection | list[RangeCollection]:
-        if isinstance(columns, str):
-            return self.range([columns], key)[0]
-
-        idx = self.sf.get_indexer(columns)
-        row = self[key]
-
-        return [RangeCollection(row, i, self.sf.sheet) for i in idx]
-
-    @overload
-    def first_range(self, columns: str, key: tuple) -> Range: ...
-
-    @overload
-    def first_range(self, columns: list[str] | None, key: tuple) -> list[Range]: ...
-
-    def first_range(
-        self,
-        columns: str | list[str] | None,
-        key: tuple,
-    ) -> Range | list[Range]:
-        if isinstance(columns, str):
-            return self.first_range([columns], key)[0]
-
-        idx = self.sf.get_indexer(columns)
-        row = self[key][0][0]
-
-        return [Range((row, i), sheet=self.sf.sheet) for i in idx]
-
-    @overload
-    def ranges(self, columns: str) -> Iterator[RangeCollection]: ...
-
-    @overload
-    def ranges(self, columns: list[str] | None) -> Iterator[list[RangeCollection]]: ...
-
-    def ranges(
-        self,
-        columns: str | list[str] | None = None,
-    ) -> Iterator[RangeCollection | list[RangeCollection]]:
-        for key in self:
-            yield self.range(columns, key)
-
-    def first_ranges(self, column: str) -> Iterator[Range]:
-        for key in self:
-            yield self.first_range(column, key)
 
     def index(
         self,
@@ -253,8 +198,8 @@ class GroupBy:
             return DataFrame(values, index=index, columns=columns)
 
         values = np.array([list(agg(f, i)) for i in idx for f in func]).T
-        m_columns = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
-        return DataFrame(values, index=index, columns=m_columns)
+        columns_ = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
+        return DataFrame(values, index=index, columns=columns_)
 
     def _agg(self, func: Func, column: int, **kwargs) -> Iterator[str]:
         if func == "first":
