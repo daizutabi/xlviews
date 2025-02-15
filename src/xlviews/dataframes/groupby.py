@@ -68,7 +68,7 @@ def groupby(
         return {(): [(start, end)]}
 
     if isinstance(by, list) or ":" in by:
-        by = list(iter_columns(sf, by))
+        by = list(iter_columns(sf.index.names, by))
     values = sf.index.to_frame()[by]
 
     index = create_group_index(values, sort=sort)
@@ -90,7 +90,7 @@ class GroupBy:
         sort: bool = True,
     ) -> None:
         self.sf = sf
-        self.by = list(iter_columns(sf, by)) if by else []
+        self.by = list(iter_columns(sf.index.names, by)) if by else []
         self.group = groupby(sf, self.by, sort=sort)
 
     def __len__(self) -> int:
@@ -180,7 +180,9 @@ class GroupBy:
             values = self.keys()
             return DataFrame(values, columns=self.by)
 
-        cs = self.sf.headers
+        # cs = self.sf.headers
+        # cs = [*self.sf.index.names, *self.sf.columns]
+        cs = self.sf.index.names
         column = self.sf.column
         idx = [cs.index(c) + column for c in self.by]
 
@@ -219,7 +221,7 @@ class GroupBy:
         idx = self.sf.column_index(columns)
 
         if columns is None:
-            columns = self.sf.value_columns
+            columns = self.sf.columns.to_list()
 
         index_df = self.index(
             as_address=as_address,

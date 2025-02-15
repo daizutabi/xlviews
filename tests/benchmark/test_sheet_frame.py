@@ -50,13 +50,7 @@ def test_len(benchmark, sf: SheetFrame, shape):
 
 
 def test_columns(benchmark, sf: SheetFrame, shape):
-    assert benchmark(lambda: len(sf.headers)) == shape[1] + 1
-
-
-def test_data(benchmark, sf: SheetFrame, shape):
-    x = benchmark(lambda: sf.data)
-    assert isinstance(x, DataFrame)
-    assert x.shape == shape
+    assert benchmark(lambda: len(sf.columns.to_list())) == shape[1] + 1
 
 
 def test_index_str(benchmark, sf: SheetFrame):

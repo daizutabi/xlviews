@@ -109,39 +109,47 @@ class SheetFrame:
         return self.cell.column
 
     @property
-    def value_columns(self) -> list[Any]:
-        it = itertools.chain.from_iterable(self.wide_columns.values())
-        return self.columns.to_list()  # + list(it)
+    def height(self) -> int:
+        return self.columns.nlevels + len(self)
 
     @property
-    def headers(self) -> list[Any]:
-        """Return the column names."""
-        if self.columns.nlevels == 1:
-            # print("A", [*self.index.names, *self.value_columns])
-            # print("B", self.expand("right").options(ndim=1).value or [])
-            # return [*self.index.names, *self.value_columns]
-            return self.expand("right").options(ndim=1).value or []
+    def width(self) -> int:
+        return self.index.nlevels + len(self.columns)
 
-        if self.columns_names:
-            idx = [tuple(self.columns_names)]
-        else:
-            start = self.row + self.columns.nlevels - 1, self.column
-            end = start[0], start[1] + self.index.nlevels - 1
-            idx = self.sheet.range(start, end).value or []
+    # @property
+    # def value_columns(self) -> list[Any]:
+    #     it = itertools.chain.from_iterable(self.wide_columns.values())
+    #     return self.columns.to_list()  # + list(it)
 
-        cs = []
-        for k in range(self.columns.nlevels):
-            rng = self.cell.offset(k, self.index.nlevels).expand("right")
-            cs.append(rng.options(ndim=1).value)
-        cs = [tuple(c) for c in zip(*cs, strict=True)]
+    # @property
+    # def headers(self) -> list[Any]:
+    #     """Return the column names."""
+    #     if self.columns.nlevels == 1:
+    #         # print("A", [*self.index.names, *self.value_columns])
+    #         # print("B", self.expand("right").options(ndim=1).value or [])
+    #         # return [*self.index.names, *self.value_columns]
+    #         return self.expand("right").options(ndim=1).value or []
 
-        return [*idx, *cs]
+    #     if self.columns_names:
+    #         idx = [tuple(self.columns_names)]
+    #     else:
+    #         start = self.row + self.columns.nlevels - 1, self.column
+    #         end = start[0], start[1] + self.index.nlevels - 1
+    #         idx = self.sheet.range(start, end).value or []
+
+    #     cs = []
+    #     for k in range(self.columns.nlevels):
+    #         rng = self.cell.offset(k, self.index.nlevels).expand("right")
+    #         cs.append(rng.options(ndim=1).value)
+    #     cs = [tuple(c) for c in zip(*cs, strict=True)]
+
+    #     return [*idx, *cs]
 
     def __contains__(self, item: str | tuple) -> bool:
-        return item in self.headers
+        return item in self.columns
 
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
-        return iter(self.headers)
+        return iter(self.columns)
 
     # @property
     # def data(self) -> DataFrame:
@@ -205,7 +213,7 @@ class SheetFrame:
                 return self._index_row(columns_str)
 
         idx = []
-        columns_ = self.headers
+        columns_ = [*self.index.names, *self.columns]
         offset = self.column
 
         for column in columns:
@@ -228,7 +236,7 @@ class SheetFrame:
         self,
         column: str | tuple[str, str | float],
     ) -> tuple[int, int] | int:
-        value_columns = self.value_columns
+        value_columns = self.columns.to_list()
 
         start = self.row - 1, self.column + self.index.nlevels
         end = start[0], start[1] + len(value_columns) - 1
@@ -262,12 +270,12 @@ class SheetFrame:
 
         column = self.column
         if columns is None:
-            columns = self.value_columns
+            columns = self.columns.to_list()
             start = column + self.index.nlevels
             end = start + len(columns)
             return list(range(start, end))
 
-        cs = self.headers
+        cs = [*self.index.names, *self.columns]
         return [cs.index(c) + column for c in columns]
 
     def range(
@@ -371,7 +379,7 @@ class SheetFrame:
         if self.columns.nlevels != 1:
             raise NotImplementedError
 
-        index = self.column + self.index.nlevels + len(self.columns)
+        index = self.column + self.width
         self.sheet.range(self.row, index).value = column
         self.columns.append(column)
 
@@ -411,7 +419,7 @@ class SheetFrame:
         if self.columns.nlevels != 1:
             raise NotImplementedError
 
-        index = self.column + self.index.nlevels + len(self.columns)
+        index = self.column + self.width
         rng = self.sheet.range(self.row - 1, index)
         rng.value = column
         set_alignment(rng, horizontal_alignment="left")
@@ -521,7 +529,7 @@ class SheetFrame:
         rngs = self.column_range(columns)
 
         if columns is None:
-            columns = self.value_columns
+            columns = self.columns.to_list()
 
         agg = partial(
             iter_addresses,
@@ -596,7 +604,7 @@ class SheetFrame:
         rngs = self.column_range(columns)
 
         if columns is None:
-            columns = self.value_columns
+            columns = self.columns.to_list()
 
         agg = partial(
             self._agg_column,
@@ -668,7 +676,7 @@ class SheetFrame:
         if self.columns_names is None:
             raise NotImplementedError
 
-        columns = self.value_columns
+        columns = self.columns.to_list()
         df = DataFrame(columns, columns=self.columns_names)
 
         agg = partial(
@@ -753,7 +761,7 @@ class SheetFrame:
         if isinstance(number_format, dict):
             columns_format.update(number_format)
 
-        for column in chain(self.headers, self.wide_columns):
+        for column in chain(self.index.names, self.columns):
             if not column:
                 continue
 
@@ -776,25 +784,25 @@ class SheetFrame:
 
     def autofit(self) -> Self:
         start = self.cell
-        end = start.offset(self.columns.nlevels + len(self), len(self.headers) - 1)
+        end = start.offset(self.height - 1, self.width - 1)
         self.sheet.range(start, end).autofit()
         return self
 
     def alignment(self, alignment: str) -> Self:
         start = self.cell
-        end = start.offset(0, len(self.headers) - 1)
+        end = start.offset(0, self.width - 1)
         rng = self.sheet.range(start, end)
         set_alignment(rng, alignment)
         return self
 
     def set_adjacent_column_width(self, width: float) -> None:
         """Set the width of the adjacent empty column."""
-        column = self.column + len(self.headers)
+        column = self.column + self.width
         self.sheet.range(1, column).column_width = width
 
     def get_adjacent_cell(self, offset: int = 0) -> RangeImpl:
         """Get the adjacent cell of the SheetFrame."""
-        return self.cell.offset(0, len(self.headers) + offset + 1)
+        return self.cell.offset(0, self.width + offset + 1)
 
     def move(self, count: int, direction: str = "down", width: int = 0) -> RangeImpl:
         return modify.move(self, count, direction, width)
@@ -817,7 +825,7 @@ class SheetFrame:
 
         self.alignment("left")
 
-        end = self.cell.offset(len(self), len(self.headers) - 1)
+        end = self.cell.offset(len(self), self.width - 1)
         rng = self.sheet.range(self.cell, end)
 
         table = Table(

@@ -82,9 +82,9 @@ def get_func(func: str | list[str] | None) -> list[str]:
 
 def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
     if not by:
-        return [c for c in sf.index.names if isinstance(c, str)]
+        return sf.index.names
 
-    return list(iter_columns(sf, by))
+    return list(iter_columns(sf.index.names, by))
 
 
 def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
@@ -101,7 +101,7 @@ def get_frame(
     funcs: list[str],
     func_column_name: str = "func",
 ) -> DataFrame:
-    df = group.agg(funcs, group.sf.value_columns, formula=True, as_address=True)
+    df = group.agg(funcs, group.sf.columns.to_list(), formula=True, as_address=True)
     df = df.stack(level=1, future_stack=True)  # noqa: PD013
 
     index = df.index.to_frame()

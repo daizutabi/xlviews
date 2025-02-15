@@ -9,15 +9,14 @@ from xlwings.constants import DVType, FormatConditionOperator
 from xlviews.colors import rgb
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
     from numpy.typing import NDArray
-    from pandas import DataFrame, Index
+    from pandas import Index
     from xlwings import Range as RangeImpl
     from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.core.range import Range
-    from xlviews.dataframes.sheet_frame import SheetFrame
 
 
 def constant(type_: str, name: str | None = None) -> int:
@@ -45,7 +44,7 @@ def constant(type_: str, name: str | None = None) -> int:
     return getattr(type_, name)
 
 
-def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterator[str]:
+def iter_columns(iterable: Iterable[str], columns: str | list[str]) -> Iterator[str]:
     """Yield the columns in the order of appearance with colon notation.
 
     Examples:
@@ -61,13 +60,13 @@ def iter_columns(sf: DataFrame | SheetFrame, columns: str | list[str]) -> Iterat
     if isinstance(columns, str):
         columns = [columns]
 
-    cs = [c for c in sf if isinstance(c, str)]
+    lst = list(iterable)
 
     for c in columns:
         if c.startswith("::"):
-            yield from cs[: cs.index(c[2:])]
+            yield from lst[: lst.index(c[2:])]
         elif c.startswith(":"):
-            yield from cs[: cs.index(c[1:]) + 1]
+            yield from lst[: lst.index(c[1:]) + 1]
         else:
             yield c
 

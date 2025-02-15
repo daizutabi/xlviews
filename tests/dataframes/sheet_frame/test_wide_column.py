@@ -99,19 +99,6 @@ def test_index_error(sf: SheetFrame, column):
         sf.index_past(column)
 
 
-def test_data(sf: SheetFrame, df: DataFrame):
-    df_ = sf.data
-    np.testing.assert_array_equal(df_.index, df.index)
-    np.testing.assert_array_equal(df_.index.names, df.index.names)
-    np.testing.assert_array_equal(df_.columns[:2], df.columns)
-    np.testing.assert_array_equal(df_.columns[2:], [*range(3), *range(4)])
-    np.testing.assert_array_equal(df_.columns.names, df.columns.names)
-    np.testing.assert_array_equal(df_.iloc[:, :2], df)
-    assert df_.iloc[:, 2:].isna().all().all()
-    assert df_.index.name == df.index.name
-    assert df_.columns.name == df.columns.name
-
-
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [

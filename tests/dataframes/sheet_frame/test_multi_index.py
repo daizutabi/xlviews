@@ -92,17 +92,6 @@ def test_index_error(sf: SheetFrame):
         sf.index_past("z")
 
 
-def test_data(sf: SheetFrame, df: DataFrame):
-    df_ = sf.data
-    np.testing.assert_array_equal(df_.index, df.index)
-    np.testing.assert_array_equal(df_.index.names, df.index.names)
-    np.testing.assert_array_equal(df_.columns, df.columns)
-    np.testing.assert_array_equal(df_.columns.names, df.columns.names)
-    np.testing.assert_array_equal(df_, df)
-    assert df_.index.name == df.index.name
-    assert df_.columns.name == df.columns.name
-
-
 @pytest.mark.parametrize(
     ("column", "offset", "address"),
     [

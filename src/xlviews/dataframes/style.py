@@ -257,7 +257,7 @@ def set_heat_frame_style(
     end = cell.offset(columns_nlevels + length - 1, index_nlevels - 1)
     set_style(start, end, "index")
 
-    width = len(sf.value_columns)
+    width = len(sf.columns)
 
     start = cell.offset(columns_nlevels - 1, index_nlevels)
     end = cell.offset(columns_nlevels - 1, index_nlevels + width - 1)
