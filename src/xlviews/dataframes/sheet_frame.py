@@ -6,9 +6,10 @@ import re
 from functools import partial
 from typing import TYPE_CHECKING, overload
 
+import numpy as np
 import pandas as pd
 import xlwings
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 from xlwings.constants import Direction
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any, Literal, Self
 
-    import numpy as np
     from numpy.typing import NDArray
 
 
@@ -357,23 +357,10 @@ class SheetFrame:
             formula=formula,
         )
 
-        values = [list(agg(r)) for r in rngs]
-        df = DataFrame(values, index=columns).T
-
-        if self.index.names[0]:
-            index = self._index_frame()
-            if len(index.columns) == 1:
-                df.index = pd.Index(index[index.columns[0]])
-            else:
-                df.index = MultiIndex.from_frame(index)
+        values = np.array([list(agg(r)) for r in rngs]).T
+        df = DataFrame(values, index=self.index, columns=columns)
 
         return df[columns[0]] if is_str else df
-
-    def _index_frame(self) -> DataFrame:
-        start = self.cell.offset(self.columns.nlevels - 1)
-        end = start.offset(len(self), self.index.nlevels - 1)
-        rng = self.sheet.range(start, end)
-        return rng.options(DataFrame).value.reset_index()  # type: ignore
 
     @overload
     def agg(
