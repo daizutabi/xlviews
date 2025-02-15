@@ -30,7 +30,6 @@ def test_init(sf: SheetFrame, sheet_module: Sheet):
     assert sf.sheet.name == sheet_module.name
     assert sf.index.nlevels == 2
     assert sf.columns.nlevels == 1
-    assert sf.columns_names is None
 
 
 def test_len(sf: SheetFrame):
@@ -60,8 +59,8 @@ def test_iter(sf: SheetFrame):
         ("y", None, "$G$3:$G$10"),
     ],
 )
-def test_column_range(sf: SheetFrame, column, offset, address):
-    assert sf.column_range(column, offset).get_address() == address
+def test_get_range(sf: SheetFrame, column, offset, address):
+    assert sf.get_range(column, offset).get_address() == address
 
 
 @pytest.mark.parametrize(

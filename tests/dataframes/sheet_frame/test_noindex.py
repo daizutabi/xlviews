@@ -28,7 +28,6 @@ def test_init(sf: SheetFrame, fc: FrameContainer):
     assert sf.column == fc.column
     assert sf.index.nlevels == 1
     assert sf.columns.nlevels == 1
-    assert sf.columns_names is None
 
 
 def test_repr(sf: SheetFrame):
@@ -65,8 +64,8 @@ def test_iter(sf: SheetFrame):
         ("a", None, "$C$3:$C$6"),
     ],
 )
-def test_column_range(sf: SheetFrame, column, offset, address):
-    assert sf.column_range(column, offset).get_address() == address
+def test_get_range(sf: SheetFrame, column, offset, address):
+    assert sf.get_range(column, offset).get_address() == address
 
 
 def test_get_address(sf: SheetFrame):

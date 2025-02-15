@@ -142,9 +142,7 @@ class Index:
             self.wide_index.append(key, values)
 
     def get_loc(self, key: str, offset: int = 0) -> int | tuple[int, int]:
-        """Get the location of a key.
-
-        The end is inclusive.
+        """Get the location of a key. The end index is inclusive.
 
         Examples:
             >>> index = Index(["a", "b"], {"c": [1, 2, 3], "d": [4, 5]})
@@ -168,25 +166,6 @@ class Index:
 
         raise NotImplementedError
 
-    def get_range(self, key: str, offset: int = 0) -> tuple[int, int]:
-        """Get the range of a key. The range is the start and end of the key.
-
-        The end is inclusive.
-
-        Examples:
-            >>> index = Index(["a", "b"], {"c": [1, 2, 3], "d": [4, 5]})
-            >>> index.get_range("a")
-            (0, 0)
-
-            >>> index.get_range("c", offset=4)
-            (6, 8)
-        """
-        loc = self.get_loc(key)
-        if isinstance(loc, int):
-            return loc + offset, loc + offset
-
-        return loc[0] + offset, loc[1] + offset
-
     def get_indexer(
         self,
         columns: dict[str, Any] | None = None,
@@ -199,12 +178,9 @@ class Index:
         if columns is not None:
             kwargs.update(columns)
 
-        idx = [
-            self.index.get_level_values(level) == value
-            for level, value in kwargs.items()
-        ]
+        idx = [self.index.get_level_values(k) == v for k, v in kwargs.items()]
 
         return np.where(np.all(idx, axis=0))[0] + offset
 
-    def to_frame(self) -> DataFrame:
-        return self.index.to_frame()
+    def to_frame(self, index: bool = True) -> DataFrame:
+        return self.index.to_frame(index=index)
