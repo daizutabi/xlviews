@@ -639,9 +639,9 @@ class SheetFrame:
         const_header: bool = True,
         autofit: bool = True,
         style: bool = True,
-    ) -> Self:
+    ) -> Table:
         if self.table:
-            return self
+            return self.table
 
         if self.columns.nlevels != 1:
             raise NotImplementedError
@@ -660,7 +660,7 @@ class SheetFrame:
         )
         self.table = table
 
-        return self
+        return table
 
     def unlist(self) -> Self:
         if self.table:

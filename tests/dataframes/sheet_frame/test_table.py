@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 from xlwings import Sheet
 
@@ -27,7 +26,7 @@ def sf(fc: FrameContainer):
 
 @pytest.fixture
 def table(sf: SheetFrame):
-    yield sf.as_table().table
+    yield sf.as_table()
     sf.unlist()
 
 

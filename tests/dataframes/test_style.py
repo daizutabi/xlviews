@@ -159,7 +159,7 @@ def test_table_style(sheet_module: Sheet):
     df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     df = df.set_index("x")
     sf = SheetFrame(17, 2, data=df, sheet=sheet_module)
-    table = sf.as_table(style=False).table
+    table = sf.as_table(style=False)
     assert table
     set_table_style(table)
     assert table.sheet.book.api.TableStyles("xlviews")
