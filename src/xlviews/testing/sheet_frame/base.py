@@ -129,3 +129,5 @@ if __name__ == "__main__":
     sf.add_wide_column("v", list(range(4)), number_format="0.0")
     sf.add_formula_column("u", "={u}+{a}")
     sf.add_formula_column("v", "={v}+{b}", style=True, autofit=True)
+
+    print(fcs[3].sf.columns.get_indexer(s="a", i="x"))

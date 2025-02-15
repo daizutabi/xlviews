@@ -107,6 +107,16 @@ class SheetFrame:
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
         return iter(self.columns)
 
+    def get_loc(self, column: str) -> int | tuple[int, int]:
+        if column in self.index.names:
+            return self.index.names.index(column) + self.column
+
+        return self.columns.get_loc(column, self.column + self.index.nlevels)
+
+    def get_range(self, column: str) -> tuple[int, int]:
+        loc = self.get_loc(column)
+        return loc if isinstance(loc, tuple) else (loc, loc)
+
     @overload
     def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
 
@@ -376,14 +386,13 @@ class SheetFrame:
         if isinstance(column, str) and column not in self.columns:
             self.add_column(column)
 
-        offset = self.column + self.index.nlevels
-        start, end = self.columns.get_range(column, offset)
+        start, end = self.get_range(column)
         rng = self.sheet.range((self.row + 1, start), (self.row + len(self), end))
 
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
             column = m.group(1)
-            loc = self.columns.get_loc(column, offset)
+            loc = self.get_loc(column)
 
             if isinstance(loc, int):
                 ref = Range(self.row + 1, loc, self.sheet)
@@ -657,8 +666,9 @@ class SheetFrame:
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)
 
-    def get_number_format(self, column: str | tuple) -> str:
-        return self.range(column, 0).impl.number_format
+    def get_number_format(self, column: str) -> str:
+        idx = self.column_index(column)
+        return self.sheet.range(self.row + self.columns.nlevels, idx).number_format
 
     def number_format(
         self,
@@ -679,6 +689,9 @@ class SheetFrame:
         if isinstance(number_format, dict):
             columns_format.update(number_format)
 
+        # offset = self.column + self.index.nlevels
+        # start, end = self.columns.get_range(column, offset)
+        # if self.columns.nlevels == 1:
         for column in chain(self.index.names, self.columns):
             if not column:
                 continue
