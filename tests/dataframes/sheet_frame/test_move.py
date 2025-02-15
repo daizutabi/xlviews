@@ -19,8 +19,7 @@ def test_range_original(sf: SheetFrame):
 
 
 def test_move_down(sf: SheetFrame):
-    moved = sf.move(20, "down")
-    assert moved.get_address() == "$C$2"
+    sf.move(20, "down")
     assert sf.cell.get_address() == "$C$22"
     assert sf.expand().get_address() == "$C$22:$E$26"
     assert sf.row == 22
@@ -31,8 +30,7 @@ def test_move_down(sf: SheetFrame):
 
 
 def test_move_right(sf: SheetFrame):
-    moved = sf.move(10, "right", width=3)
-    assert moved.get_address() == "$C$2"
+    sf.move(10, "right", width=3)
     assert sf.cell.get_address() == "$M$2"
     assert sf.expand().get_address() == "$M$2:$O$6"
     v = [[None, "a", "b"], [0, 1, 5], [1, 2, 6], [2, 3, 7], [3, 4, 8]]

@@ -135,6 +135,7 @@ def move_down(sf: SheetFrame, length: int) -> int:
 
     rows = sf.sheet.api.Rows(f"{start}:{end}")
     rows.Insert(Shift=Direction.xlDown)
+    sf.cell = sf.cell.offset()  # update cell
     return end - start + 1
 
 

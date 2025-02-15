@@ -16,7 +16,7 @@ def funcs():
 
 @pytest.fixture(scope="module")
 def sf(sf_parent: SheetFrame, funcs: list[str]):
-    return sf_parent.stats_frame(funcs, by=":y")
+    return StatsFrame(sf_parent, funcs, by=":y")
 
 
 def test_func(sf: StatsFrame, funcs: list[str]):
