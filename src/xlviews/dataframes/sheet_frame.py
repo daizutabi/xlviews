@@ -12,15 +12,15 @@ import xlwings
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
+from xlwings.constants import Direction
 
-from xlviews.chart.axes import set_first_position
+from xlviews.core.address import index_to_column_name
 from xlviews.core.formula import Func, aggregate
 from xlviews.core.index import Index, WideIndex
 from xlviews.core.range import Range, iter_addresses
 from xlviews.core.style import set_alignment
 from xlviews.decorators import suspend_screen_updates
 
-from . import modify
 from .groupby import GroupBy
 from .style import set_frame_style, set_wide_column_style
 from .table import Table
@@ -28,9 +28,6 @@ from .table import Table
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any, Literal, Self
-
-    from .dist_frame import DistFrame
-    from .stats_frame import StatsFrame
 
 
 class SheetFrame:
@@ -73,9 +70,6 @@ class SheetFrame:
             self.columns_names = list(data.columns.names)
             self.cell.options(transpose=True).value = self.columns_names
 
-    def _update_cell(self) -> None:  # important
-        self.cell = self.cell.offset()
-
     def expand(self) -> Range:
         start = self.row, self.column
         end = start[0] + self.height - 1, start[1] + self.width - 1
@@ -92,13 +86,11 @@ class SheetFrame:
     @property
     def row(self) -> int:
         """Return the row of the top-left cell."""
-        self._update_cell()
         return self.cell.row
 
     @property
     def column(self) -> int:
         """Return the column of the top-left cell."""
-        self._update_cell()
         return self.cell.column
 
     @property
@@ -730,8 +722,8 @@ class SheetFrame:
         """Get the adjacent cell of the SheetFrame."""
         return self.cell.offset(0, self.width + offset + 1)
 
-    def move(self, count: int, direction: str = "down", width: int = 0) -> RangeImpl:
-        return modify.move(self, count, direction, width)
+    def move(self, count: int, direction: str = "down", width: int = 0) -> None:
+        return move(self, count, direction, width)
 
     # def delete(self, direction: str = "up", *, entire: bool = False) -> None:
     #     return modify.delete(self, direction, entire=entire)
@@ -772,31 +764,55 @@ class SheetFrame:
 
         return self
 
-    def dist_frame(self, *args, **kwargs) -> DistFrame:
-        from .dist_frame import DistFrame
 
-        self.set_adjacent_column_width(1)
+def move(sf: SheetFrame, count: int, direction: str = "down", width: int = 0) -> None:
+    """Insert empty rows/columns to move the SheetFrame to the right or down.
 
-        self.dist = DistFrame(self, *args, **kwargs)
-        return self.dist
+    Args:
+        count (int): The number of empty rows/columns to insert.
+        direction (str): 'down' or 'right'
+        width (int, optional): The width of the columns to insert.
 
-    def stats_frame(self, *args, **kwargs) -> StatsFrame:
-        from .stats_frame import StatsFrame
+    Returns:
+        Range: Original cell.
+    """
 
-        self.stats = StatsFrame(self, *args, **kwargs)
-        return self.stats
+    match direction:
+        case "down":
+            return _move_down(sf, count)
 
-    def set_chart_position(self, pos: str = "right") -> None:
-        set_first_position(self, pos=pos)
+        case "right":
+            return _move_right(sf, count, width)
 
-    # def scatter(self, *args, **kwargs) -> Scatter:
-    #     return Scatter(*args, data=self, **kwargs)
+    raise ValueError("direction must be 'down' or 'right'")
 
-    # def plot(self, *args, **kwargs) -> Plot:
-    #     return Plot(*args, data=self, **kwargs)
 
-    # def bar(self, *args, **kwargs) -> Bar:
-    #     return Bar(*args, data=self, **kwargs)
+def _move_down(sf: SheetFrame, count: int) -> None:
+    start = sf.row - 1
+    end = start + count - 1
 
-    # def grid(self, *args, **kwargs) -> FacetGrid:
-    #     return FacetGrid(self, *args, **kwargs)
+    if sf.cell.offset(-1).formula:
+        end += 1
+
+    rows = sf.sheet.api.Rows(f"{start}:{end}")
+    rows.Insert(Shift=Direction.xlDown)
+
+    sf.cell = sf.cell.offset()  # update cell
+
+
+def _move_right(sf: SheetFrame, count: int, width: int) -> None:
+    start = sf.column - 1
+    end = start + count - 1
+
+    start_name = index_to_column_name(start)
+    end_name = index_to_column_name(end)
+    columns_name = f"{start_name}:{end_name}"
+
+    columns = sf.sheet.api.Columns(columns_name)
+    columns.Insert(Shift=Direction.xlToRight)
+
+    if width:
+        columns = sf.sheet.api.Columns(columns_name)
+        columns.ColumnWidth = width
+
+    sf.cell = sf.cell.offset()  # update cell
