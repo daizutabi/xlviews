@@ -111,9 +111,18 @@ class SheetFrame:
 
         return self.columns.get_loc(column, self.column + self.index.nlevels)
 
-    def get_range(self, column: str) -> tuple[int, int]:
+    def get_range(self, column: str) -> Range:
         loc = self.get_loc(column)
-        return loc if isinstance(loc, tuple) else (loc, loc)
+
+        if isinstance(loc, int):
+            loc = loc, loc
+        # return loc if isinstance(loc, tuple) else (loc, loc)
+
+        # rng = self.sheet.range((self.row + 1, start), (self.row + len(self), end))
+
+        start = self.row + self.columns.nlevels
+        end = start + len(self) - 1
+        return Range((start, loc[0]), (end, loc[1]), self.sheet)
 
     @overload
     def get_indexer(self, columns: str) -> int: ...
@@ -273,16 +282,10 @@ class SheetFrame:
         if self.columns.nlevels != 1:
             raise NotImplementedError
 
-        if isinstance(column, str) and column not in self.columns:
-            self.add_column(column)
-
-        start, end = self.get_range(column)
-        rng = self.sheet.range((self.row + 1, start), (self.row + len(self), end))
-
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
-            column = m.group(1)
-            loc = self.get_loc(column)
+            key = m.group(1)
+            loc = self.get_loc(key)
 
             if isinstance(loc, int):
                 ref = Range(self.row + 1, loc, self.sheet)
@@ -292,8 +295,12 @@ class SheetFrame:
                 ref = Range((self.row, loc[0]), (self.row, loc[0]), self.sheet)
                 addr = ref.get_address(column_absolute=False)
 
-            refs[column] = addr
+            refs[key] = addr
 
+        if isinstance(column, str) and column not in self.columns:
+            self.add_column(column)
+
+        rng = self.get_range(column).impl
         rng.value = formula.format(**refs)
 
         if number_format:
@@ -558,8 +565,7 @@ class SheetFrame:
 
                 for pattern, number_format in columns_format.items():
                     if re.match(pattern, column):
-                        start, end = self.get_range(column)
-                        rng = self.sheet.range((row_start, start), (row_end, end))
+                        rng = self.get_range(column).impl
                         rng.number_format = number_format
                         if autofit:
                             rng.autofit()
