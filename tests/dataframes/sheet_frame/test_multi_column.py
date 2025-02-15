@@ -52,7 +52,7 @@ def test_iter(sf: SheetFrame):
 
 
 def test_ranges(sf: SheetFrame):
-    for rng, i in zip(sf.ranges(), range(11, 26), strict=False):
+    for rng, i in zip(sf.iter_ranges(), range(11, 26), strict=False):
         c = string.ascii_uppercase[i]
         assert rng.get_address() == f"${c}$6:${c}$11"
 

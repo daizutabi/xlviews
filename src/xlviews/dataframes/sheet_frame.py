@@ -177,6 +177,26 @@ class SheetFrame:
         idx = self.get_indexer(columns)
         return [Range((start, i), (end, i), sheet=self.sheet) for i in idx]
 
+    def iter_ranges(self, axis: Literal[0, 1] = 0) -> Iterator[Range]:
+        if axis == 0:
+            start = self.row + self.columns.nlevels
+            end = start + len(self) - 1
+            offset = self.column + self.index.nlevels
+
+            for index in range(len(self.columns)):
+                yield Range((start, index + offset), (end, index + offset), self.sheet)
+
+        elif axis == 1:
+            start = self.column + self.index.nlevels
+            end = start + len(self.columns) - 1
+            offset = self.row + self.columns.nlevels
+
+            for index in range(len(self)):
+                yield Range((index + offset, start), (index + offset, end), self.sheet)
+
+        else:
+            raise ValueError("axis must be 0 or 1")
+
     def add_column(
         self,
         column: str,
@@ -401,7 +421,7 @@ class SheetFrame:
             columns = self.columns.to_list()
 
         agg = partial(
-            self._agg_column,
+            self._agg,
             row_absolute=row_absolute,
             column_absolute=column_absolute,
             include_sheetname=include_sheetname,
@@ -419,32 +439,12 @@ class SheetFrame:
         values = [[agg(f, r) for r in rngs] for f in func]
         return DataFrame(values, index=list(func), columns=columns)
 
-    def _agg_column(self, func: Func, rng: Range, **kwargs) -> str:
+    def _agg(self, func: Func, rng: Range, **kwargs) -> str:
         if func == "first":
             rng = rng[0]
             func = None
 
         return aggregate(func, rng, **kwargs)
-
-    def ranges(self, axis: Literal[0, 1] = 0) -> Iterator[Range]:
-        if axis == 0:
-            start = self.row + self.columns.nlevels
-            end = start + len(self) - 1
-            offset = self.column + self.index.nlevels
-
-            for index in range(len(self.columns)):
-                yield Range((start, index + offset), (end, index + offset), self.sheet)
-
-        elif axis == 1:
-            start = self.column + self.index.nlevels
-            end = start + len(self.columns) - 1
-            offset = self.row + self.columns.nlevels
-
-            for index in range(len(self)):
-                yield Range((index + offset, start), (index + offset, end), self.sheet)
-
-        else:
-            raise ValueError("axis must be 0 or 1")
 
     def melt(
         self,
@@ -469,7 +469,7 @@ class SheetFrame:
             formula=formula,
         )
 
-        df[value_name] = list(map(agg, self.ranges(axis=0)))
+        df[value_name] = list(map(agg, self.iter_ranges(axis=0)))
         return df
 
     def pivot_table(

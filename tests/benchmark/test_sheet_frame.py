@@ -66,7 +66,7 @@ def columns(request: pytest.FixtureRequest):
 
 
 def test_ranges(benchmark, sf: SheetFrame, shape):
-    x = benchmark(lambda: list(sf.ranges()))
+    x = benchmark(lambda: list(sf.iter_ranges()))
     assert len(x) == shape[0]
 
 
