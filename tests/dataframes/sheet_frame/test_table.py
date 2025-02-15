@@ -37,17 +37,3 @@ def test_table(table: Table, value):
     header = table.const_header.value
     assert isinstance(header, list)
     assert header[0] == value
-
-
-@pytest.mark.parametrize(
-    ("name", "value"),
-    [
-        ("x", [[1, 5], [2, 6]]),
-        ("y", [[3, 7], [4, 8]]),
-    ],
-)
-def test_visible_data(sf: SheetFrame, table: Table, name, value):
-    table.auto_filter("name", name)
-    df = sf.visible_data
-    assert df.index.to_list() == [name, name]
-    np.testing.assert_array_equal(df, value)

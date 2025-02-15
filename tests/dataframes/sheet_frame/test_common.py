@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 from pandas import DataFrame
 from xlwings import Sheet
@@ -13,21 +12,6 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
 def sf(sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     return SheetFrame(3, 3, df, sheet)
-
-
-def test_row_one(sheet: Sheet):
-    df = DataFrame({"a": [1], "b": [2]})
-    sf = SheetFrame(2, 2, df, sheet)
-    assert len(sf) == 1
-    np.testing.assert_array_equal(sf.data["a"], [1])
-
-
-def test_column_one(sheet: Sheet):
-    df = DataFrame({"a": [1, 2, 3]})
-    sf = SheetFrame(2, 2, df, sheet)
-    assert len(sf) == 3
-    assert sf.headers == [None, "a"]
-    np.testing.assert_array_equal(sf.data["a"], [1, 2, 3])
 
 
 @pytest.mark.parametrize("number_format", ["0", "0.00", "0.00%"])

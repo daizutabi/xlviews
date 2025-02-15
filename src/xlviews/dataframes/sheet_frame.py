@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
 import re
 from functools import partial
 from itertools import chain, takewhile
@@ -13,7 +12,6 @@ import xlwings
 from pandas import DataFrame, MultiIndex, Series
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
-from xlwings.constants import CellType
 
 from xlviews.chart.axes import set_first_position
 from xlviews.core.formula import Func, aggregate
@@ -78,20 +76,12 @@ class SheetFrame:
     def _update_cell(self) -> None:  # important
         self.cell = self.cell.offset()
 
-    def expand(self, mode: str = "table") -> RangeImpl:
-        self._update_cell()
-
-        if self.cell.value is None and self.columns.nlevels > 1:
-            end = self.cell.offset(self.columns.nlevels - 1).expand(mode)
-            return self.sheet.range(self.cell, end)
-
-        return self.cell.expand(mode)
-
     def __repr__(self) -> str:
-        return repr(self.expand()).replace("<Range ", "<SheetFrame ")
-
-    def __str__(self) -> str:
-        return str(self.expand()).replace("<Range ", "<SheetFrame ")
+        start = self.row, self.column
+        end = start[0] + self.height - 1, start[1] + self.width - 1
+        rng = Range(start, end, sheet=self.sheet)
+        cls = self.__class__.__name__
+        return f"<{cls} {rng.get_address(external=True)}>"
 
     def __len__(self) -> int:
         return len(self.index)
@@ -751,8 +741,9 @@ class SheetFrame:
         **columns_format,
     ) -> Self:
         if isinstance(number_format, str):
-            start = self.cell.offset(self.columns.nlevels, self.index.nlevels)
-            rng = self.sheet.range(start, self.expand().last_cell)
+            start = self.row + self.columns.nlevels, self.column + self.index.nlevels
+            end = self.row + self.height - 1, self.column + self.width - 1
+            rng = self.sheet.range(start, end)
             rng.number_format = number_format
             if autofit:
                 rng.autofit()
@@ -807,8 +798,8 @@ class SheetFrame:
     def move(self, count: int, direction: str = "down", width: int = 0) -> RangeImpl:
         return modify.move(self, count, direction, width)
 
-    def delete(self, direction: str = "up", *, entire: bool = False) -> None:
-        return modify.delete(self, direction, entire=entire)
+    # def delete(self, direction: str = "up", *, entire: bool = False) -> None:
+    #     return modify.delete(self, direction, entire=entire)
 
     def as_table(
         self,

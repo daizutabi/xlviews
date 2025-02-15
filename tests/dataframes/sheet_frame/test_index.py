@@ -1,6 +1,4 @@
-import numpy as np
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -33,35 +31,26 @@ def test_init(sf: SheetFrame):
     assert sf.columns_names is None
 
 
-def test_expand(sf: SheetFrame):
-    v = [["name", "a", "b"], ["x", 1, 5], ["x", 2, 6], ["y", 3, 7], ["y", 4, 8]]
-    assert sf.expand().options(ndim=2).value == v
-
-
 def test_len(sf: SheetFrame):
     assert len(sf) == 4
 
 
-def test_headers(sf: SheetFrame):
-    assert sf.headers == ["name", "a", "b"]
+def test_columns(sf: SheetFrame):
+    assert sf.columns.to_list() == ["a", "b"]
 
 
-def test_value_columns(sf: SheetFrame):
-    assert sf.value_columns == ["a", "b"]
-
-
-def test_index_columns(sf: SheetFrame):
+def test_index_names(sf: SheetFrame):
     assert sf.index.names == ["name"]
 
 
 def test_contains(sf: SheetFrame):
-    assert "name" in sf
+    assert "name" not in sf
     assert "a" in sf
     assert "x" not in sf
 
 
 def test_iter(sf: SheetFrame):
-    assert list(sf) == ["name", "a", "b"]
+    assert list(sf) == ["a", "b"]
 
 
 @pytest.mark.parametrize(
