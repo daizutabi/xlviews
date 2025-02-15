@@ -1,6 +1,8 @@
 import pytest
+from pandas import DataFrame, Series
 from xlwings import Sheet
 
+from xlviews.core.range import Range
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_excel_installed
 from xlviews.testing.sheet_frame.base import NoIndex
@@ -42,10 +44,6 @@ def test_len(sf: SheetFrame):
     assert len(sf) == 4
 
 
-def test_index_names(sf: SheetFrame):
-    assert sf.index.names == [None]
-
-
 def test_contains(sf: SheetFrame):
     assert "a" in sf
     assert "x" not in sf
@@ -53,6 +51,23 @@ def test_contains(sf: SheetFrame):
 
 def test_iter(sf: SheetFrame):
     assert list(sf) == ["a", "b"]
+
+
+def test_value(sf: SheetFrame, df: DataFrame):
+    assert sf.value.equals(df.astype(float))
+
+
+@pytest.mark.parametrize(("column", "loc"), [("a", 3), ("b", 4)])
+def test_loc(sf: SheetFrame, column, loc):
+    assert sf.get_loc(column) == loc
+
+
+@pytest.mark.parametrize(
+    ("columns", "indexer"),
+    [(["a"], [3]), (["b"], [4]), (None, [3, 4])],
+)
+def test_get_indexer(sf: SheetFrame, columns, indexer):
+    assert sf.get_indexer(columns) == indexer
 
 
 @pytest.mark.parametrize(
@@ -64,12 +79,23 @@ def test_iter(sf: SheetFrame):
         ("a", None, "$C$3:$C$6"),
     ],
 )
-def test_get_range(sf: SheetFrame, column, offset, address):
+def test_get_range(sf: SheetFrame, column: str, offset, address):
     assert sf.get_range(column, offset).get_address() == address
 
 
-def test_get_address(sf: SheetFrame):
-    df = sf.get_address()
+@pytest.mark.parametrize(
+    ("axis", "v0", "v1"),
+    [(0, [1, 2, 3, 4], [5, 6, 7, 8]), (1, [1, 5], [2, 6])],
+)
+def test_iter_ranges(sf: SheetFrame, axis, v0, v1):
+    values = list(sf.iter_ranges(axis))
+    assert values[0].value == v0
+    assert values[1].value == v1
+
+
+@pytest.mark.parametrize("columns", [["a", "b"], None])
+def test_get_address_none(sf: SheetFrame, columns):
+    df = sf.get_address(columns)
     assert df.columns.to_list() == ["a", "b"]
     assert df.index.to_list() == [0, 1, 2, 3]
     assert df.loc[0, "a"] == "$C$3"
@@ -80,3 +106,75 @@ def test_get_address(sf: SheetFrame):
     assert df.loc[2, "b"] == "$D$5"
     assert df.loc[3, "a"] == "$C$6"
     assert df.loc[3, "a"] == "$C$6"
+
+
+def test_get_address_str(sf: SheetFrame):
+    s = sf.get_address("a", formula=True, row_absolute=False)
+    assert s.name == "a"
+    assert s.index.to_list() == [0, 1, 2, 3]
+    assert s.to_list() == ["=$C3", "=$C4", "=$C5", "=$C6"]
+
+
+def test_agg_str(sf: SheetFrame):
+    s = sf.agg("sum", row_absolute=False, column_absolute=False)
+    assert s.name == "sum"
+    assert s.index.to_list() == ["a", "b"]
+    assert s.to_list() == ["AGGREGATE(9,7,C3:C6)", "AGGREGATE(9,7,D3:D6)"]
+
+
+def test_agg_dict(sf: SheetFrame):
+    s = sf.agg({"a": "min", "b": "max"}, row_absolute=False, column_absolute=False)
+    assert s.name is None
+    assert s.index.to_list() == ["a", "b"]
+    assert s.to_list() == ["AGGREGATE(5,7,C3:C6)", "AGGREGATE(4,7,D3:D6)"]
+
+
+def test_agg_none(sf: SheetFrame):
+    s = sf.agg()
+    assert s.name is None
+    assert s.index.to_list() == ["a", "b"]
+    assert s.to_list() == ["$C$3:$C$6", "$D$3:$D$6"]
+
+
+def test_agg_range(sf: SheetFrame):
+    func = Range(100, 200, sf.sheet)
+    s = sf.agg(func)
+    assert s.name is None
+    assert s.index.to_list() == ["a", "b"]
+    assert 'IF(GR100="soa"' in s["a"]
+
+
+def test_agg_range_error(sf: SheetFrame, sheet: Sheet):
+    func = Range(100, 200, sheet)
+    with pytest.raises(ValueError, match="Range is from a different sheet"):
+        sf.agg(func)
+
+
+def test_agg_list(sf: SheetFrame):
+    df = sf.agg(["median", "mean"])
+    assert df.index.to_list() == ["median", "mean"]
+    assert df.columns.to_list() == ["a", "b"]
+    assert df.loc["median", "a"] == "AGGREGATE(12,7,$C$3:$C$6)"
+    assert df.loc["mean", "b"] == "AGGREGATE(1,7,$D$3:$D$6)"
+
+
+def test_agg_first(sf: SheetFrame):
+    s = sf.agg("first")
+    assert s.name == "first"
+    assert s.to_list() == ["$C$3", "$D$3"]
+
+
+def test_melt_none(sf: SheetFrame):
+    s = sf.melt()
+    assert isinstance(s, Series)
+    assert s.name is None
+    assert s.index.to_list() == ["a", "b"]
+    assert s.to_list() == ["$C$3:$C$6", "$D$3:$D$6"]
+
+
+def test_melt_str(sf: SheetFrame):
+    s = sf.melt("std")
+    assert isinstance(s, Series)
+    assert s.name == "std"
+    assert s.index.to_list() == ["a", "b"]
+    assert s.to_list() == ["AGGREGATE(8,7,$C$3:$C$6)", "AGGREGATE(8,7,$D$3:$D$6)"]
