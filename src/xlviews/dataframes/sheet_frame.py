@@ -112,9 +112,6 @@ class SheetFrame:
         return self.columns.get_loc(column, self.column + self.index.nlevels)
 
     @overload
-    def get_indexer(self, columns: str) -> int: ...
-
-    @overload
     def get_indexer(self, columns: list[str] | None) -> list[int]: ...
 
     @overload
@@ -122,13 +119,10 @@ class SheetFrame:
 
     def get_indexer(
         self,
-        columns: str | list[str] | dict[str, Any] | None,
-    ) -> int | list[int] | NDArray[np.intp]:
+        columns: list[str] | dict[str, Any] | None,
+    ) -> list[int] | NDArray[np.intp]:
         if isinstance(columns, dict):
             return self.columns.get_indexer(columns, self.column + self.index.nlevels)
-
-        if isinstance(columns, str):
-            return self.get_indexer([columns])[0]
 
         column = self.column
         if columns is None:
@@ -425,12 +419,7 @@ class SheetFrame:
         values = [[agg(f, r) for r in rngs] for f in func]
         return DataFrame(values, index=list(func), columns=columns)
 
-    def _agg_column(
-        self,
-        func: Func,
-        rng: Range,
-        **kwargs,
-    ) -> str:
+    def _agg_column(self, func: Func, rng: Range, **kwargs) -> str:
         if func == "first":
             rng = rng[0]
             func = None
