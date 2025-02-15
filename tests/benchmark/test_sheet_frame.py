@@ -11,19 +11,18 @@ from xlviews.testing import is_excel_installed
 pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
 
 
-def create_data_frame(rows: int = 10, columns: int = 10) -> DataFrame:
+def create_data_frame(rows: int = 10, columns: int = 20) -> DataFrame:
     values = np.arange(rows * columns).reshape((rows, columns))
     cnames = [index_to_column_name(i + 1) for i in range(columns)]
     df = DataFrame(values, columns=cnames)
-    df.index.name = "name"
-    return df
+    return df.set_index(df.columns.to_list()[:10])
 
 
 def create_sheet_frame(df: DataFrame, sheet: Sheet) -> SheetFrame:
     return SheetFrame(2, 3, data=df, sheet=sheet)
 
 
-@pytest.mark.parametrize(("rows", "columns"), [(10, 10), (100, 100), (1000, 100)])
+@pytest.mark.parametrize(("rows", "columns"), [(10, 20), (100, 100), (1000, 100)])
 def test_create_sheet_frame(benchmark, sheet: Sheet, rows: int, columns: int):
     df = create_data_frame(rows, columns)
     sf = benchmark(create_sheet_frame, df, sheet)
@@ -31,7 +30,7 @@ def test_create_sheet_frame(benchmark, sheet: Sheet, rows: int, columns: int):
 
 
 @pytest.fixture(
-    params=[(100, 10), (1000, 10), (10000, 10), (10, 100), (10, 1000)],
+    params=[(100, 20), (1000, 20), (10000, 20), (10, 100), (10, 1000)],
     ids=lambda x: "_".join([str(i) for i in x]),
 )
 def shape(request: pytest.FixtureRequest):
@@ -43,14 +42,6 @@ def sf(shape: tuple[int, int], sheet: Sheet):
     rows, columns = shape
     df = create_data_frame(rows, columns)
     return create_sheet_frame(df, sheet)
-
-
-def test_len(benchmark, sf: SheetFrame, shape):
-    assert benchmark(len, sf) == shape[0]
-
-
-def test_columns(benchmark, sf: SheetFrame, shape):
-    assert benchmark(lambda: len(sf.columns.to_list())) == shape[1] + 1
 
 
 @pytest.fixture(
@@ -65,9 +56,10 @@ def columns(request: pytest.FixtureRequest):
     return request.param
 
 
-def test_ranges(benchmark, sf: SheetFrame, shape):
-    x = benchmark(lambda: list(sf.iter_ranges()))
-    assert len(x) == shape[0]
+@pytest.mark.parametrize("axis", [0, 1])
+def test_ranges(benchmark, sf: SheetFrame, shape, axis):
+    x = benchmark(lambda: list(sf.iter_ranges(axis)))
+    assert len(x) == shape[1 - axis] - 10 * (1 - axis)
 
 
 def test_agg(benchmark, sf: SheetFrame, columns):
@@ -85,4 +77,4 @@ def test_groupby(benchmark, sf: SheetFrame, columns):
 def test_groupby_agg(benchmark, sf: SheetFrame, columns, shape):
     x = benchmark(lambda: sf.groupby(columns).agg(["sum", "count"]))
     assert isinstance(x, DataFrame)
-    assert x.shape == (len(sf), 2 * shape[1])
+    assert x.shape == (len(sf), 2 * (shape[1] - 10))
