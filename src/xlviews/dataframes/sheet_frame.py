@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from functools import partial
-from itertools import chain, takewhile
 from typing import TYPE_CHECKING, overload
 
 import pandas as pd
@@ -16,7 +15,7 @@ from xlwings.constants import Direction
 
 from xlviews.core.address import index_to_column_name
 from xlviews.core.formula import Func, aggregate
-from xlviews.core.index import Index, WideIndex
+from xlviews.core.index import Index
 from xlviews.core.range import Range, iter_addresses
 from xlviews.core.style import set_alignment
 from xlviews.decorators import suspend_screen_updates
@@ -29,6 +28,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from typing import Any, Literal, Self
 
+    import numpy as np
+    from numpy.typing import NDArray
+
 
 class SheetFrame:
     """Data frame on an Excel sheet."""
@@ -37,7 +39,6 @@ class SheetFrame:
     sheet: Sheet
     index: Index
     columns: Index
-    wide_columns: WideIndex
     columns_names: list[str] | None = None
     table: Table | None = None
 
@@ -62,7 +63,6 @@ class SheetFrame:
 
         self.index = Index(data.index)
         self.columns = Index(data.columns)
-        self.wide_columns = WideIndex()
 
         self.cell.options(DataFrame).value = data
 
@@ -107,70 +107,21 @@ class SheetFrame:
     def __iter__(self) -> Iterator[str | tuple[str, ...] | None]:
         return iter(self.columns)
 
-    @overload
-    def index_past(self, columns: str | tuple) -> int | tuple[int, int]: ...
+    def get_loc(self, column: str) -> int | tuple[int, int]:
+        if column in self.index.names:
+            return self.index.names.index(column) + self.column
 
-    @overload
-    def index_past(
-        self,
-        columns: Sequence[str | tuple],
-    ) -> list[int] | list[tuple[int, int]]: ...
+        return self.columns.get_loc(column, self.column + self.index.nlevels)
 
-    def index_past(
-        self,
-        columns: str | tuple | Sequence[str | tuple],
-    ) -> int | tuple[int, int] | list[int] | list[tuple[int, int]]:
-        """Return the column index (1-indexed)."""
-        if isinstance(columns, str | tuple):
-            return self.index_past([columns])[0]
+    def get_range(self, column: str) -> tuple[int, int]:
+        loc = self.get_loc(column)
+        return loc if isinstance(loc, tuple) else (loc, loc)
 
-        if self.columns_names:
-            columns_str = [c for c in columns if isinstance(c, str)]
-            if len(columns_str) == len(columns):
-                return self._index_row(columns_str)
+    def get_indexer(self, columns: dict[str, Any]) -> NDArray[np.intp]:
+        if self.columns.nlevels == 1:
+            raise NotImplementedError
 
-        idx = []
-        columns_ = [*self.index.names, *self.columns]
-        offset = self.column
-
-        for column in columns:
-            if column in columns_:
-                idx.append(columns_.index(column) + offset)
-            else:
-                idx.append(self._index_wide(column))
-
-        return idx
-
-    def _index_row(self, columns: list[str]) -> list[int]:
-        if not self.columns_names:
-            raise ValueError("columns names are not specified")
-
-        columns_names = self.columns_names
-        offset = self.row
-        return [columns_names.index(c) + offset for c in columns]
-
-    def _index_wide(
-        self,
-        column: str | tuple[str, str | float],
-    ) -> tuple[int, int] | int:
-        value_columns = self.columns.to_list()
-
-        start = self.row - 1, self.column + self.index.nlevels
-        end = start[0], start[1] + len(value_columns) - 1
-        names = self.sheet.range(start, end).options(ndim=1).value or []
-
-        name = column[0] if isinstance(column, tuple) else column
-        start = names.index(name)
-        end = len(list(takewhile(lambda n: n is None, names[start + 1 :]))) + start
-
-        offset = self.index.nlevels + self.cell.column
-
-        if isinstance(column, str):
-            return start + offset, end + offset
-
-        values = value_columns[start : end + 1]
-
-        return values.index(column[1]) + start + offset
+        return self.columns.get_indexer(columns, self.column + self.index.nlevels)
 
     @overload
     def column_index(self, columns: str) -> int: ...
@@ -194,55 +145,6 @@ class SheetFrame:
 
         cs = [*self.index.names, *self.columns]
         return [cs.index(c) + column for c in columns]
-
-    def range(
-        self,
-        column: str | tuple,
-        offset: Literal[0, -1] | None = None,
-    ) -> Range:
-        """Return the range of the column.
-
-        Args:
-            column (str or tuple): The name of the column.
-            offset (int, optional):
-                - None: entire row data without column row
-                - 0: first row
-                - -1: column row
-        """
-        if self.columns_names and isinstance(column, str):
-            raise NotImplementedError
-
-        index = self.index_past(column)
-
-        match offset:
-            case 0:  # first data row
-                start = end = self.row + self.columns.nlevels
-                if not isinstance(index, tuple):
-                    return Range((start, index), sheet=self.sheet)
-
-            case -1:  # column row
-                start = end = self.row
-                if isinstance(column, tuple) and self.columns.nlevels == 1:
-                    start -= 1  # wide column
-                else:
-                    end += self.columns.nlevels - 1
-                    if isinstance(index, tuple):
-                        start -= 1
-
-            case None:  # entire data rows
-                start = self.row + self.columns.nlevels
-                end = start + len(self) - 1
-
-            case _:
-                msg = f"invalid offset: {offset}"
-                raise ValueError(msg)
-
-        if isinstance(index, tuple):  # wide column
-            column_start, column_end = index
-        else:
-            column_start = column_end = index
-
-        return Range((start, column_start), (end, column_end), sheet=self.sheet)
 
     @overload
     def column_range(
@@ -376,14 +278,13 @@ class SheetFrame:
         if isinstance(column, str) and column not in self.columns:
             self.add_column(column)
 
-        offset = self.column + self.index.nlevels
-        start, end = self.columns.get_range(column, offset)
+        start, end = self.get_range(column)
         rng = self.sheet.range((self.row + 1, start), (self.row + len(self), end))
 
         refs = {}
         for m in re.finditer(r"{(.+?)}", formula):
             column = m.group(1)
-            loc = self.columns.get_loc(column, offset)
+            loc = self.get_loc(column)
 
             if isinstance(loc, int):
                 ref = Range(self.row + 1, loc, self.sheet)
@@ -657,41 +558,46 @@ class SheetFrame:
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)
 
-    def get_number_format(self, column: str | tuple) -> str:
-        return self.range(column, 0).impl.number_format
+    def get_number_format(self, column: str) -> str:
+        idx = self.column_index(column)
+        return self.sheet.range(self.row + self.columns.nlevels, idx).number_format
 
-    def number_format(
+    def number_format(  # noqa: C901
         self,
         number_format: str | dict | None = None,
         *,
         autofit: bool = False,
         **columns_format,
     ) -> Self:
-        if isinstance(number_format, str):
-            start = self.row + self.columns.nlevels, self.column + self.index.nlevels
-            end = self.row + self.height - 1, self.column + self.width - 1
-            rng = self.sheet.range(start, end)
-            rng.number_format = number_format
-            if autofit:
-                rng.autofit()
-            return self
-
         if isinstance(number_format, dict):
             columns_format.update(number_format)
 
-        for column in chain(self.index.names, self.columns):
-            if not column:
-                continue
+        row_start = self.row + self.columns.nlevels
+        row_end = row_start + len(self) - 1
 
-            for pattern, number_format in columns_format.items():
-                column_name = column if isinstance(column, str) else column[0]
+        if self.columns.nlevels == 1:
+            for column in [*self.index.names, *self.columns]:
+                if not column:
+                    continue
 
-                if re.match(pattern, column_name):
-                    rng = self.range(column).impl
-                    rng.number_format = number_format
-                    if autofit:
-                        rng.autofit()
-                    break
+                for pattern, number_format in columns_format.items():
+                    if re.match(pattern, column):
+                        start, end = self.get_range(column)
+                        rng = self.sheet.range((row_start, start), (row_end, end))
+                        rng.number_format = number_format
+                        if autofit:
+                            rng.autofit()
+                        break
+
+        elif isinstance(number_format, str):
+            for i in self.get_indexer(columns_format):
+                rng = self.sheet.range((row_start, i), (row_end, i))
+                rng.number_format = number_format
+                if autofit:
+                    rng.autofit()
+
+        else:
+            raise NotImplementedError
 
         return self
 
@@ -724,9 +630,6 @@ class SheetFrame:
 
     def move(self, count: int, direction: str = "down", width: int = 0) -> None:
         return move(self, count, direction, width)
-
-    # def delete(self, direction: str = "up", *, entire: bool = False) -> None:
-    #     return modify.delete(self, direction, entire=entire)
 
     def as_table(
         self,

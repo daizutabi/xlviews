@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
+    from numpy.typing import NDArray
     from pandas import DataFrame
     from pandas._typing import Axes
 
@@ -184,6 +186,25 @@ class Index:
             return loc + offset, loc + offset
 
         return loc[0] + offset, loc[1] + offset
+
+    def get_indexer(
+        self,
+        columns: dict[str, Any] | None = None,
+        offset: int = 0,
+        **kwargs,
+    ) -> NDArray[np.intp]:
+        if self.index.nlevels == 1:
+            raise NotImplementedError
+
+        if columns is not None:
+            kwargs.update(columns)
+
+        idx = [
+            self.index.get_level_values(level) == value
+            for level, value in kwargs.items()
+        ]
+
+        return np.where(np.all(idx, axis=0))[0] + offset
 
     def to_frame(self) -> DataFrame:
         return self.index.to_frame()

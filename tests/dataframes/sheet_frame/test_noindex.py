@@ -57,18 +57,6 @@ def test_iter(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(
-    ("column", "index"),
-    [
-        ("a", 3),
-        ("b", 4),
-        (["a", "b"], [3, 4]),
-    ],
-)
-def test_index(sf: SheetFrame, column, index):
-    assert sf.index_past(column) == index
-
-
-@pytest.mark.parametrize(
     ("column", "offset", "address"),
     [
         ("a", 0, "$C$3"),
@@ -77,13 +65,8 @@ def test_index(sf: SheetFrame, column, index):
         ("a", None, "$C$3:$C$6"),
     ],
 )
-def test_range(sf: SheetFrame, column, offset, address):
-    assert sf.range(column, offset).get_address() == address
-
-
-def test_range_error(sf: SheetFrame):
-    with pytest.raises(ValueError, match="invalid offset"):
-        sf.range("a", 1)  # type: ignore
+def test_column_range(sf: SheetFrame, column, offset, address):
+    assert sf.column_range(column, offset).get_address() == address
 
 
 def test_get_address(sf: SheetFrame):
