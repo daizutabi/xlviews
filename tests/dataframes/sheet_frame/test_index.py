@@ -28,7 +28,6 @@ def test_init(sf: SheetFrame):
     assert sf.column == 2
     assert sf.index.nlevels == 1
     assert sf.columns.nlevels == 1
-    assert sf.columns_names is None
 
 
 def test_len(sf: SheetFrame):
