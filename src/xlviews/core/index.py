@@ -206,5 +206,5 @@ class Index:
 
         return np.where(np.all(idx, axis=0))[0] + offset
 
-    def to_frame(self) -> DataFrame:
-        return self.index.to_frame()
+    def to_frame(self, index: bool = True) -> DataFrame:
+        return self.index.to_frame(index=index)

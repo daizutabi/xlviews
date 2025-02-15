@@ -39,7 +39,6 @@ class SheetFrame:
     sheet: Sheet
     index: Index
     columns: Index
-    columns_names: list[str] | None = None
     table: Table | None = None
 
     @suspend_screen_updates
@@ -67,8 +66,7 @@ class SheetFrame:
         self.cell.options(DataFrame).value = data
 
         if data.columns.nlevels > 1 and data.index.nlevels == 1:
-            self.columns_names = list(data.columns.names)
-            self.cell.options(transpose=True).value = self.columns_names
+            self.cell.options(transpose=True).value = data.columns.names
 
     def expand(self) -> Range:
         start = self.row, self.column
@@ -455,30 +453,25 @@ class SheetFrame:
 
         return aggregate(func, rng, **kwargs)
 
-    def ranges(self) -> Iterator[Range]:
-        if self.columns_names is None:
-            start = self.column + self.index.nlevels
-            end = start + len(self.columns) - 1
-            offset = self.row + self.columns.nlevels
-
-            for index in range(len(self)):
-                yield Range(
-                    (index + offset, start),
-                    (index + offset, end),
-                    sheet=self.sheet,
-                )
-
-        else:
+    def ranges(self, axis: Literal[0, 1] = 0) -> Iterator[Range]:
+        if axis == 0:
             start = self.row + self.columns.nlevels
             end = start + len(self) - 1
             offset = self.column + self.index.nlevels
 
             for index in range(len(self.columns)):
-                yield Range(
-                    (start, index + offset),
-                    (end, index + offset),
-                    sheet=self.sheet,
-                )
+                yield Range((start, index + offset), (end, index + offset), self.sheet)
+
+        elif axis == 1:
+            start = self.column + self.index.nlevels
+            end = start + len(self.columns) - 1
+            offset = self.row + self.columns.nlevels
+
+            for index in range(len(self)):
+                yield Range((index + offset, start), (index + offset, end), self.sheet)
+
+        else:
+            raise ValueError("axis must be 0 or 1")
 
     def melt(
         self,
@@ -491,11 +484,7 @@ class SheetFrame:
         formula: bool = False,
     ) -> DataFrame:
         """Unpivot a SheetFrame from wide to long format."""
-        if self.columns_names is None:
-            raise NotImplementedError
-
-        columns = self.columns.to_list()
-        df = DataFrame(columns, columns=self.columns_names)
+        df = self.columns.to_frame()
 
         agg = partial(
             aggregate,
@@ -507,8 +496,16 @@ class SheetFrame:
             formula=formula,
         )
 
-        df[value_name] = list(map(agg, self.ranges()))
+        df[value_name] = list(map(agg, self.ranges(axis=0)))
         return df
+
+    def _iter_row_ranges(self) -> Iterator[Range]:
+        start = self.row + self.columns.nlevels
+        end = start + len(self) - 1
+        offset = self.column + self.index.nlevels
+
+        for index in range(len(self.columns)):
+            yield Range((start, index + offset), (end, index + offset), self.sheet)
 
     def pivot_table(
         self,
