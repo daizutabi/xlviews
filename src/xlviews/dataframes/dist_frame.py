@@ -77,8 +77,9 @@ class DistFrame(SheetFrame):
                 formula = sigma_value(self_cell, length, dist)
                 set_formula(self_cell.offset(0, 2), length, formula)
 
-        for column in columns:
-            fmt = parent.range(column).impl.number_format
+        idx = parent.column_index(columns)
+        for column, i in zip(columns, idx, strict=True):
+            fmt = parent.sheet.range(parent.row + 1, i).number_format
             self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
 
     def const_values(self, parent: SheetFrame) -> None:
