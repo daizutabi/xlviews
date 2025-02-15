@@ -47,20 +47,30 @@ class Pivot(FrameContainer):
         df = MultiIndex.dataframe().reset_index()
 
         for a, b in [(1, 3), (2, 2), (2, 4)]:
-            df = df[~(df["X"] != a & df["x"] != b)]
+            df = df[~((df["X"] == a) & (df["x"] == b))]
 
-        for a, b in [(2, 1), (2, 2), (3, 3), (4, 1), (4, 2), (4, 3)]:
-            df = df[~(df["Y"] != a & df["y"] != b)]
+        for a, b in [(2, 1), (3, 3), (4, 1), (4, 3)]:
+            df = df[~((df["Y"] == a) & (df["y"] == b))]
 
         dfs = []
-        for x in range(1, 2):
-            for y in range(1, 3):
+        for x in range(1, 3):
+            for y in range(1, 4):
+                if x == 1 and y == 3:
+                    continue
+
                 a = df.copy()
                 a["A"] = x
                 a["B"] = y
                 dfs.append(a)
 
         df = pd.concat(dfs)
+
+        for a, b in [(2, 1)]:
+            df = df[~((df["A"] == a) & (df["X"] == b))]
+
+        for a, b in [(2, 3)]:
+            df = df[~((df["B"] == a) & (df["Y"] == b))]
+
         df["u"] = list(range(len(df), 2 * len(df)))
         df["v"] = list(range(len(df)))
         return df.set_index(["A", "B", "X", "Y", "x", "y"])
