@@ -190,7 +190,7 @@ class GroupBy:
         idx = [cs.index(c) + column for c in self.by]
 
         agg = partial(
-            self._agg_column,
+            self._agg,
             "first",
             row_absolute=row_absolute,
             column_absolute=column_absolute,
@@ -237,7 +237,7 @@ class GroupBy:
         index = MultiIndex.from_frame(index_df)
 
         agg = partial(
-            self._agg_column,
+            self._agg,
             row_absolute=row_absolute,
             column_absolute=column_absolute,
             include_sheetname=include_sheetname,
@@ -258,12 +258,7 @@ class GroupBy:
         m_columns = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
         return DataFrame(values, index=index, columns=m_columns)
 
-    def _agg_column(
-        self,
-        func: Func,
-        column: int,
-        **kwargs,
-    ) -> Iterator[str]:
+    def _agg(self, func: Func, column: int, **kwargs) -> Iterator[str]:
         if func == "first":
             func = None
             for row in self.values():

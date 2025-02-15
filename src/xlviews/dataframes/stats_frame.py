@@ -159,5 +159,5 @@ def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None
             if func == "soa" and col != idx[0]:
                 set_number_format(rc, "0.0%")
 
-    rng = sf.column_range(func_column_name)
+    rng = sf.get_range(func_column_name)
     set_font(rng, italic=True)

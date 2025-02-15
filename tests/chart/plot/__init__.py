@@ -21,7 +21,7 @@ if __name__ == "__main__":
     df.columns = MultiIndex.from_arrays([a, b, c, d], names=["s", "t", "r", "i"])
     sf = SheetFrame(2, 2, df, sheet_module)
 
-    len(list(sf.ranges()))
+    len(list(sf.iter_ranges()))
 
     columns = sf.value_columns
     DataFrame(columns, columns=sf.columns_names)
