@@ -152,7 +152,6 @@ def set_tick_labels(
 ) -> None:
     name = name or rcParams["chart.font.name"]
     size = size or rcParams["chart.axis.ticklabels.font.size"]
-
     set_font_api(axis.TickLabels, name, size=size)
 
     if number_format:

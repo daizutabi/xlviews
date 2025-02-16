@@ -40,9 +40,24 @@ if __name__ == "__main__":
     for key, s in df.iterrows():
         print(key, s["x"], s["y"])
         ax.add_series(s["x"], s["y"], label=f"{key}")
+    ax.set(
+        xlabel="xlabel",
+        ylabel="ylabel",
+        title="title",
+        xticks=(0, 10, 5),
+        legend=(-1, -1),
+    )
 
-    ax = Axes(chart_type=ChartType.xlLine)
+    ax = Axes(chart_type=ChartType.xlXYScatterLines)
     df = sf.groupby(["b", "c"]).agg(include_sheetname=True)
     for key, s in df.iterrows():
         print(key, s["x"], s["y"])
         ax.add_series(s["x"], s["y"], label=f"{key[0]}_{key[1]}")  # type: ignore
+    ax.set(
+        xlabel="xlabel",
+        ylabel="ylabel",
+        title="title",
+        xticks=(0, 20, 4),
+        yticks=(0, 20, 4),
+        legend=(1, 1),
+    )

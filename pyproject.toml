@@ -94,6 +94,7 @@ ignore = [
     "PGH003",
     "PLR",
     "RUF001",
+    "RUF003",
     "SIM102",
     "SIM108",
     "TD",
