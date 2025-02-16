@@ -17,7 +17,7 @@ from xlviews.core.style import (
     set_font,
     set_number_format,
 )
-from xlviews.decorators import suspend_screen_updates
+from xlviews.utils import suspend_screen_updates
 
 from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style

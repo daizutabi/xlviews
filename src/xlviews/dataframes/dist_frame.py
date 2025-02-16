@@ -6,8 +6,7 @@ import numpy as np
 from pandas import DataFrame
 
 from xlviews.core.range import Range
-from xlviews.decorators import suspend_screen_updates
-from xlviews.utils import iter_columns
+from xlviews.utils import iter_columns, suspend_screen_updates
 
 from .sheet_frame import SheetFrame
 
