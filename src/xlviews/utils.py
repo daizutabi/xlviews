@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import wraps
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
-import xlwings as xw
+import xlwings
 from pandas import DataFrame, Series
 from xlwings.constants import DVType, FormatConditionOperator
 
@@ -40,7 +40,7 @@ def constant(type_: str, name: str | None = None) -> int:
     if not name.startswith("xl"):
         name = "xl" + name[0].upper() + name[1:]
 
-    type_ = getattr(xw.constants, type_)
+    type_ = getattr(xlwings.constants, type_)
 
     return getattr(type_, name)
 
@@ -153,7 +153,7 @@ def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
 
     @wraps(func)
     def _func(*args: P.args, **kwargs: P.kwargs) -> R:
-        if app := xw.apps.active:
+        if app := xlwings.apps.active:
             is_updating = app.screen_updating
             app.screen_updating = False
 
