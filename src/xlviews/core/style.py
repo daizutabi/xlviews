@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import xlwings as xw
+import xlwings
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 from xlwings.constants import (
@@ -201,7 +201,7 @@ def hide_unique(
 
 
 def hide_gridlines(sheet: Sheet | None = None) -> None:
-    sheet = sheet or xw.sheets.active
+    sheet = sheet or xlwings.sheets.active
     sheet.book.app.api.ActiveWindow.DisplayGridlines = False
 
 
