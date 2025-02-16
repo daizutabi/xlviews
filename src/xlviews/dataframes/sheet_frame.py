@@ -19,7 +19,7 @@ from xlviews.core.formula import Func, aggregate
 from xlviews.core.index import Index
 from xlviews.core.range import Range, iter_addresses
 from xlviews.core.style import set_alignment
-from xlviews.decorators import suspend_screen_updates
+from xlviews.utils import suspend_screen_updates
 
 from .groupby import GroupBy
 from .style import set_frame_style, set_wide_column_style

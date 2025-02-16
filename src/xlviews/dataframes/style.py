@@ -19,8 +19,7 @@ from xlviews.core.style import (
     set_fill,
     set_font,
 )
-from xlviews.decorators import suspend_screen_updates
-from xlviews.utils import iter_group_locs
+from xlviews.utils import iter_group_locs, suspend_screen_updates
 
 if TYPE_CHECKING:
     from pandas import Index
