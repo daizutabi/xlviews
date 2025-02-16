@@ -71,7 +71,9 @@ class Pivot(FrameContainer):
         for a, b in [(2, 3)]:
             df = df[~((df["B"] == a) & (df["Y"] == b))]
 
-        df["u"] = list(range(len(df), 2 * len(df)))
+        df["u"] = (
+            1000 * df["A"] + 300 * df["B"] + 100 * df["X"] + 10 * df["Y"] + df["x"]
+        )
         df["v"] = list(range(len(df)))
         return df.set_index(["A", "B", "X", "Y", "x", "y"])
 

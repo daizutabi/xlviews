@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import xlwings
-from pandas import Index, MultiIndex
+from pandas import DataFrame, Index, MultiIndex
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
@@ -22,9 +23,11 @@ from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
-    from typing import Literal, Self
+    from collections.abc import Hashable, Iterator
+    from typing import Any, Literal, Self
 
-    from pandas import DataFrame, Index
+    from numpy.typing import NDArray
+    from pandas import Index
     from xlwings import Sheet
 
 
@@ -142,7 +145,7 @@ class Colorbar:
         vmin: float | str | Range | None = None,
         vmax: float | str | Range | None = None,
         label: str | None = None,
-        autofit: bool = True,
+        autofit: bool = False,
     ) -> Self:
         if vmin is not None:
             self.vmin = vmin
@@ -239,3 +242,62 @@ class Colorbar:
             self.range.offset(0, 1).impl.column_width = width
         else:
             self.range.last_cell.offset(0, 2).impl.column_width = width
+
+
+def facet(
+    row: int,
+    column: int,
+    data: DataFrame,
+    index: str | list[str] | None = None,
+    columns: str | list[str] | None = None,
+    padding: tuple[int, int] = (1, 1),
+) -> NDArray:
+    frames = []
+    for row_, isub in iterrows(data.index, index, row, padding[0] + 1):
+        frames.append([])
+        for column_, csub in iterrows(data.columns, columns, column, padding[1] + 1):
+            sub = xs(data, isub, csub)
+            frame = HeatFrame(row_, column_, sub)
+            frames[-1].append(frame)
+
+    return np.array(frames)
+
+
+def iterrows(
+    index: Index,
+    levels: str | list[str] | None,
+    offset: int = 0,
+    padding: int = 0,
+) -> Iterator[tuple[int, dict[Hashable, Any]]]:
+    if levels is None:
+        yield offset, {}
+        return
+
+    if isinstance(levels, str):
+        levels = [levels]
+
+    if levels:
+        values = {level: index.get_level_values(level) for level in levels}
+        it = DataFrame(values).drop_duplicates().iterrows()
+
+        for k, (i, s) in enumerate(it):
+            if not isinstance(i, int):
+                raise NotImplementedError
+
+            yield i + offset + k * padding, s.to_dict()
+
+
+def xs(
+    df: DataFrame,
+    index: dict[Hashable, Any] | None,
+    columns: dict[Hashable, Any] | None,
+) -> DataFrame:
+    if index:
+        for key, value in index.items():
+            df = df.xs(value, level=key, axis=0)  # type: ignore
+
+    if columns:
+        for key, value in columns.items():
+            df = df.xs(value, level=key, axis=1)  # type: ignore
+
+    return df
