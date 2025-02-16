@@ -26,16 +26,6 @@ def test_number_format_dict(sf: SheetFrame):
     assert sf.get_number_format("b") == "0.00"
 
 
-def test_style_gray(sf: SheetFrame):
-    sf.add_wide_column("u", range(3), autofit=True, number_format="0", style=True)
-    sf.style(gray=True)
-    assert sf.sheet["F2"].api.Font.Bold
-    assert sf.sheet["D3"].api.Font.Bold
-    assert sf.sheet["C3"].api.Interior.Color == 15658734
-    assert sf.sheet["H2"].api.Interior.Color == 15658734
-    assert sf.sheet["H7"].api.Interior.Color != 15658734
-
-
 @pytest.mark.parametrize(
     ("alignment", "value"),
     [("left", -4131), ("center", -4108), ("right", -4152)],

@@ -32,79 +32,52 @@ if TYPE_CHECKING:
 
 def _set_style(
     start: Range,
-    end: Range,
+    end: Range | None,
     name: str,
     *,
     border: bool = True,
-    gray: bool = False,
-    font: bool = True,
     fill: bool = True,
+    font: bool = True,
     font_size: int | None = None,
 ) -> None:
     rng = start.sheet.range(start, end)
 
     if border:
-        set_border(rng, edge_color=rcParams["frame.gray.border.color"] if gray else 0)
+        set_border(rng, edge_color=rcParams["frame.border.color"])
 
     if fill:
-        _set_style_fill(rng, name, gray=gray)
+        set_fill(rng, color=rcParams[f"frame.{name}.fill.color"])
 
     if font:
-        _set_style_font(rng, name, gray=gray, font_size=font_size)
-
-
-def _set_style_fill(rng: Range, name: str, *, gray: bool = False) -> None:
-    if gray and name != "values":
-        color = rcParams["frame.gray.fill.color"]
-    else:
-        color = rcParams[f"frame.{name}.fill.color"]
-
-    set_fill(rng, color=color)
-
-
-def _set_style_font(
-    rng: Range,
-    name: str,
-    *,
-    gray: bool = False,
-    font_size: int | None = None,
-) -> None:
-    if gray:
-        color = rcParams["frame.gray.font.color"]
-    else:
         color = rcParams[f"frame.{name}.font.color"]
-    bold = rcParams[f"frame.{name}.font.bold"]
-    size = font_size or rcParams["frame.font.size"]
-
-    set_font(rng, color=color, bold=bold, size=size)
+        bold = rcParams[f"frame.{name}.font.bold"]
+        size = font_size or rcParams["frame.font.size"]
+        set_font(rng, color=color, bold=bold, size=size)
 
 
 @suspend_screen_updates
 def set_frame_style(
     sf: SheetFrame,
     *,
+    border: bool = True,
+    fill: bool = True,
+    font: bool = True,
+    font_size: int | None = None,
     alignment: str | None = "center",
     banding: bool = False,
     succession: bool = False,
-    border: bool = True,
-    gray: bool = False,
-    font: bool = True,
-    fill: bool = True,
-    font_size: int | None = None,
 ) -> None:
     """Set style of SheetFrame.
 
     Args:
         sf: The SheetFrame object.
-        autofit: Whether to autofit the frame.
-        alignment: The alignment of the frame.
         border: Whether to draw the border.
         font: Whether to specify the font.
         fill: Whether to fill the frame.
+        font_size: The font size to specify directly.
+        alignment: The alignment of the frame.
         banding: Whether to draw the banding.
         succession: Whether to hide the succession of the index.
-        gray: Whether to set the frame in gray mode.
-        font_size: The font size to specify directly.
     """
     cell = sf.cell
     sheet = sf.sheet
@@ -112,9 +85,8 @@ def set_frame_style(
     set_style = partial(
         _set_style,
         border=border,
-        gray=gray,
-        font=font,
         fill=fill,
+        font=font,
         font_size=font_size,
     )
 
@@ -122,9 +94,11 @@ def set_frame_style(
     columns_nlevels = sf.columns.nlevels
     length = len(sf)
 
-    start = cell
     end = cell.offset(columns_nlevels - 1, index_nlevels - 1)
-    set_style(start, end, "index.name")
+    if columns_nlevels > 1 and index_nlevels == 1:
+        set_style(cell, end, "columns.name")
+    else:
+        set_style(cell, end, "index.name")
 
     start = cell.offset(columns_nlevels, 0)
     end = cell.offset(columns_nlevels + length - 1, index_nlevels - 1)
@@ -141,12 +115,7 @@ def set_frame_style(
 
     width = len(sf.columns)
 
-    if columns_nlevels > 1:
-        start = cell.offset(0, index_nlevels)
-        end = cell.offset(columns_nlevels - 2, index_nlevels + width - 1)
-        set_style(start, end, "columns.name")
-
-    start = cell.offset(columns_nlevels - 1, index_nlevels)
+    start = cell.offset(0, index_nlevels)
     end = cell.offset(columns_nlevels - 1, index_nlevels + width - 1)
     set_style(start, end, "columns")
 
@@ -156,32 +125,25 @@ def set_frame_style(
 
     rng = sheet.range(start, end)
 
-    if banding and not gray:
+    if banding:
         set_banding(rng)
 
     rng = sheet.range(cell, end)
 
     if border:
-        if gray:
-            ew = 2
-            ec = rcParams["frame.gray.border.color"]
-        else:
-            ew = rcParams["frame.border.weight"]
-            ec = rcParams["frame.border.color"]
-
+        ew = rcParams["frame.border.weight"]
+        ec = rcParams["frame.border.color"]
         set_border(rng, edge_weight=ew, inside_weight=0, edge_color=ec)
 
     if alignment:
         set_alignment(rng, alignment)
 
 
-def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
-    edge_color = rcParams["frame.gray.border.color"] if gray else 0
+def set_wide_column_style(sf: SheetFrame) -> None:
+    edge_color = rcParams["frame.border.color"]
+    edge_weight = rcParams["frame.wide-columns.border.weight"]
 
     columns = list(sf.columns.wide_index)
-
-    ew_default = rcParams["frame.wide-columns.border.weight"]
-
     for column in columns:
         loc = sf.columns.get_loc(column, sf.column + sf.index.nlevels)
         if not isinstance(loc, tuple):
@@ -189,21 +151,17 @@ def set_wide_column_style(sf: SheetFrame, gray: bool = False) -> None:
 
         rng = sf.sheet.range((sf.row, loc[0]), (sf.row, loc[1]))
 
-        er = ew_default if column == columns[-1] else 2
-        edge_weight = (1, er - 1, 1, 1) if gray else (2, er, 2, 2)
-        set_border(rng, edge_weight, inside_weight=1, edge_color=edge_color)
-
-        _set_style_fill(rng, "wide-columns", gray=gray)
-        _set_style_font(rng, "wide-columns", gray=gray)
+        er = edge_weight if column == columns[-1] else 2
+        edge_weight_tuple = (2, er, 2, 2)
+        set_border(rng, edge_weight_tuple, inside_weight=1, edge_color=edge_color)
+        _set_style(rng, None, "wide-columns", border=False)
 
         rng = sf.sheet.range((sf.row - 1, loc[0]), (sf.row - 1, loc[1]))
 
-        el = ew_default if column == columns[0] else 2
-        edge_weight = (el - 1, 2, 2, 1) if gray else (el, ew_default, ew_default, 2)
-        set_border(rng, edge_weight, inside_weight=0, edge_color=edge_color)
-
-        _set_style_fill(rng, "wide-columns.name", gray=gray)
-        _set_style_font(rng, "wide-columns.name", gray=gray)
+        el = edge_weight if column == columns[0] else 2
+        edge_weight_tuple = (el, edge_weight, edge_weight, 2)
+        set_border(rng, edge_weight_tuple, inside_weight=0, edge_color=edge_color)
+        _set_style(rng, None, "wide-columns.name", border=False)
 
 
 def set_table_style(
@@ -229,21 +187,21 @@ def set_table_style(
 def set_heat_frame_style(
     sf: HeatFrame,
     *,
-    alignment: str | None = "center",
     border: bool = True,
-    font: bool = True,
     fill: bool = True,
+    font: bool = True,
     font_size: int | None = None,
+    alignment: str | None = "center",
 ) -> None:
     """Set style of SheetFrame.
 
     Args:
         sf: The SheetFrame object.
-        alignment: The alignment of the frame.
         border: Whether to draw the border.
-        font: Whether to specify the font.
         fill: Whether to fill the frame.
+        font: Whether to specify the font.
         font_size: The font size to specify directly.
+        alignment: The alignment of the frame.
     """
     cell = sf.cell
     sheet = sf.sheet
@@ -251,9 +209,8 @@ def set_heat_frame_style(
     set_style = partial(
         _set_style,
         border=border,
-        font=font,
         fill=fill,
-        gray=False,
+        font=font,
         font_size=font_size,
     )
 
@@ -282,7 +239,7 @@ def set_heat_frame_style(
 
     _merge_index(sf.columns, sf.row, sf.column, 1, sf.sheet)
     _merge_index(sf.index, sf.row, sf.column, 0, sf.sheet)
-    _set_border(sf)
+    _set_heat_border(sf)
 
 
 def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
@@ -295,7 +252,7 @@ def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -
             sheet.range((row, column + start + 1), (row, column + end + 1)).merge()
 
 
-def _set_border(sf: HeatFrame) -> None:
+def _set_heat_border(sf: HeatFrame) -> None:
     r = sf.row + 1
     c = sf.column + 1
 
