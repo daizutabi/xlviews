@@ -276,7 +276,7 @@ class SheetFrame:
         index = self.column + self.width
         rng = self.sheet.range(self.row - 1, index)
         rng.value = column
-        set_alignment(rng, horizontal_alignment="left")
+        set_alignment(rng, horizontal_alignment="center")
         self.columns.append(column, values)
 
         rng = self.sheet.range((self.row, index), (self.row, index + len(values)))

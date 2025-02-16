@@ -1,6 +1,8 @@
 [frame]
 font.name = "Meiryo UI"
 font.size = 9
+border.color = "#000000"
+border.weight = 2
 
 [frame.index.name]
 fill.color = "#ffffaa"
@@ -31,6 +33,7 @@ font.bold = true
 fill.color = "#f0fff0"
 font.color = "#004455"
 font.bold = false
+border.weight = 2
 
 [frame.gray]
 fill.color = "#eeeeee"

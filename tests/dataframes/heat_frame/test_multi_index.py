@@ -56,15 +56,3 @@ def test_columns_from_sf(sf: HeatFrame):
 )
 def test_values(sf: HeatFrame, i: int, value: int):
     assert sf.sheet.range(f"W{i}:AA{i}").value == value
-
-
-def test_vmin(sf: HeatFrame):
-    assert sf.vmin.get_address() == "$AJ$26"
-
-
-def test_vmax(sf: HeatFrame):
-    assert sf.vmax.get_address() == "$AJ$3"
-
-
-def test_label(sf: HeatFrame):
-    assert sf.label.get_address() == "$AJ$2"

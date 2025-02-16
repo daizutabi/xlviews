@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import xlwings
 from pandas import Index, MultiIndex
 
 from xlviews.colors import rgb
@@ -16,22 +17,21 @@ from xlviews.core.style import (
     set_number_format,
 )
 from xlviews.decorators import suspend_screen_updates
-from xlviews.utils import iter_group_locs
 
 from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
-    from typing import Self
+    from typing import Literal, Self
 
     from pandas import DataFrame, Index
-    from xlwings import Range as RangeImpl
     from xlwings import Sheet
 
 
 class HeatFrame(SheetFrame):
     index: Index
     columns: Index
+    range: Range
 
     @suspend_screen_updates
     def __init__(
@@ -40,6 +40,8 @@ class HeatFrame(SheetFrame):
         column: int,
         data: DataFrame,
         sheet: Sheet | None = None,
+        vmin: float | str | Range | None = None,
+        vmax: float | str | Range | None = None,
     ) -> None:
         data = clean_data(data)
 
@@ -47,90 +49,47 @@ class HeatFrame(SheetFrame):
 
         self.columns = data.columns
 
-        set_heat_frame_style(self)
-        self.set_adjacent_column_width(1, offset=-1)
-        self.vmin = None
-        self.vmax = None
-        self.set_colorbar()
-        set_style(self)
-
-    def value_range(self) -> Range:
         start = self.row + 1, self.column + 1
         end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
-        return Range(start, end, self.sheet)
+        self.range = Range(start, end, self.sheet)
 
-    @property
-    def vmin(self) -> RangeImpl:
-        return self.cell.offset(self.shape[0], self.shape[1] + 2)
+        set_heat_frame_style(self)
+        self.set(vmin, vmax)
 
-    @property
-    def vmax(self) -> RangeImpl:
-        return self.cell.offset(1, self.shape[1] + 2)
+    def set(
+        self,
+        vmin: float | str | Range | None = None,
+        vmax: float | str | Range | None = None,
+    ) -> Self:
+        rng = self.range
 
-    @property
-    def label(self) -> RangeImpl:
-        return self.cell.offset(0, self.shape[1] + 2)
+        if vmin is None:
+            vmin = aggregate("min", rng)
+        if vmax is None:
+            vmax = aggregate("max", rng)
 
-    @vmin.setter
-    def vmin(self, value: float | str | None) -> None:
-        rng = self.value_range()
-
-        if value is None:
-            value = aggregate("min", rng, formula=True)
-
-        self.vmin.value = value
-
-    @vmax.setter
-    def vmax(self, value: float | str | None) -> None:
-        rng = self.value_range()
-
-        if value is None:
-            value = aggregate("max", rng, formula=True)
-
-        self.vmax.value = value
-
-    @label.setter
-    def label(self, label: str | None) -> None:
-        rng = self.label
-        rng.value = label
-        set_font(rng, bold=True, size=rcParams["frame.font.size"])
-        set_alignment(rng, horizontal_alignment="center")
-
-    def set_colorbar(self) -> None:
-        vmin = self.vmin.get_address()
-        vmax = self.vmax.get_address()
-
-        col = self.vmax.column
-        start = self.vmax.row
-        end = self.vmin.row
-        n = end - start - 1
-        for i in range(n):
-            value = f"={vmax}+{i + 1}*({vmin}-{vmax})/{n + 1}"
-            self.sheet.range(i + start + 1, col).value = value
-
-        rng = self.sheet.range((start, col), (end, col))
-        set_color_scale(rng, self.vmin, self.vmax)
-        set_font(rng, color=rgb("white"), size=rcParams["frame.font.size"])
-        set_alignment(rng, horizontal_alignment="center")
-        ec = rcParams["heat.border.color"]
-        set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)
-
-        if n > 0:
-            rng = self.sheet.range((start + 1, col), (end - 1, col))
-            set_font(rng, size=4)
-            set_number_format(rng, "0")
-
-    def autofit(self) -> Self:
-        start = self.cell
-        end = start.offset(*self.shape)
-        self.sheet.range(start, end).autofit()
-        self.label.expand("down").autofit()
+        set_color_scale(rng, vmin, vmax)
         return self
 
-    def set_adjacent_column_width(self, width: float, offset: int = 1) -> None:
-        """Set the width of the adjacent empty column."""
-        column = self.vmax.column + offset
-        self.sheet.range(1, column).column_width = width
+    def colorbar(
+        self,
+        vmin: float | str | Range | None = None,
+        vmax: float | str | Range | None = None,
+        label: str | None = None,
+        autofit: bool = False,
+    ) -> Colorbar:
+        row = self.row + 1
+        column = self.column + self.shape[1] + 2
+        length = self.shape[0]
+
+        if vmin is None:
+            vmin = self.range
+        if vmax is None:
+            vmax = self.range
+
+        cb = Colorbar(row, column, length, sheet=self.sheet)
+        cb.set(vmin, vmax, label, autofit)
+        return cb
 
 
 def clean_data(data: DataFrame) -> DataFrame:
@@ -147,36 +106,136 @@ def clean_data(data: DataFrame) -> DataFrame:
     return data
 
 
-def set_style(sf: HeatFrame) -> None:
-    set_color_scale(sf.value_range(), sf.vmin, sf.vmax)
-    _merge_index(sf.columns, sf.row, sf.column, 1, sf.sheet)
-    _merge_index(sf.index, sf.row, sf.column, 0, sf.sheet)
-    _set_border(sf)
+class Colorbar:
+    start: int
+    end: int
+    offset: int
+    orientation: Literal["vertical", "horizontal"] = "vertical"
+    sheet: Sheet
+    range: Range
 
+    def __init__(
+        self,
+        row: int,
+        column: int,
+        length: int,
+        orientation: Literal["vertical", "horizontal"] = "vertical",
+        sheet: Sheet | None = None,
+    ) -> None:
+        self.sheet = sheet or xlwings.sheets.active
+        self.orientation = orientation
 
-def _merge_index(index: Index, row: int, column: int, axis: int, sheet: Sheet) -> None:
-    for start, end in iter_group_locs(index):
-        if start == end:
-            continue
-        if axis == 0:
-            sheet.range((row + start + 1, column), (row + end + 1, column)).merge()
+        if orientation == "vertical":
+            self.start = row
+            self.end = row + length - 1
+            self.offset = column
+            self.range = Range((self.start, column), (self.end, column), self.sheet)
+
         else:
-            sheet.range((row, column + start + 1), (row, column + end + 1)).merge()
+            self.start = column
+            self.end = column + length - 1
+            self.offset = row
+            self.range = Range((row, self.start), (row, self.end), self.sheet)
 
+    def set(
+        self,
+        vmin: float | str | Range | None = None,
+        vmax: float | str | Range | None = None,
+        label: str | None = None,
+        autofit: bool = True,
+    ) -> Self:
+        if vmin is not None:
+            self.vmin = vmin
+        if vmax is not None:
+            self.vmax = vmax
+        if label is not None:
+            self.label = label
 
-def _set_border(sf: HeatFrame) -> None:
-    r = sf.row + 1
-    c = sf.column + 1
+        self.draw()
 
-    ec = rcParams["heat.border.color"]
+        if autofit:
+            self.autofit()
 
-    for row in iter_group_locs(sf.index, offset=r):
-        if row[0] == row[1]:
-            continue
+        return self
 
-        for col in iter_group_locs(sf.columns, offset=c):
-            if col[0] == col[1]:
-                continue
+    @property
+    def vmin(self) -> Range:
+        i = -1 if self.orientation == "vertical" else 0
+        return self.range[i]
 
-            rng = sf.sheet.range((row[0], col[0]), (row[1], col[1]))
-            set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)
+    @property
+    def vmax(self) -> Range:
+        i = 0 if self.orientation == "vertical" else -1
+        return self.range[i]
+
+    @vmin.setter
+    def vmin(self, value: float | str | Range | list[Range]) -> None:
+        if isinstance(value, Range | list):
+            func = "min" if len(value) > 1 else None
+            value = aggregate(func, value, formula=True)
+
+        self.vmin.value = value
+
+    @vmax.setter
+    def vmax(self, value: float | str | Range | list[Range]) -> None:
+        if isinstance(value, Range | list):
+            func = "max" if len(value) > 1 else None
+            value = aggregate(func, value, formula=True)
+
+        self.vmax.value = value
+
+    @property
+    def label(self) -> Range:
+        offset = (-1, 0) if self.orientation == "vertical" else (0, 1)
+        return self.vmax.offset(*offset)
+
+    @label.setter
+    def label(self, label: str | None) -> None:
+        rng = self.label
+        rng.value = label
+        set_font(rng, bold=True, size=rcParams["frame.font.size"])
+        set_alignment(rng, horizontal_alignment="center")
+
+    def draw(self) -> None:
+        rng = self.range
+        set_color_scale(rng, self.vmin, self.vmax)
+        set_font(rng, color=rgb("white"), size=rcParams["frame.font.size"])
+        set_alignment(rng, horizontal_alignment="center")
+        ec = rcParams["heat.border.color"]
+        set_border(rng, edge_weight=2, edge_color=ec, inside_weight=0)
+
+        vmin = self.vmin.get_address()
+        vmax = self.vmax.get_address()
+
+        n = self.end - self.start - 1
+        for i in range(n):
+            value = f"={vmax}+{i + 1}*({vmin}-{vmax})/{n + 1}"
+            if self.orientation == "vertical":
+                rng = self.sheet.range(self.start + i + 1, self.offset)
+            else:
+                rng = self.sheet.range(self.offset, self.start + i + 1)
+
+            rng.value = value
+            set_font(rng, size=4)
+            set_number_format(rng, "0")
+
+    def apply(self, rng: Range) -> None:
+        set_color_scale(rng, self.vmin, self.vmax)
+
+    def autofit(self) -> Self:
+        if self.orientation == "vertical":
+            start = (self.start - 1, self.offset)
+            end = (self.end, self.offset)
+        else:
+            start = (self.offset, self.start)
+            end = (self.offset, self.end + 1)
+
+        self.sheet.range(start, end).autofit()
+        return self
+
+    def set_adjacent_column_width(self, width: float, offset: int = 1) -> None:
+        """Set the width of the adjacent empty column."""
+        if self.orientation == "vertical":
+            self.range.offset(0, 1).impl.column_width = width
+        else:
+            self.range.last_cell.offset(0, 2).impl.column_width = width
