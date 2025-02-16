@@ -4,7 +4,7 @@ from functools import partial
 from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from xlwings import Range as RangeImpl
 
 from xlviews.core.formula import Func, aggregate
@@ -123,27 +123,33 @@ class GroupBy:
         include_sheetname: bool = False,
         external: bool = False,
         formula: bool = False,
-    ) -> DataFrame:
+    ) -> Index:
         if not as_address:
             values = self.keys()
-            return DataFrame(values, columns=self.by)
+            df = DataFrame(values, columns=self.by)
 
-        cs = self.sf.index.names
-        column = self.sf.column
-        idx = [cs.index(c) + column for c in self.by]
+        else:
+            cs = self.sf.index.names
+            column = self.sf.column
+            idx = [cs.index(c) + column for c in self.by]
 
-        agg = partial(
-            self._agg,
-            "first",
-            row_absolute=row_absolute,
-            column_absolute=column_absolute,
-            include_sheetname=include_sheetname,
-            external=external,
-            formula=formula,
-        )
+            agg = partial(
+                self._agg,
+                "first",
+                row_absolute=row_absolute,
+                column_absolute=column_absolute,
+                include_sheetname=include_sheetname,
+                external=external,
+                formula=formula,
+            )
 
-        values = {c: agg(i) for c, i in zip(self.by, idx, strict=True)}
-        return DataFrame(values)
+            values = {c: agg(i) for c, i in zip(self.by, idx, strict=True)}
+            df = DataFrame(values)
+
+        if len(self.by) == 1:
+            return Index(df.iloc[:, 0], name=self.by[0])
+
+        return MultiIndex.from_frame(df)
 
     def agg(
         self,
@@ -169,7 +175,7 @@ class GroupBy:
         if columns is None:
             columns = self.sf.columns.to_list()
 
-        index_df = self.index(
+        index = self.index(
             as_address=as_address,
             row_absolute=row_absolute,
             column_absolute=column_absolute,
@@ -177,7 +183,6 @@ class GroupBy:
             external=external,
             formula=formula,
         )
-        index = MultiIndex.from_frame(index_df)
 
         agg = partial(
             self._agg,

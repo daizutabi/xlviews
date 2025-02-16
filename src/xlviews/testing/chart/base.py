@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from pandas import DataFrame
+from xlwings.constants import ChartType
 
+from xlviews.chart.axes import Axes
 from xlviews.testing.common import FrameContainer, create_sheet
 
 
@@ -21,11 +23,38 @@ if __name__ == "__main__":
     sheet = create_sheet()
     fc = Base(sheet, style=True)
     sf = fc.sf
-    x = sf.get_address(["x", "y"], include_sheetname=True)
-    print(x)
-    x = sf.get_range(["x", "y"])
-    print(x)
-    print(sf.melt())
+
+    x, y = sf.agg(include_sheetname=True)
+    ax = Axes(100, 20, chart_type=ChartType.xlXYScatter)
+    ax.add_series(x, y, label="label")
+    ax.set(
+        xlabel="xlabel",
+        ylabel="ylabel",
+        title="title",
+        xticks=(0, 10, 2),
+        legend=(1, -1),
+    )
+
+    df = sf.groupby("b").agg(include_sheetname=True)
+    print(df.index)
+    for key, (x, y) in df.iterrows():
+        print(key, x, y)
+
+    df = DataFrame([[1, 2], [4, 5]], columns=["a", "b"])
+    a = df.groupby(["a"]).agg("mean")
+    print(a)
+    print(a.index)
+    # ax = Axes(chart_type=ChartType.xlXYScatterLines)
+    # ax.add_series(x, y, label="label")
+    # ax.set(
+    #     xlabel="xlabel",
+    #     ylabel="ylabel",
+    #     title="title",
+    # )
+    # x = sf.range("x")
+    # y = sf.range("y")
+    # label = sf.first_range("a")
+    # ax.add_series(x.get_address(include_sheetname=True), y)
     #     fc.sf.set_adjacent_column_width(1)
     #     fc.sf.number_format(b="0.0")
     #     DistFrame(fc.sf, ["a", "b"], by=["x", "y"])

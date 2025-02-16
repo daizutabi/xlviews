@@ -8,6 +8,7 @@ from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
 from xlviews.core.address import reference
+from xlviews.utils import suspend_screen_updates
 
 from .series import Series
 from .style import (
@@ -24,7 +25,7 @@ from .style import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Self
 
     from xlwings import Chart, Sheet
     from xlwings import Range as RangeImpl
@@ -97,6 +98,7 @@ class Axes:
     chart_type: int
     series_collection: list[Series]
 
+    @suspend_screen_updates
     def __init__(
         self,
         left: float | None = None,
@@ -153,6 +155,7 @@ class Axes:
         chart = self.chart.api[1]
         return chart.Axes(AxisType.xlValue)
 
+    @suspend_screen_updates
     def add_series(
         self,
         x: Any,
@@ -284,6 +287,7 @@ class Axes:
     def yscale(self, scale: str) -> None:
         set_axis_scale(self.yaxis, scale)
 
+    @suspend_screen_updates
     def set(
         self,
         xlabel: str | tuple[int, int] | Range | RangeImpl | None = "",
@@ -292,7 +296,11 @@ class Axes:
         yticks: tuple[float, ...] | None = None,
         xscale: str | None = None,
         yscale: str | None = None,
-    ) -> None:
+        title: str | tuple[int, int] | Range | RangeImpl | None = None,
+        style: bool = True,
+        tight_layout: bool = True,
+        legend: bool | tuple[float, float] = False,
+    ) -> Self:
         if xlabel != "":
             self.xlabel = xlabel
         if ylabel != "":
@@ -305,13 +313,27 @@ class Axes:
             self.xscale = xscale
         if yscale:
             self.yscale = yscale
+        if title:
+            self.title = title
+        if style:
+            self.style()
+        if tight_layout:
+            self.tight_layout()
+
+        if isinstance(legend, tuple):
+            self.legend(loc=legend)
+        elif legend:
+            self.legend()
+
+        return self
 
     def delete_legend(self) -> None:
         api = self.chart.api[1]
         if api.HasLegend:
             api.Legend.Delete()
 
-    def set_legend(
+    @suspend_screen_updates
+    def legend(
         self,
         left: float | None = None,
         top: float | None = None,
@@ -326,7 +348,7 @@ class Axes:
         loc: tuple[float, float] | None = (1, 1),
         margin: float = 3,
         entry_height_scale: float = 1,
-    ) -> None:
+    ) -> Self:
         self.delete_legend()
         api = self.chart.api[1]
         api.HasLegend = True
@@ -343,7 +365,7 @@ class Axes:
         size = size or rcParams["chart.legend.font.size"]
 
         if api.HasLegend is False:
-            return
+            return self
 
         set_font_api(legend, name, size=size)
 
@@ -380,13 +402,15 @@ class Axes:
 
             set_dimensions(legend, left, top)
 
-    def tight_layout(self, title_height_scale: float = 0.7) -> None:
+        return self
+
+    def tight_layout(self, title_height_scale: float = 0.7) -> Self:
         api = self.chart.api[1]
         xaxis = self.xaxis
         yaxis = self.yaxis
 
         if not (api.HasTitle and xaxis.HasTitle and yaxis.HasTitle):
-            return
+            return self
 
         title = api.ChartTitle
         pa = api.PlotArea
@@ -410,7 +434,9 @@ class Axes:
             pa.InsideTop + pa.InsideHeight / 2 - yaxis.AxisTitle.Height / 2
         )
 
-    def set_style(self) -> None:
+        return self
+
+    def style(self) -> Self:
         # msoElementPrimaryCategoryGridLinesMajor = 334
         api = self.chart.api[1]
         api.SetElement(334)
@@ -421,8 +447,8 @@ class Axes:
         line = plot_area.Format.Line
         line.Visible = True
         line.ForeColor.RGB = 0
-        line.Weight = 1.25
-        line.Transparency = 0
+        line.Weight = 1.2
+        line.Transparency = 0.5
 
         line = self.xaxis.MajorGridlines.Format.Line
         line.Visible = True
@@ -435,6 +461,8 @@ class Axes:
         line.ForeColor.RGB = 0
         line.Weight = 1
         line.Transparency = 0.7
+
+        return self
 
     # @property
     # def plot_area(self) -> COMRetryObjectWrapper:

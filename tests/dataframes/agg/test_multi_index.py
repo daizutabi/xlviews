@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pandas import DataFrame, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 from xlwings import Sheet
 
 from xlviews.core.range import Range
@@ -196,29 +196,27 @@ def test_df_group_list_dict(df: DataFrame):
 
 def test_index_str(sf: SheetFrame):
     a = sf.groupby("x").index()
-    df = DataFrame([1, 2], columns=["x"])
-    assert a.equals(df)
-    assert a.index.equals(df.index)
-    assert a.columns.equals(df.columns)
+    b = Index([1, 2], name="x")
+    assert a.equals(b)
 
 
 def test_index_list(sf: SheetFrame):
     a = sf.groupby(["x", "y"]).index()
-    df = DataFrame([(1, 1), (1, 2), (2, 1), (2, 2)], columns=["x", "y"])
-    assert a.equals(df)
-    assert a.index.equals(df.index)
-    assert a.columns.equals(df.columns)
+    b = MultiIndex.from_tuples([(1, 1), (1, 2), (2, 1), (2, 2)], names=["x", "y"])
+    assert a.equals(b)
 
 
 def test_index_str_as_address(sf: SheetFrame):
     a = sf.groupby("x").index(as_address=True)
-    assert a.equals(DataFrame(["$B$3", "$B$7"], columns=["x"]))
+    b = Index(["$B$3", "$B$7"], name="x")
+    assert a.equals(b)
 
 
 def test_index_list_as_address(sf: SheetFrame):
     a = sf.groupby(["x", "y"]).index(as_address=True, formula=True)
-    values = [[f"=$B${r}", f"=$C${r}"] for r in [3, 5, 7, 9]]
-    assert a.equals(DataFrame(values, columns=["x", "y"]))
+    values = [(f"=$B${r}", f"=$C${r}") for r in [3, 5, 7, 9]]
+    b = MultiIndex.from_tuples(values, names=["x", "y"])
+    assert a.equals(b)
 
 
 @pytest.mark.parametrize("func", ["sum", "median", "mean"])
