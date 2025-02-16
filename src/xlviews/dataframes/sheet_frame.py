@@ -547,7 +547,9 @@ class SheetFrame:
                 )
                 for f in aggfunc
             ]
-            return pd.concat(dfs, axis=1, keys=aggfunc)
+
+            keys = [f if isinstance(f, str) else None for f in aggfunc]
+            return pd.concat(dfs, axis=1, keys=keys)
 
         if aggfunc is None:
             data = self.get_address(
