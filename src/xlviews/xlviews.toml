@@ -67,8 +67,8 @@ font.bold = true
 [chart.legend]
 font.size = 8
 border.color = "#aaaaaa"
-fill.color = "#eeeeee"
-fill.alpha = 0.8
+fill.color = "#f0f0f0"
+fill.alpha = 0.7
 
 [chart.axis.title]
 font.size = 9
