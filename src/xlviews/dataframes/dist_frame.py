@@ -6,7 +6,7 @@ import numpy as np
 from pandas import DataFrame
 
 from xlviews.core.range import Range
-from xlviews.utils import iter_columns, suspend_screen_updates
+from xlviews.utils import suspend_screen_updates
 
 from .sheet_frame import SheetFrame
 
@@ -39,7 +39,7 @@ class DistFrame(SheetFrame):
         super().__init__(row, column, data, parent.sheet)
 
         self.set_values(parent, columns, by)
-        self.style(gray=True)
+        self.style()
         self.autofit()
         self.const_values(parent)
 
@@ -90,7 +90,7 @@ class DistFrame(SheetFrame):
         column = self.column
 
         sf = SheetFrame(row, column, data, self.sheet)
-        sf.style(gray=True)
+        sf.style()
 
         head = Range((parent.row - 1, parent.column), sheet=parent.sheet)
         tail = Range((sf.row + 1, sf.column + 1), sheet=sf.sheet)

@@ -5,33 +5,33 @@ border.color = "#000000"
 border.weight = 2
 
 [frame.index.name]
-fill.color = "#ffffaa"
-font.color = "#333300"
+fill.color = "#ffffe0"
+font.color = "#505050"
 font.bold = true
 
 [frame.index]
-fill.color = "#ffffee"
-font.color = "#111100"
+fill.color = "#fffff0"
+font.color = "#505050"
 font.bold = false
 
 [frame.columns.name]
-fill.color = "#88eeff"
-font.color = "#002244"
+fill.color = "#d0ffff"
+font.color = "#505050"
 font.bold = true
 
 [frame.columns]
-fill.color = "#ccffff"
-font.color = "#004455"
+fill.color = "#e0ffff"
+font.color = "#505050"
 font.bold = true
 
 [frame.wide-columns.name]
-fill.color = "#e0ffe0"
-font.color = "#002244"
+fill.color = "#e0ffff"
+font.color = "#505050"
 font.bold = true
 
 [frame.wide-columns]
-fill.color = "#f0fff0"
-font.color = "#004455"
+fill.color = "#f0ffff"
+font.color = "#505050"
 font.bold = false
 border.weight = 2
 
