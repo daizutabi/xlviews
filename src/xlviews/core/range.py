@@ -62,21 +62,6 @@ class Range:
             for column in range(self.column, self.column_end + 1):
                 yield self.__class__((row, column), sheet=self.sheet)
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Range):
-            return False
-
-        return all(
-            [
-                self.row == other.row,
-                self.column == other.column,
-                self.row_end == other.row_end,
-                self.column_end == other.column_end,
-                self.sheet.name == other.sheet.name,
-                self.sheet.book.name == other.sheet.book.name,
-            ],
-        )
-
     def __getitem__(self, key: int) -> Self:
         if key < 0:
             key += len(self)
