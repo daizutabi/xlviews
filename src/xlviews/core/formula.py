@@ -70,7 +70,7 @@ def _aggregate(
     if func is None:
         return column
 
-    if func in AGG_FUNCS:
+    if isinstance(func, str) and func in AGG_FUNCS:
         return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"
 
     if isinstance(func, Range | RangeImpl):
