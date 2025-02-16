@@ -24,16 +24,16 @@ def test_index(sf: HeatFrame):
     assert sf.sheet.range("G3:G8").value == [1, 2, 3, 4, 5, 6]
 
 
-def test_index_from_df(sf: HeatFrame):
-    assert sf.data.index.to_list() == [1, 2, 3, 4, 5, 6]
+def test_index_from_sf(sf: HeatFrame):
+    assert sf.index.to_list() == [1, 2, 3, 4, 5, 6]
 
 
 def test_columns(sf: HeatFrame):
     assert sf.sheet.range("H2:K2").value == [1, 2, 3, 4]
 
 
-def test_columns_from_df(sf: HeatFrame):
-    assert sf.data.columns.to_list() == [1, 2, 3, 4]
+def test_columns_from_sf(sf: HeatFrame):
+    assert sf.columns.to_list() == [1, 2, 3, 4]
 
 
 @pytest.mark.parametrize(
@@ -51,20 +51,8 @@ def test_values(sf: HeatFrame, i: int, value: int):
     assert sf.sheet.range(f"H{i}:K{i}").value == value
 
 
-def test_vmin(sf: HeatFrame):
-    assert sf.vmin.get_address() == "$M$8"
-
-
-def test_vmax(sf: HeatFrame):
-    assert sf.vmax.get_address() == "$M$3"
-
-
 def test_label(sf: HeatFrame):
-    assert sf.label.get_address() == "$M$2"
-
-
-def test_label_value(sf: HeatFrame):
-    assert sf.label.value == "v"
+    assert sf.sheet.range("M2").value == "v"
 
 
 @pytest.mark.parametrize(

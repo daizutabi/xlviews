@@ -74,8 +74,9 @@ def iter_columns(
             yield c
 
 
-def iter_group_ranges(
+def iter_group_locs(
     index: list | NDArray | Index | Series,
+    offset: int = 0,
     padding: int = 0,
 ) -> Iterator[tuple[int, int]]:
     """Yield the group ranges of the index.
@@ -88,10 +89,13 @@ def iter_group_ranges(
         padding: The padding to add to the start and end of each group.
 
     Examples:
-        >>> list(iter_group_ranges([1, 1, 1, 2, 2, 3, 3, 3]))
+        >>> list(iter_group_locs([1, 1, 1, 2, 2, 3, 3, 3]))
         [(0, 2), (3, 4), (5, 7)]
 
-        >>> list(iter_group_ranges([1, 1, 1, 2, 2, 3, 3, 3], padding=3))
+        >>> list(iter_group_locs([1, 1, 1, 2, 2, 3, 3, 3], offset=1))
+        [(1, 3), (4, 5), (6, 8)]
+
+        >>> list(iter_group_locs([1, 1, 1, 2, 2, 3, 3, 3], padding=3))
         [(0, 2), (6, 7), (11, 13)]
     """
     s = Series(index)
@@ -99,7 +103,7 @@ def iter_group_ranges(
 
     it = zip(idx, [*idx[1:], len(s)], strict=True)
     for k, (start, end) in enumerate(it):
-        yield (start + padding * k, end + padding * k - 1)
+        yield (start + offset + padding * k, end + offset + padding * k - 1)
 
 
 def set_font_api(
