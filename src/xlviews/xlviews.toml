@@ -35,11 +35,6 @@ font.color = "#505050"
 font.bold = false
 border.weight = 2
 
-[frame.gray]
-fill.color = "#eeeeee"
-font.color = "#aaaaaa"
-border.color = "#aaaaaa"
-
 [frame.values]
 fill.color = "#ffffff"
 font.color = "#001122"
@@ -71,6 +66,9 @@ font.bold = true
 
 [chart.legend]
 font.size = 8
+border.color = "#aaaaaa"
+fill.color = "#eeeeee"
+fill.alpha = 0.8
 
 [chart.axis.title]
 font.size = 9
