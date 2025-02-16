@@ -44,7 +44,7 @@ class Table:
             self.api = api
             self.cell = sheet.range(api.Range.Row, api.Range.Column)  # type: ignore
         else:
-            raise ValueError("Either rng or sheet and api must be provided")
+            raise ValueError("Either range or sheet and api must be provided")
 
         self.sheet = self.cell.sheet
 

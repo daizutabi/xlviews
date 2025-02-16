@@ -106,6 +106,6 @@ def test_auto_filter(table: Table, name, value, const, to_dict):
 
 
 def test_table_error():
-    msg = "Either rng or sheet and api must be provided"
+    msg = "Either range or sheet and api must be provided"
     with pytest.raises(ValueError, match=msg):
         Table()
