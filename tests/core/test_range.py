@@ -104,6 +104,18 @@ def test_iter(rng: Range, rng_impl: RangeImpl):
     assert x == y
 
 
+def test_eq_true(sheet_module: Sheet):
+    r1 = Range((1, 1), (1, 1), sheet_module)
+    r2 = Range((1, 1), (1, 1), sheet_module)
+    assert r1 == r2
+
+
+def test_eq_false(sheet_module: Sheet, sheet: Sheet):
+    r1 = Range((1, 1), (1, 1), sheet_module)
+    r2 = Range((1, 1), (1, 1), sheet)
+    assert r1 != r2
+
+
 def test_getitem(rng: Range, rng_impl: RangeImpl):
     for k in range(len(rng)):
         assert rng[k].get_address() == rng_impl[k].get_address()
