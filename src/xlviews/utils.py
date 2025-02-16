@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import wraps
 from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
-import xlwings as xw
+import xlwings
 from pandas import DataFrame, Series
 from xlwings.constants import DVType, FormatConditionOperator
 
@@ -40,7 +40,7 @@ def constant(type_: str, name: str | None = None) -> int:
     if not name.startswith("xl"):
         name = "xl" + name[0].upper() + name[1:]
 
-    type_ = getattr(xw.constants, type_)
+    type_ = getattr(xlwings.constants, type_)
 
     return getattr(type_, name)
 
@@ -153,7 +153,7 @@ def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
 
     @wraps(func)
     def _func(*args: P.args, **kwargs: P.kwargs) -> R:
-        if app := xw.apps.active:
+        if app := xlwings.apps.active:
             is_updating = app.screen_updating
             app.screen_updating = False
 
@@ -232,85 +232,7 @@ def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
 #     for key in keys:
 #         if key not in dict_:
 #             warnings.warn(
-#                 f"タイトル文字列に含まれる'{key}'が、dfに含まれないか、単一ではない。",
+#                 f"タイトル文字列に含まれる'{key}'が、dfに含まれない。",
 #             )
 #             dict_[key] = "XXX"
 #     return fmt.format(**dict_)
-
-
-# def get_sheet(book, name):
-#     try:
-#         return book.sheets[name]
-#     except Exception:
-#         return book.sheets.add(name, after=book.sheets(book.sheets.count))
-
-# def get_range(book, name, title=False):
-#     for sheet in book.sheets:
-#         try:
-#             range_ = sheet.names(name).refers_to_range
-#             if title:
-#                 start = range_[0, 0].offset(-1, 0)
-#                 if start.value:
-#                     return sheet.range(start, range_[-1, -1])
-#             else:
-#                 return range_
-#         except Exception:
-#             continue
-
-
-# def copy_range(book_from, sheet_to, name, title=False):
-#     range_ = get_range(book_from, name.replace("-", "__"), title=title)
-#     range_.api.CopyPicture()  # Appearance:=xlScreen, Format:=xlPicture)
-#     # sheet_to.activate()
-#     # sheet_to.range('A1').api.Select()
-#     sheet_to.api.Paste()
-#     sheet_to.pictures[-1].name = name.replace("__", "-")
-
-# def get_chart(book, name):
-#     for sheet in book.sheets:
-#         try:
-#             return sheet.charts(name)
-#         except Exception:
-#             continue
-
-
-# def copy_chart(book_from, sheet_to, name):
-#     chart = get_chart(book_from, name)
-#     # chart.api[1].ChartArea.Copy()
-#     chart.api[0].Copy()
-#     # sheet_to.api.Paste()
-#     # sheet_to.activate()
-#     # sheet_to.range('A1').api.Select()
-#     sheet_to.api.PasteSpecial(Format="図 (PNG)", Link=False, DisplayAsIcon=False)
-#     sheet_to.pictures[-1].name = name
-
-# def outline_group(sheet, start: int, end: int, axis=0):
-#     """
-#     セルをグループする。
-#     """
-#     outline = sheet.api.Outline
-#     if axis == 0:
-#         outline.SummaryRow = constant("SummaryRow.xlSummaryAbove")
-#         sheet.range((start, 1), (end, 1)).api.EntireRow.Group()
-#     else:
-#         outline.SummaryColumn = constant("SummaryColumn.xlSummaryOnLeft")
-#         sheet.range((1, start), (1, end)).api.EntireRow.Group()
-
-
-# def show_group(start: int, axis=0, show=True):
-#     app = xw.apps.active
-#     if axis == 0:
-#         app.api.ExecuteExcel4Macro(f"SHOW.DETAIL(1,{start},{show})")
-#     else:
-#         raise ValueError("未実装")
-
-
-# def hide_group(start: int, axis=0):
-#     show_group(start, axis=axis, show=False)
-
-
-# def outline_levels(sheet, levels: int, axis=0):
-#     if axis == 0:
-#         sheet.api.Outline.ShowLevels(RowLevels=levels)
-#     else:
-#         sheet.api.Outline.ShowLevels(ColumnLevels=levels)

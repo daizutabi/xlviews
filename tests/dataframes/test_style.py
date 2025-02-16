@@ -14,14 +14,13 @@ pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not inst
     "name",
     ["index.name", "index", "columns.name", "columns", "values"],
 )
-@pytest.mark.parametrize("gray", [True, False])
-def test_set_style(sheet: Sheet, name, gray):
+def test_set_style(sheet: Sheet, name):
     from xlviews.dataframes.style import _set_style
 
     rng = sheet["C3:E5"]
-    _set_style(rng[0], rng[-1], name, gray=gray)
+    _set_style(rng[0], rng[-1], name)
     param = f"frame.{name}.fill.color"
-    color = rgb("#eeeeee") if gray and name != "values" else rgb(rcParams[param])
+    color = rgb(rcParams[param])
     assert rng.api.Interior.Color == color
 
 
@@ -76,12 +75,12 @@ def sf_mc(sheet_module: Sheet, df_mc: DataFrame):
 @pytest.mark.parametrize(
     ("cell", "name"),
     [
-        ("B9", "index.name"),
-        ("B11", "index.name"),
+        ("B9", "columns.name"),
+        ("B11", "columns.name"),
         ("B12", "index"),
         ("B15", "index"),
-        ("C9", "columns.name"),
-        ("E10", "columns.name"),
+        ("C9", "columns"),
+        ("E10", "columns"),
         ("C11", "columns"),
         ("E11", "columns"),
         ("C12", "values"),
@@ -119,8 +118,8 @@ def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
         ("H10", "index.name"),
         ("G11", "index"),
         ("H14", "index"),
-        ("I9", "columns.name"),
-        ("K9", "columns.name"),
+        ("I9", "columns"),
+        ("K9", "columns"),
         ("I10", "columns"),
         ("K10", "columns"),
         ("I11", "values"),
@@ -140,7 +139,7 @@ def sf_wide(sheet_module: Sheet):
     sf = SheetFrame(24, 2, data=df, sheet=sheet_module)
     sf.add_wide_column("u", range(3), autofit=True)
     sf.add_wide_column("v", range(4), autofit=True)
-    set_wide_column_style(sf, gray=False)
+    set_wide_column_style(sf)
     return sf
 
 

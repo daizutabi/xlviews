@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-import xlwings as xw
+import xlwings
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
@@ -115,7 +115,7 @@ class Axes:
         has_legend: bool = True,
         include_in_layout: bool = False,
     ) -> None:
-        self.sheet = sheet or xw.sheets.active
+        self.sheet = sheet or xlwings.sheets.active
 
         if row:
             top = self.sheet.range(row, 1).top

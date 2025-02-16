@@ -631,9 +631,9 @@ class SheetFrame:
 
         return self
 
-    def style(self, *, gray: bool = False, **kwargs) -> Self:
-        set_frame_style(self, gray=gray, **kwargs)
-        set_wide_column_style(self, gray=gray)
+    def style(self, **kwargs) -> Self:
+        set_frame_style(self, **kwargs)
+        set_wide_column_style(self)
         return self
 
     def autofit(self) -> Self:

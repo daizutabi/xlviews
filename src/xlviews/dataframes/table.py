@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import xlwings as xw
 from xlwings import Range
+from xlwings.constants import AutoFilterOperator, ListObjectSourceType, YesNoGuess
 
 from xlviews.core.formula import const
 from xlviews.core.style import set_alignment, set_font
@@ -35,16 +35,16 @@ class Table:
             self.cell = rng[0]
 
             self.api = rng.sheet.api.ListObjects.Add(
-                xw.constants.ListObjectSourceType.xlSrcRange,
+                ListObjectSourceType.xlSrcRange,
                 rng.api,
                 None,
-                xw.constants.YesNoGuess.xlYes,
+                YesNoGuess.xlYes,
             )
         elif sheet and api:
             self.api = api
             self.cell = sheet.range(api.Range.Row, api.Range.Column)  # type: ignore
         else:
-            raise ValueError("Either rng or sheet and api must be provided")
+            raise ValueError("Either range or sheet and api must be provided")
 
         self.sheet = self.cell.sheet
 
@@ -128,8 +128,7 @@ class Table:
             for name, criteria in zip(args[::2], args[1::2], strict=True):
                 field_criteria[name] = criteria
 
-        autofilter = self.api.Range.AutoFilter  # type: ignore
-        operator = xw.constants.AutoFilterOperator
+        auto_filter = self.api.Range.AutoFilter  # type: ignore
 
         columns = self.columns
 
@@ -137,25 +136,25 @@ class Table:
             field = columns.index(name) + 1
 
             if isinstance(criteria, list):
-                autofilter(
+                auto_filter(
                     Field=field,
                     Criteria1=[str(x) for x in criteria],
-                    Operator=operator.xlFilterValues,
+                    Operator=AutoFilterOperator.xlFilterValues,
                 )
 
             elif isinstance(criteria, tuple):
-                autofilter(
+                auto_filter(
                     Field=field,
                     Criteria1=f">={criteria[0]}",
-                    Operator=operator.xlAnd,
+                    Operator=AutoFilterOperator.xlAnd,
                     Criteria2=f"<={criteria[1]}",
                 )
 
             elif criteria is None:
-                autofilter(Field=field)
+                auto_filter(Field=field)
 
             else:
-                autofilter(Field=field, Criteria1=f"{criteria}")
+                auto_filter(Field=field, Criteria1=f"{criteria}")
 
     def unlist(self) -> None:
         """Unlist the SheetFrame."""
