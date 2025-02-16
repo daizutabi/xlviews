@@ -180,7 +180,7 @@ def test_set(ax: Axes):
     ],
 )
 def test_legend_position(ax: Axes, loc, left, top):
-    ax.set_legend(loc=loc)
+    ax.legend(loc=loc)
     assert ax.chart.api[1].HasLegend
     # legend = ax2.chart.api[1].Legend
     # assert left - 3 < legend.Left < left + 3
@@ -199,7 +199,7 @@ def test_tight_layout(ax: Axes):
 
 
 def test_style(ax: Axes):
-    ax.set_style()
+    ax.style()
     assert ax.chart.api[1].PlotArea.Format.Line.Visible
 
 
@@ -214,5 +214,5 @@ def test_legend_none(sheet: Sheet):
     z.options(transpose=True).value = list(range(20, 30))
     ax.add_series(x, y)
     ax.add_series(x, z)
-    ax.set_legend()
+    ax.legend()
     assert ax.chart.api[1].HasLegend is False
