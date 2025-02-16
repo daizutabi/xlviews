@@ -15,7 +15,7 @@ font.color = "#505050"
 font.bold = false
 
 [frame.columns.name]
-fill.color = "#e0ffff"
+fill.color = "#d0ffff"
 font.color = "#505050"
 font.bold = true
 
