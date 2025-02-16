@@ -206,6 +206,7 @@ class Axes:
         chart_title = api.ChartTitle
         chart_title.Text = reference(title, sheet or self.chart.parent)
 
+        name = name or rcParams["chart.font.name"]
         size = size or rcParams["chart.title.font.size"]
         set_font_api(chart_title, name, size=size, **kwargs)
 
@@ -342,9 +343,9 @@ class Axes:
         *,
         name: str | None = None,
         size: int | None = None,
-        border: str | int = "#aaaaaa",
-        fill: str | int = "#eeeeee",
-        alpha: float = 0.8,
+        border: str | int | None = None,
+        fill: str | int | None = None,
+        alpha: float | None = None,
         loc: tuple[float, float] | None = (1, 1),
         margin: float = 3,
         entry_height_scale: float = 1,
@@ -362,11 +363,11 @@ class Axes:
             if not series.label:
                 entry.Delete()
 
-        size = size or rcParams["chart.legend.font.size"]
-
         if api.HasLegend is False:
             return self
 
+        name = name or rcParams["chart.font.name"]
+        size = size or rcParams["chart.legend.font.size"]
         set_font_api(legend, name, size=size)
 
         if height is None:
@@ -384,6 +385,13 @@ class Axes:
             width = max(widths)
 
         set_dimensions(legend, left, top, width, height)
+
+        if border is None:
+            border = rcParams["chart.legend.border.color"]
+        if fill is None:
+            fill = rcParams["chart.legend.fill.color"]
+        if alpha is None:
+            alpha = rcParams["chart.legend.fill.alpha"]
         set_area_format(legend, border, fill, alpha)
 
         if loc:
@@ -463,11 +471,3 @@ class Axes:
         line.Transparency = 0.7
 
         return self
-
-    # @property
-    # def plot_area(self) -> COMRetryObjectWrapper:
-    #     return self.chart.api[1].PlotArea
-
-    # @property
-    # def graph_area(self) -> COMRetryObjectWrapper:
-    #     return self.chart.api[0]
