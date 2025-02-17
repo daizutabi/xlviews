@@ -10,47 +10,42 @@ readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 classifiers = [
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 requires-python = ">=3.11"
 dependencies = ["numpy>=2", "pandas>=2", "xlwings>=0.33"]
 
 [project.urls]
-Documentation = "https://daizutabi.github.io/xlviews/"
+Documentation = "https://github.com/daizutabi/xlviews"
 Source = "https://github.com/daizutabi/xlviews"
 Issues = "https://github.com/daizutabi/xlviews/issues"
 
 [tool.uv]
 dev-dependencies = [
-    "pytest-benchmark>=5.1",
-    "pytest-clarity>=1",
-    "pytest-cov>=6.0",
-    "pytest-randomly>=3.16",
-    "pytest-skip-slow>=0.0.5",
-    "scipy>=1.15",
+  "pytest-benchmark>=5.1",
+  "pytest-clarity>=1",
+  "pytest-cov>=6.0",
+  "pytest-randomly>=3.16",
+  "pytest-skip-slow>=0.0.5",
+  "scipy>=1.15",
 ]
-
-[tool.hatch.build.targets.sdist]
-exclude = ["/.github", "/docs"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/xlviews"]
 
 [tool.pytest.ini_options]
 markers = ["app: mark test as app"]
 addopts = [
-    "--benchmark-skip",
-    "--benchmark-columns=min,mean,max",
-    "--cov-report=lcov:lcov.info",
-    "--cov=xlviews",
-    "--doctest-modules",
-    "--strict-markers",
-    "-p no:faulthandler",
+  "--benchmark-skip",
+  "--benchmark-columns=min,mean,max",
+  "--cov-report=lcov:lcov.info",
+  "--cov=xlviews",
+  "--doctest-modules",
+  "--strict-markers",
+  "-p no:faulthandler",
 ]
-doctest_optionflags = ["NORMALIZE_WHITESPACE", "IGNORE_EXCEPTION_DETAIL"]
+doctest_optionflags = []
 filterwarnings = []
 
 [tool.coverage.run]
@@ -58,10 +53,10 @@ disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
 exclude_lines = [
-    "no cov",
-    "raise NotImplementedError",
-    "if TYPE_CHECKING:",
-    "if __name__",
+  "no cov",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+  "if __name__",
 ]
 omit = ["src/xlviews/testing/*"]
 skip_covered = true
@@ -74,31 +69,31 @@ target-version = "py311"
 select = ["ALL"]
 unfixable = ["F401"]
 ignore = [
-    "ANN002",
-    "ANN003",
-    "ANN401",
-    "ARG001",
-    "ARG002",
-    "C901",
-    "D",
-    "D105",
-    "D107",
-    "D203",
-    "D213",
-    "EM101",
-    "ERA001",
-    "FBT001",
-    "FBT002",
-    "PD901",
-    "PERF401",
-    "PGH003",
-    "PLR",
-    "RUF001",
-    "RUF003",
-    "SIM102",
-    "SIM108",
-    "TD",
-    "TRY003",
+  "ANN002",
+  "ANN003",
+  "ANN401",
+  "ARG001",
+  "ARG002",
+  "C901",
+  "D",
+  "D105",
+  "D107",
+  "D203",
+  "D213",
+  "EM101",
+  "ERA001",
+  "FBT001",
+  "FBT002",
+  "PD901",
+  "PERF401",
+  "PGH003",
+  "PLR",
+  "RUF001",
+  "RUF003",
+  "SIM102",
+  "SIM108",
+  "TD",
+  "TRY003",
 ]
 
 [tool.ruff.lint.per-file-ignores]
