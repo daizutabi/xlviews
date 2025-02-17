@@ -4,9 +4,9 @@ from scipy.stats import norm
 
 from xlviews.dataframes.dist_frame import DistFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import is_app_available
 
-pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
+pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 def test_init_data(sf_parent: SheetFrame):

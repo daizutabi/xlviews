@@ -2,7 +2,7 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.testing import is_excel_installed
+from xlviews.testing import is_app_available
 
 
 @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ def test_iter_columns(columns, lst):
     assert list(iter_columns(df, columns)) == lst
 
 
-@pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
+@pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 def test_validate_list(sheet: Sheet):
     from xlviews.utils import add_validate_list
 

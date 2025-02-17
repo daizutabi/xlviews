@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 @cache
-def is_excel_installed() -> bool:
+def is_app_available() -> bool:
     try:
         with xlwings.App(visible=False):
             pass

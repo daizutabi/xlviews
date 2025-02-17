@@ -3,10 +3,10 @@ from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import FrameContainer, is_excel_installed
+from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import Index
 
-pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
+pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")
