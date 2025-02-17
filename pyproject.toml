@@ -34,12 +34,6 @@ dev-dependencies = [
   "scipy>=1.15",
 ]
 
-[tool.hatch.build.targets.sdist]
-exclude = ["/.github", "/docs"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/xlviews"]
-
 [tool.pytest.ini_options]
 markers = ["app: mark test as app"]
 addopts = [
