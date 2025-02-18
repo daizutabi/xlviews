@@ -20,7 +20,7 @@ class Parent(FrameContainer):
                 "x": [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2],
                 "y": [3, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 4, 4],
                 "a": [5, 4, 3, 2, 1, 4, 3, 2, 1, 3, 2, 1, 2, 1],
-                "b": [10, 4, 9, 14, 5, 4, 6, 3, 4, 9, 12, 13, 9, 2],
+                "b": [10, 4, 9, 14, 5, 4, 6, 3, 4, 9, 12, None, 9, 2],
             },
         )
         return df.set_index(cls.index)
@@ -32,4 +32,4 @@ if __name__ == "__main__":
     fc = Parent(sheet, 3, 2, style=True)
     fc.sf.set_adjacent_column_width(1)
     fc.sf.number_format(b="0.0")
-    DistFrame(fc.sf, ["a", "b"], by="x")
+    DistFrame(fc.sf, ["a", "b"], by=["x", "y"])

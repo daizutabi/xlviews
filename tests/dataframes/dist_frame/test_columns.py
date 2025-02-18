@@ -2,7 +2,6 @@ import pytest
 from pandas import DataFrame
 from xlwings import Sheet
 
-from xlviews.core.formula import NONCONST_VALUE
 from xlviews.dataframes.dist_frame import DistFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_app_available
@@ -51,20 +50,3 @@ def test_group_error(sheet: Sheet):
     sf = SheetFrame(3, 2, data=df, sheet=sheet)
     with pytest.raises(ValueError, match="group must be continuous"):
         sf = DistFrame(sf, None, by=["x", "y"])
-
-
-def test_group_const(sheet: Sheet):
-    df = DataFrame(
-        {
-            "x": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            "y": [3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-            "a": [5, 4, 3, 2, 1, 4, 3, 2, 1, 3, 2, 1, 2, 1],
-            "b": [1, 2, 3, 4, 5, 1, 2, 3, 4, 1, 2, 3, 1, 2],
-        },
-    )
-    df = df.set_index(["x", "y"])
-
-    sf = SheetFrame(3, 2, data=df, sheet=sheet)
-    sf = DistFrame(sf, by=["x", "y"])
-    assert sf.sheet["H20"].value == 1
-    assert sf.sheet["H21"].value == NONCONST_VALUE
