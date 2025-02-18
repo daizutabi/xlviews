@@ -4,9 +4,9 @@ from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
 from xlviews.chart.series import Series
-from xlviews.testing import is_excel_installed
+from xlviews.testing import is_app_available
 
-pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
+pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 @pytest.fixture(scope="module")

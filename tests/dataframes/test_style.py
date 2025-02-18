@@ -4,10 +4,10 @@ from xlwings import Sheet
 
 from xlviews.config import rcParams
 from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import is_excel_installed
+from xlviews.testing import is_app_available
 from xlviews.utils import rgb
 
-pytestmark = pytest.mark.skipif(not is_excel_installed(), reason="Excel not installed")
+pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 @pytest.mark.parametrize(

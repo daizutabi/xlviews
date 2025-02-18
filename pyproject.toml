@@ -24,8 +24,8 @@ Documentation = "https://github.com/daizutabi/xlviews"
 Source = "https://github.com/daizutabi/xlviews"
 Issues = "https://github.com/daizutabi/xlviews/issues"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "pytest-benchmark>=5.1",
   "pytest-clarity>=1",
   "pytest-cov>=6.0",
@@ -45,19 +45,9 @@ addopts = [
   "--strict-markers",
   "-p no:faulthandler",
 ]
-doctest_optionflags = []
-filterwarnings = []
-
-[tool.coverage.run]
-disable_warnings = ["module-not-measured"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "raise NotImplementedError",
-  "if TYPE_CHECKING:",
-  "if __name__",
-]
+exclude_lines = ["no cov", "raise NotImplementedError", "if TYPE_CHECKING:"]
 omit = ["src/xlviews/testing/*"]
 skip_covered = true
 
