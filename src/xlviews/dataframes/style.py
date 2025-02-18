@@ -10,7 +10,7 @@ from xlwings.constants import TableStyleElementType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.core.style import (
+from xlviews.style import (
     hide_succession,
     hide_unique,
     set_alignment,
@@ -43,7 +43,9 @@ def _set_style(
     rng = start.sheet.range(start, end)
 
     if border:
-        set_border(rng, edge_color=rcParams["frame.border.color"])
+        edge_color = rcParams["frame.border.color"]
+        inside_color = rcParams["frame.border.inside.color"]
+        set_border(rng, edge_color=edge_color, inside_color=inside_color)
 
     if fill:
         set_fill(rng, color=rcParams[f"frame.{name}.fill.color"])

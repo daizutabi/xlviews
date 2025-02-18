@@ -7,8 +7,8 @@ import xlwings
 from pywintypes import com_error
 from xlwings import Sheet
 
-from xlviews.core.style import hide_gridlines
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.style import hide_gridlines
 
 if TYPE_CHECKING:
     from pandas import DataFrame

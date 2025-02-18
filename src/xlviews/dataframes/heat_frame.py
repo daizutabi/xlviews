@@ -10,7 +10,7 @@ from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.core.formula import aggregate
 from xlviews.core.range import Range
-from xlviews.core.style import (
+from xlviews.style import (
     set_alignment,
     set_border,
     set_color_scale,

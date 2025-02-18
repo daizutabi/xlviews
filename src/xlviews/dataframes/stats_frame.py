@@ -7,7 +7,7 @@ from xlwings.constants import Direction
 from xlviews.config import rcParams
 from xlviews.core.formula import AGG_FUNCS
 from xlviews.core.range_collection import RangeCollection
-from xlviews.core.style import set_font, set_number_format
+from xlviews.style import set_font, set_number_format
 from xlviews.utils import iter_columns, suspend_screen_updates
 
 from .groupby import GroupBy
