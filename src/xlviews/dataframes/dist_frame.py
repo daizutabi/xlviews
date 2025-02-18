@@ -29,9 +29,6 @@ class DistFrame(SheetFrame):
 
         self.dist_func = get_dist_func(dist, columns)
 
-        if not parent.table:
-            parent.as_table()
-
         row = parent.row
         column = parent.column + parent.width + 1
         by = list(iter_columns(parent.index.names, by)) if by else []
@@ -43,7 +40,6 @@ class DistFrame(SheetFrame):
         self.set_values(parent, columns, by)
         self.style()
         self.autofit()
-        self.const_values(parent)
 
     def set_values(
         self,
@@ -82,23 +78,6 @@ class DistFrame(SheetFrame):
         for column, i in zip(columns, idx, strict=True):
             fmt = parent.sheet.range(parent.row + 1, i).number_format
             self.number_format({f"{column}_v": fmt, f"{column}_s": "0.00"})
-
-    def const_values(self, parent: SheetFrame) -> None:
-        index = parent.index.names
-        array = np.zeros((len(index), 1))
-        data = DataFrame(array, columns=["value"], index=index)
-
-        row = self.row + len(self) + self.columns.nlevels + 1
-        column = self.column
-
-        sf = SheetFrame(row, column, data, self.sheet)
-        sf.style()
-
-        head = Range((parent.row - 1, parent.column), sheet=parent.sheet)
-        tail = Range((sf.row + 1, sf.column + 1), sheet=sf.sheet)
-
-        for k in range(len(index)):
-            tail.offset(k, 0).value = head.offset(0, k).get_address(formula=True)
 
     # def plot(
     #     self,
