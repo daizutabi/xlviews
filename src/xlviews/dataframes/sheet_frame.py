@@ -18,7 +18,7 @@ from xlviews.core.address import index_to_column_name
 from xlviews.core.formula import Func, aggregate
 from xlviews.core.index import Index
 from xlviews.core.range import Range, iter_addresses
-from xlviews.core.style import set_alignment
+from xlviews.style import set_alignment
 from xlviews.utils import suspend_screen_updates
 
 from .groupby import GroupBy

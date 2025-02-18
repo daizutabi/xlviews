@@ -3,6 +3,7 @@ font.name = "Meiryo UI"
 font.size = 9
 border.color = "#000000"
 border.weight = 2
+border.inside.color = "#a0a0a0"
 
 [frame.index.name]
 fill.color = "#ffffe7"

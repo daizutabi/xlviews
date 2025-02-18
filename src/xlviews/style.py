@@ -20,7 +20,7 @@ from xlviews.core.range import Range
 from xlviews.utils import constant, set_font_api
 
 if TYPE_CHECKING:
-    from .range_collection import RangeCollection
+    from .core.range_collection import RangeCollection
 
 
 def set_border_line(
@@ -79,7 +79,7 @@ def set_border(
     edge_weight: int | tuple[int, int, int, int] = 2,
     inside_weight: int = 1,
     edge_color: int | str = 0,
-    inside_color: int | str = rgb(140, 140, 140),
+    inside_color: int | str = 0,
 ) -> None:
     if edge_weight:
         set_border_edge(rng, edge_weight, edge_color)

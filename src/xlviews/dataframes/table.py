@@ -6,7 +6,7 @@ from xlwings import Range
 from xlwings.constants import AutoFilterOperator, ListObjectSourceType, YesNoGuess
 
 from xlviews.core.formula import const
-from xlviews.core.style import set_alignment, set_font
+from xlviews.style import set_alignment, set_font
 
 from .style import set_table_style
 
