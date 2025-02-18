@@ -25,6 +25,19 @@ def test_columns(columns, values, sheet: Sheet):
     assert sf.columns.to_list() == values
 
 
+def test_index_str(sheet: Sheet):
+    fc = Parent(sheet, 3, 2)
+    sf = DistFrame(fc.sf, by="x")
+    assert sf.index.names == ["x"]
+
+
+def test_index_none(sheet: Sheet):
+    fc = Parent(sheet, 3, 2)
+    sf = DistFrame(fc.sf)
+    assert sf.index.names == [None]
+    assert sf.index.to_list() == list(range(14))
+
+
 def test_group_error(sheet: Sheet):
     df = DataFrame(
         {

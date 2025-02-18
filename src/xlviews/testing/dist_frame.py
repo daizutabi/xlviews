@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 from pandas import DataFrame
 
 from xlviews.dataframes.dist_frame import DistFrame
@@ -9,6 +11,7 @@ from xlviews.testing.common import FrameContainer, create_sheet
 class Parent(FrameContainer):
     row: int = 3
     column: int = 2
+    index: ClassVar[list[str] | str] = ["x", "y"]
 
     @classmethod
     def dataframe(cls) -> DataFrame:
@@ -20,12 +23,13 @@ class Parent(FrameContainer):
                 "b": [10, 4, 9, 14, 5, 4, 6, 3, 4, 9, 12, 13, 9, 2],
             },
         )
-        return df.set_index(["x", "y"])
+        return df.set_index(cls.index)
 
 
 if __name__ == "__main__":
     sheet = create_sheet()
+    Parent.index = ["x", "y"]
     fc = Parent(sheet, 3, 2, style=True)
     fc.sf.set_adjacent_column_width(1)
     fc.sf.number_format(b="0.0")
-    DistFrame(fc.sf, ["a", "b"], by=["x", "y"])
+    DistFrame(fc.sf, ["a", "b"], by="x")

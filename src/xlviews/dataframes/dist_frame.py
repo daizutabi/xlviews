@@ -3,10 +3,10 @@ from __future__ import annotations
 from itertools import product
 
 import numpy as np
-from pandas import DataFrame
+from pandas import DataFrame, Index
 
 from xlviews.core.range import Range
-from xlviews.utils import suspend_screen_updates
+from xlviews.utils import iter_columns, suspend_screen_updates
 
 from .sheet_frame import SheetFrame
 
@@ -34,7 +34,9 @@ class DistFrame(SheetFrame):
 
         row = parent.row
         column = parent.column + parent.width + 1
-        data = get_init_data(parent, columns)
+        by = list(iter_columns(parent.index.names, by)) if by else []
+        index = select_index(parent.index, by)
+        data = get_init_data(index, columns)
 
         super().__init__(row, column, data, parent.sheet)
 
@@ -47,7 +49,7 @@ class DistFrame(SheetFrame):
         self,
         parent: SheetFrame,
         columns: list[str],
-        by: str | list[str] | None,
+        by: list[str],
     ) -> None:
         group = parent.groupby(by)
         parent_columns = parent.get_indexer(columns)
@@ -194,10 +196,26 @@ class DistFrame(SheetFrame):
     #     return column_
 
 
-def get_init_data(sf: SheetFrame, columns: list[str]) -> DataFrame:
+def select_index(index: Index, names: list[str]) -> Index:
+    if not names:
+        return Index(range(len(index)))
+
+    if index.nlevels == 1:
+        if index.name in names:
+            return index
+        return Index(range(len(index)))
+
+    for name in index.names:
+        if name not in names:
+            index = index.droplevel(name)
+
+    return index
+
+
+def get_init_data(index: Index, columns: list[str]) -> DataFrame:
     columns = [f"{c}_{suffix}" for c, suffix in product(columns, ["n", "v", "s"])]
-    array = np.zeros((len(sf), len(columns)))
-    return DataFrame(array, index=sf.index, columns=columns)
+    array = np.zeros((len(index), len(columns)))
+    return DataFrame(array, index=index, columns=columns)
 
 
 def get_dist_func(dist: str | dict[str, str], columns: list[str]) -> dict[str, str]:
