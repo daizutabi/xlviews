@@ -29,7 +29,7 @@ def test_func(sf: StatsFrame, funcs: list[str]):
     [
         ("count", "gray"),
         ("mean", "#33aa33"),
-        ("median", "#111151"),
+        ("median", "#111111"),
         ("min", "#7777FF"),
         ("max", "#FF7777"),
         ("soa", "#5555FF"),
