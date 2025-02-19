@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from xlviews.core.range import Range
-from xlviews.dataframes.heat_frame import Colorbar
+from xlviews.dataframes.colorbar import Colorbar
 from xlviews.testing.common import create_sheet
 
 if __name__ == "__main__":
