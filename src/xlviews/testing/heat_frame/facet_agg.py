@@ -22,9 +22,9 @@ def facet(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
     cb.set(vmin=rng, vmax=rng).autofit()
     cb.set_adjacent_column_width(1)
 
-    df = sf.pivot_table("u", ["B", "Y", "y"], ["A", "X", "x"], formula=True)
+    df = sf.pivot_table("u", ["B", "Y"], ["A", "X"], aggfunc="mean", formula=True)
 
-    for key, frame in HeatFrame.facet(2, 13, df, index="B", columns="A"):
+    for key, frame in HeatFrame.facet(2, 13, df, index="B"):
         frame.autofit()
         frame.set_adjacent_column_width(1)
         cb.apply(frame.range)

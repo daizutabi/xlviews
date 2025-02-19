@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy as np
 from pandas import DataFrame, Index, MultiIndex
 
 from xlviews.core.formula import aggregate
@@ -15,10 +14,9 @@ from .sheet_frame import SheetFrame
 from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Iterator
-    from typing import Any, Self
+    from collections.abc import Hashable, Iterator, Sequence
+    from typing import Any, Literal, Self
 
-    from numpy.typing import NDArray
     from pandas import Index
     from xlwings import Sheet
 
@@ -86,6 +84,58 @@ class HeatFrame(SheetFrame):
         cb.set(vmin, vmax, label, autofit)
         return cb
 
+    @classmethod
+    def facet(
+        cls,
+        row: int,
+        column: int,
+        data: DataFrame,
+        index: str | list[str] | None = None,
+        columns: str | list[str] | None = None,
+        padding: tuple[int, int] = (2, 1),
+    ) -> Iterator[tuple[dict[Hashable, Any], Self]]:
+        for r, ikey in iterrows(data.index, index, row, padding[0] + 1):
+            for c, ckey in iterrows(data.columns, columns, column, padding[1] + 1):
+                sub = xs(data, ikey, ckey)
+                yield (ikey | ckey), cls(r, c, sub)
+
+    @classmethod
+    def pair(
+        cls,
+        row: int,
+        column: int,
+        data: DataFrame,
+        values: str | list[str] | None = None,
+        index: str | list[str] | None = None,
+        columns: str | list[str] | None = None,
+        padding: tuple[int, int] = (2, 1),
+        value_name: str = "value",
+        axis: Literal[0, 1] | None = None,
+    ) -> Iterator[tuple[dict[Hashable, Any], Self]]:
+        if values is None:
+            values = data.columns.get_level_values(0).unique().to_list()
+        elif isinstance(values, str):
+            values = [values]
+
+        if axis is None:
+            axis = 1 if columns is None else 0
+
+        nr = row
+        nc = column
+
+        for value in values:
+            sub = xs(data, None, {0: value})
+
+            for key, frame in cls.facet(row, column, sub, index, columns, padding):
+                yield {value_name: value} | key, frame
+                if axis == 1:
+                    nc = max(nc, frame.column + frame.shape[1] + 1 + padding[1])
+                else:
+                    nr = max(nr, frame.row + frame.shape[0] + 1 + padding[0])
+
+            column = nc
+            row = nr
+
 
 def clean_data(data: DataFrame) -> DataFrame:
     data = data.copy()
@@ -101,28 +151,9 @@ def clean_data(data: DataFrame) -> DataFrame:
     return data
 
 
-def facet(
-    row: int,
-    column: int,
-    data: DataFrame,
-    index: str | list[str] | None = None,
-    columns: str | list[str] | None = None,
-    padding: tuple[int, int] = (1, 1),
-) -> NDArray:
-    frames = []
-    for row_, isub in iterrows(data.index, index, row, padding[0] + 1):
-        frames.append([])
-        for column_, csub in iterrows(data.columns, columns, column, padding[1] + 1):
-            sub = xs(data, isub, csub)
-            frame = HeatFrame(row_, column_, sub)
-            frames[-1].append(frame)
-
-    return np.array(frames)
-
-
 def iterrows(
     index: Index,
-    levels: str | list[str] | None,
+    levels: int | str | Sequence[int | str] | None,
     offset: int = 0,
     padding: int = 0,
 ) -> Iterator[tuple[int, dict[Hashable, Any]]]:
@@ -130,7 +161,7 @@ def iterrows(
         yield offset, {}
         return
 
-    if isinstance(levels, str):
+    if isinstance(levels, int | str):
         levels = [levels]
 
     if levels:
