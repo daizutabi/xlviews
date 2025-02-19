@@ -14,20 +14,26 @@ if TYPE_CHECKING:
     from xlviews.dataframes.sheet_frame import SheetFrame
 
 
-def facet(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
+def pair(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
     sf.set_adjacent_column_width(1)
 
     rng = sf.get_range("u")
-    cb = Colorbar(3, 11, 12)
-    cb.set(vmin=rng, vmax=rng).autofit()
-    cb.set_adjacent_column_width(1)
+    cbu = Colorbar(3, 11, 12)
+    cbu.set(vmin=rng, vmax=rng).autofit()
+    rng = sf.get_range("v")
+    cbv = Colorbar(16, 11, 12)
+    cbv.set(vmin=rng, vmax=rng).autofit()
+    cbv.set_adjacent_column_width(1)
 
-    df = sf.pivot_table("u", ["B", "Y", "y"], ["A", "X", "x"], formula=True)
+    df = sf.pivot_table(["u", "v"], ["B", "Y", "y"], ["A", "X", "x"], formula=True)
 
-    for key, frame in HeatFrame.facet(2, 13, df, index="B", columns="A"):
+    for key, frame in HeatFrame.pair(2, 13, df, index="B", columns="A", axis=1):
         frame.autofit()
         frame.set_adjacent_column_width(1)
-        cb.apply(frame.range)
+        if key["value"] == "u":
+            cbu.apply(frame.range)
+        else:
+            cbv.apply(frame.range)
         cell = Range(frame.row - 1, frame.column + 1)
         cell.value = str(key)
         yield key, frame
@@ -36,4 +42,4 @@ def facet(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
 if __name__ == "__main__":
     sheet = create_sheet()
     fc = Pivot(sheet, style=True)
-    list(facet(fc.sf))
+    list(pair(fc.sf))
