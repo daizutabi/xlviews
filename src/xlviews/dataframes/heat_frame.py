@@ -75,7 +75,10 @@ class HeatFrame(SheetFrame):
         color: Color | None = None,
     ) -> Self:
         set_font(self.range, size=size, bold=bold, italic=italic, color=color)
+        return self
 
+    def number_format(self, number_format: str) -> Self:
+        self.range.impl.number_format = number_format
         return self
 
     def colorbar(
