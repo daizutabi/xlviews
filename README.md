@@ -5,6 +5,38 @@
 [![Build Status][GHAction-image]][GHAction-link]
 [![Coverage Status][codecov-image]][codecov-link]
 
+## Installation
+
+```bash
+pip install xlviews
+```
+
+## Examples
+
+### `SheetFrame`
+
+```bash
+python -m xlviews.testing.sheet_frame.base
+```
+
+![SheetFrame](./docs/images/sheet_frame.png)
+
+### `StatsFrame`
+
+```bash
+python -m xlviews.testing.stats_frame
+```
+
+![StatsFrame](./docs/images/stats_frame.png)
+
+### `HeatFrame`
+
+```bash
+python -m xlviews.testing.heat_frame.base
+```
+
+![HeatFrame](./docs/images/heat_frame.png)
+
 <!-- Badges -->
 [pypi-v-image]: https://img.shields.io/pypi/v/xlviews.svg
 [pypi-v-link]: https://pypi.org/project/xlviews/
