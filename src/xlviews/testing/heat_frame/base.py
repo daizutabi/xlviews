@@ -19,14 +19,16 @@ class Base(HeatFrameContainer):
         return sf.pivot_table("v", "y", "x", formula=True)
 
     def init(self) -> None:
-        super().init()
         cb = self.sf.colorbar(label="v", autofit=True)
         cb.set_adjacent_column_width(1)
-        self.sf.style(color="#e0e0e0")
+        self.sf.style(color="#e0e0e0").autofit()
 
 
 class MultiIndexParent(MultiIndexParent_):
     column: int = 15
+
+    def init(self) -> None:
+        self.sf.number_format("0.0").autofit()
 
 
 class MultiIndex(HeatFrameContainer):
