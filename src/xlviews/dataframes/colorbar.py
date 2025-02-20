@@ -55,8 +55,8 @@ class Colorbar:
 
     def set(
         self,
-        vmin: float | str | Range | None = None,
-        vmax: float | str | Range | None = None,
+        vmin: float | str | Range | list[Range] | None = None,
+        vmax: float | str | Range | list[Range] | None = None,
         label: str | None = None,
         autofit: bool = False,
     ) -> Self:
