@@ -14,7 +14,7 @@ from xlwings.constants import (
     LineStyle,
 )
 
-from xlviews.colors import rgb
+from xlviews.colors import Color, rgb
 from xlviews.config import rcParams
 from xlviews.core.range import Range
 from xlviews.utils import constant, set_font_api
@@ -27,7 +27,7 @@ def set_border_line(
     rng: Range | RangeImpl,
     index: str,
     weight: int = 2,
-    color: int | str = 0,
+    color: Color = 0,
 ) -> None:
     if not weight:
         return
@@ -42,7 +42,7 @@ def set_border_line(
 def set_border_edge(
     rng: Range | RangeImpl,
     weight: int | tuple[int, int, int, int] = 3,
-    color: int | str = 0,
+    color: Color = 0,
 ) -> None:
     if isinstance(weight, int):
         wl = wr = wt = wb = weight
@@ -68,7 +68,7 @@ def set_border_edge(
 def set_border_inside(
     rng: Range | RangeImpl,
     weight: int = 1,
-    color: int | str = 0,
+    color: Color = 0,
 ) -> None:
     set_border_line(rng, "xlInsideVertical", weight=weight, color=color)
     set_border_line(rng, "xlInsideHorizontal", weight=weight, color=color)
@@ -78,8 +78,8 @@ def set_border(
     rng: Range | RangeImpl,
     edge_weight: int | tuple[int, int, int, int] = 2,
     inside_weight: int = 1,
-    edge_color: int | str = 0,
-    inside_color: int | str = 0,
+    edge_color: Color = 0,
+    inside_color: Color = 0,
 ) -> None:
     if edge_weight:
         set_border_edge(rng, edge_weight, edge_color)
@@ -90,7 +90,7 @@ def set_border(
 
 def set_fill(
     rng: Range | RangeCollection | RangeImpl,
-    color: int | str | None = None,
+    color: Color | None = None,
 ) -> None:
     if color is not None:
         rng.api.Interior.Color = rgb(color)
@@ -103,7 +103,7 @@ def set_font(
     size: float | None = None,
     bold: bool | None = None,
     italic: bool | None = None,
-    color: int | str | None = None,
+    color: Color | None = None,
 ) -> None:
     name = name or rcParams["frame.font.name"]
     set_font_api(rng.api, name, size=size, bold=bold, italic=italic, color=color)
@@ -125,11 +125,15 @@ def set_number_format(rng: Range | RangeCollection | RangeImpl, fmt: str) -> Non
     rng.api.NumberFormat = fmt
 
 
+EVEN_COLOR = rgb(240, 250, 255)
+ODD_COLOR = rgb(255, 255, 255)
+
+
 def set_banding(
     rng: Range | RangeImpl,
     axis: int = 0,
-    even_color: int | str = rgb(240, 250, 255),
-    odd_color: int | str = rgb(255, 255, 255),
+    even_color: Color = EVEN_COLOR,
+    odd_color: Color = ODD_COLOR,
 ) -> None:
     def banding(mod: int, color: int) -> None:
         formula = f"=MOD(ROW(), 2)={mod}" if axis == 0 else f"=MOD(COLUMN(), 2)={mod}"
@@ -149,9 +153,12 @@ def set_banding(
     banding(1, rgb(even_color))
 
 
+SUCCESSION_COLOR = rgb(200, 200, 200)
+
+
 def hide_succession(
     rng: Range | RangeImpl,
-    color: int | str = rgb(200, 200, 200),
+    color: Color = SUCCESSION_COLOR,
 ) -> None:
     cell = rng[0].get_address(row_absolute=False, column_absolute=False)
 
@@ -178,10 +185,13 @@ def hide_succession(
     condition.Font.Color = rgb(color)
 
 
+UNIQUE_COLOR = rgb(100, 100, 100)
+
+
 def hide_unique(
     rng: Range | RangeImpl,
     length: int,
-    color: int | str = rgb(100, 100, 100),
+    color: Color = UNIQUE_COLOR,
 ) -> None:
     def address(r: Range | RangeImpl) -> str:
         return r.get_address(row_absolute=False, column_absolute=False)

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from xlwings import Range as RangeImpl
 from xlwings.constants import LineStyle
 
-from xlviews.colors import rgb
+from xlviews.colors import Color, rgb
 from xlviews.core.address import reference
 from xlviews.core.range import Range
 from xlviews.core.range_collection import RangeCollection
@@ -94,7 +94,7 @@ class Series:
         self,
         marker: str | None = "o",
         line: str | None = "-",
-        color: str | int | tuple[int, int, int] = "black",
+        color: Color = "black",
         size: int = 5,
         weight: float = 2,
         alpha: float = 0,

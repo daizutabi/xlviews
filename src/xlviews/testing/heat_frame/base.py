@@ -22,6 +22,7 @@ class Base(HeatFrameContainer):
         super().init()
         cb = self.sf.colorbar(label="v", autofit=True)
         cb.set_adjacent_column_width(1)
+        self.sf.style(color="#e0e0e0")
 
 
 class MultiIndexParent(MultiIndexParent_):

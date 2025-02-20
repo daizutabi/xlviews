@@ -7,7 +7,7 @@ from pandas import DataFrame, Index, MultiIndex
 from xlviews.core.formula import aggregate
 from xlviews.core.range import Range
 from xlviews.dataframes.colorbar import Colorbar
-from xlviews.style import set_color_scale
+from xlviews.style import set_color_scale, set_font
 from xlviews.utils import suspend_screen_updates
 
 from .sheet_frame import SheetFrame
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
     from pandas import Index
     from xlwings import Sheet
+
+    from xlviews.colors import Color
 
 
 class HeatFrame(SheetFrame):
@@ -62,6 +64,18 @@ class HeatFrame(SheetFrame):
             vmax = aggregate("max", rng)
 
         set_color_scale(rng, vmin, vmax)
+        return self
+
+    def style(
+        self,
+        *,
+        size: float | None = None,
+        bold: bool | None = None,
+        italic: bool | None = None,
+        color: Color | None = None,
+    ) -> Self:
+        set_font(self.range, size=size, bold=bold, italic=italic, color=color)
+
         return self
 
     def colorbar(
