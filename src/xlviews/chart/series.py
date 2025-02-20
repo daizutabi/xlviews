@@ -13,7 +13,7 @@ from xlviews.core.range_collection import RangeCollection
 from .style import get_line_style, get_marker_style
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Self
 
     from xlwings import Sheet
 
@@ -90,25 +90,40 @@ class Series:
     def delete(self) -> None:
         self.api.Delete()
 
-    def set(
+    def marker(
         self,
-        marker: str | None = "o",
-        line: str | None = "-",
-        color: Color = "black",
-        size: int = 5,
-        weight: float = 2,
+        style: str,
+        size: int = 6,
+        color: Color | None = None,
         alpha: float = 0,
-        **kwargs,
-    ) -> None:
-        if line is None:
-            weight = min(size / 4, weight)
-            line_alpha = alpha / 2
-        else:
-            line_alpha = alpha
+        weight: float = 1,
+    ) -> Self:
+        set_marker(self.api, get_marker_style(style), size)
+        if color is not None:
+            set_fill(self.api, rgb(color), alpha)
+            alpha = alpha / 2 if weight else alpha
+            set_line(self.api, get_line_style(None), rgb(color), weight, alpha)
 
-        set_marker(self.api, get_marker_style(marker), size)
-        set_fill(self.api, rgb(color), alpha)
-        set_line(self.api, rgb(color), get_line_style(line), weight, line_alpha)
+        return self
+
+    def line(
+        self,
+        style: str,
+        weight: float = 2,
+        color: Color | None = None,
+        alpha: float = 0,
+        marker: str | None = None,
+        size: int = 6,
+    ) -> None:
+        if color is not None:
+            color = rgb(color)
+
+        set_line(self.api, get_line_style(style), color, weight, alpha)
+
+        if marker:
+            set_marker(self.api, get_marker_style(marker), size)
+            if color is not None:
+                set_fill(self.api, color, alpha)
 
 
 def set_marker(api: Any, style: int, size: int) -> None:
@@ -123,10 +138,17 @@ def set_fill(api: Any, color: int, alpha: float) -> None:
     api.Format.Fill.ForeColor.RGB = color
 
 
-def set_line(api: Any, color: int, style: int, weight: float, alpha: float) -> None:
+def set_line(
+    api: Any,
+    style: int,
+    color: int | None,
+    weight: float,
+    alpha: float,
+) -> None:
     api.Border.LineStyle = LineStyle.xlContinuous
     api.Format.Line.Visible = True
     api.Format.Line.Weight = weight
-    api.Format.Line.Transparency = alpha
-    api.Format.Line.ForeColor.RGB = color
+    if color is not None:
+        api.Format.Line.Transparency = alpha
+        api.Format.Line.ForeColor.RGB = color
     api.Border.LineStyle = style

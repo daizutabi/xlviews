@@ -24,9 +24,10 @@ if __name__ == "__main__":
     fc = Base(sheet, style=True)
     sf = fc.sf
 
-    s = sf.agg(include_sheetname=True)
+    data = sf.agg(include_sheetname=True)
     ax = Axes(100, 20, chart_type=ChartType.xlXYScatter)
-    ax.add_series(s["x"], s["y"], label="label")
+    s = ax.add_series(data["x"], data["y"], label="label")
+    s.marker("o", color="red", alpha=0.6)
     ax.set(
         xlabel="xlabel",
         ylabel="ylabel",
@@ -35,11 +36,13 @@ if __name__ == "__main__":
         legend=(1, -1),
     )
 
-    ax = Axes(chart_type=ChartType.xlXYScatter)
+    # ax = Axes(chart_type=ChartType.xlXYScatterLinesNoMarkers)
+    ax = Axes(chart_type=ChartType.xlXYScatterLines)
     df = sf.groupby("b").agg(include_sheetname=True)
     for key, s in df.iterrows():
         print(key, s["x"], s["y"])
-        ax.add_series(s["x"], s["y"], label=f"{key}")
+        ax.add_series(s["x"], s["y"], label=f"{key}").line("-", marker="o")
+
     ax.set(
         xlabel="xlabel",
         ylabel="ylabel",
@@ -48,11 +51,11 @@ if __name__ == "__main__":
         legend=(-1, -1),
     )
 
-    ax = Axes(chart_type=ChartType.xlXYScatterLines)
+    ax = Axes(chart_type=ChartType.xlXYScatterLinesNoMarkers)
     df = sf.groupby(["b", "c"]).agg(include_sheetname=True)
     for key, s in df.iterrows():
         print(key, s["x"], s["y"])
-        ax.add_series(s["x"], s["y"], label=f"{key[0]}_{key[1]}")  # type: ignore
+        ax.add_series(s["x"], s["y"], label=f"{key[0]}_{key[1]}")
     ax.set(
         xlabel="xlabel",
         ylabel="ylabel",
