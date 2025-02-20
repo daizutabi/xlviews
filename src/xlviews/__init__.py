@@ -1,5 +1,6 @@
 from xlviews.chart.axes import Axes
 from xlviews.chart.series import Series
+from xlviews.core.formula import aggregate
 from xlviews.core.range import Range
 from xlviews.dataframes.colorbar import Colorbar
 from xlviews.dataframes.dist_frame import DistFrame
@@ -19,5 +20,6 @@ __all__ = [
     "Series",
     "SheetFrame",
     "StatsFrame",
+    "aggregate",
     "constant",
 ]
