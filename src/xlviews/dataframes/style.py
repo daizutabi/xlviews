@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING
 import pywintypes
 from xlwings.constants import TableStyleElementType
 
-from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.style import (
+    EVEN_COLOR,
+    ODD_COLOR,
     hide_succession,
     hide_unique,
     set_alignment,
@@ -24,6 +25,8 @@ from xlviews.utils import iter_group_locs, suspend_screen_updates
 if TYPE_CHECKING:
     from pandas import Index
     from xlwings import Range, Sheet
+
+    from xlviews.colors import Color
 
     from .heat_frame import HeatFrame
     from .sheet_frame import SheetFrame
@@ -168,8 +171,8 @@ def set_wide_column_style(sf: SheetFrame) -> None:
 
 def set_table_style(
     table: Table,
-    even_color: int | str = rgb(240, 250, 255),
-    odd_color: int | str = rgb(255, 255, 255),
+    even_color: Color = EVEN_COLOR,
+    odd_color: Color = ODD_COLOR,
 ) -> None:
     book = table.sheet.book.api
 

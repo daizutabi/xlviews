@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from typing import TypeAlias
+
+Color: TypeAlias = int | tuple[int, int, int] | str
+
 
 def rgb(
-    color: int | tuple[int, int, int] | str,
+    color: Color,
     green: int | None = None,
     blue: int | None = None,
 ) -> int:
@@ -29,21 +33,23 @@ def rgb(
     if isinstance(color, int) and green is None and blue is None:
         return color
 
-    if all(isinstance(x, int) for x in [color, green, blue]):
-        return color + green * 256 + blue * 256 * 256  # type: ignore
+    if isinstance(color, int) and isinstance(green, int) and isinstance(blue, int):
+        return color + green * 256 + blue * 256 * 256
 
     if isinstance(color, str):
         color = cnames.get(color, color)
 
         if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
-            raise ValueError("Invalid color format. Expected #xxxxxx.")
+            msg = "Invalid color format. Expected int, tuple[int, int, int], or str."
+            raise ValueError(msg)
 
         return rgb(int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16))
 
     if isinstance(color, tuple):
         return rgb(*color)
 
-    raise ValueError("Invalid color format. Expected #xxxxxx.")
+    msg = "Invalid color format. Expected int, tuple[int, int, int], or str."
+    raise ValueError(msg)
 
 
 cnames = {

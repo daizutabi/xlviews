@@ -7,7 +7,7 @@ import xlwings
 from pandas import DataFrame, Series
 from xlwings.constants import DVType, FormatConditionOperator
 
-from xlviews.colors import rgb
+from xlviews.colors import Color, rgb
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -114,7 +114,7 @@ def set_font_api(
     size: float | None = None,
     bold: bool | None = None,
     italic: bool | None = None,
-    color: int | str | None = None,
+    color: Color | None = None,
 ) -> None:
     font = api.Font
     if name:
