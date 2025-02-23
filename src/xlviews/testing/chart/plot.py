@@ -1,23 +1,11 @@
 from __future__ import annotations
 
-from pandas import DataFrame
 from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
-from xlviews.testing.common import FrameContainer, create_sheet
+from xlviews.testing.common import create_sheet
 
-
-class Base(FrameContainer):
-    @classmethod
-    def dataframe(cls) -> DataFrame:
-        a = ["c"] * 10
-        b = ["s"] * 5 + ["t"] * 5
-        c = ([100] * 2 + [200] * 3) * 2
-        x = list(range(10))
-        y = list(range(10, 20))
-        df = DataFrame({"a": a, "b": b, "c": c, "x": x, "y": y})
-        return df.set_index(["a", "b", "c"])
-
+from .base import Base
 
 if __name__ == "__main__":
     sheet = create_sheet()
@@ -28,7 +16,6 @@ if __name__ == "__main__":
     ax = Axes(100, 20, chart_type=ChartType.xlXYScatter)
     s = ax.add_series(data["x"], data["y"], label="label")
     s.marker("o", color="red", alpha=0.6)
-
     ax.set(
         xlabel="xlabel",
         ylabel="ylabel",
@@ -37,9 +24,11 @@ if __name__ == "__main__":
         legend=(1, -1),
     )
 
+    # ax = Axes(chart_type=ChartType.xlXYScatterLinesNoMarkers)
     ax = Axes(chart_type=ChartType.xlXYScatterLines)
     df = sf.groupby("b").agg(include_sheetname=True)
     for key, s in df.iterrows():
+        print(key, s["x"], s["y"])
         ax.add_series(s["x"], s["y"], label=f"{key}").line("-", marker="o")
 
     ax.set(
@@ -53,8 +42,8 @@ if __name__ == "__main__":
     ax = Axes(chart_type=ChartType.xlXYScatterLinesNoMarkers)
     df = sf.groupby(["b", "c"]).agg(include_sheetname=True)
     for key, s in df.iterrows():
+        print(key, s["x"], s["y"])
         ax.add_series(s["x"], s["y"], label=f"{key[0]}_{key[1]}")  # type: ignore
-
     ax.set(
         xlabel="xlabel",
         ylabel="ylabel",

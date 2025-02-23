@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
 @pytest.fixture
 def ax(sheet: Sheet):
     ct = ChartType.xlXYScatterLines
-    return Axes(300, 10, chart_type=ct, sheet=sheet)
+    return Axes(2, 2, ct, sheet)
 
 
 def test_add_series_xy(ax: Axes):

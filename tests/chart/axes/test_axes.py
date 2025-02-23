@@ -11,17 +11,24 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
 @pytest.fixture
 def ax(sheet_module: Sheet):
     ct = ChartType.xlXYScatterLines
-    return Axes(300, 10, chart_type=ct, sheet=sheet_module)
+    return Axes(
+        left=300,
+        top=10,
+        width=250,
+        height=300,
+        chart_type=ct,
+        sheet=sheet_module,
+    )
 
 
 def test_chart_position(ax: Axes):
     assert ax.chart.left == 300
-    assert 9.75 <= ax.chart.top <= 10
+    assert ax.chart.top == 10
 
 
 def test_chart_dimensions(ax: Axes):
-    assert ax.chart.width == 200
-    assert 199.5 <= ax.chart.height <= 200
+    assert ax.chart.width == 250
+    assert ax.chart.height == 300
 
 
 def test_chart_type(ax: Axes):

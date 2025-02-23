@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
 @pytest.fixture(scope="module")
 def ax(sheet_module: Sheet):
     ct = ChartType.xlXYScatterLines
-    ax = Axes(300, 10, chart_type=ct, sheet=sheet_module)
+    ax = Axes(2, 2, ct, sheet_module)
     x = sheet_module["B2:B11"]
     y = sheet_module["C2:C11"]
     z = sheet_module["D2:D11"]
@@ -205,7 +205,7 @@ def test_style(ax: Axes):
 
 def test_legend_none(sheet: Sheet):
     ct = ChartType.xlXYScatterLines
-    ax = Axes(300, 10, chart_type=ct, sheet=sheet)
+    ax = Axes(2, 2, ct, sheet)
     x = sheet["B2:B11"]
     y = sheet["C2:C11"]
     z = sheet["D2:D11"]

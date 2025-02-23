@@ -81,15 +81,15 @@ class Axes:
     @suspend_screen_updates
     def __init__(
         self,
+        row: int | None = None,
+        column: int | None = None,
+        chart_type: int = ChartType.xlXYScatter,
+        sheet: Sheet | None = None,
+        *,
         left: float | None = None,
         top: float | None = None,
         width: float = 0,
         height: float = 0,
-        *,
-        row: int | None = None,
-        column: int | None = None,
-        sheet: Sheet | None = None,
-        chart_type: int = ChartType.xlXYScatter,
         border_width: int = 0,
         visible_only: bool = True,
         has_legend: bool = True,
@@ -124,6 +124,35 @@ class Axes:
         self.chart.api[1].Legend.IncludeInLayout = include_in_layout
 
         self.series_collection = []
+
+    @suspend_screen_updates
+    def copy(
+        self,
+        row: int | None = None,
+        column: int | None = None,
+        *,
+        left: float | None = None,
+        top: float | None = None,
+    ) -> Self:
+        border_width = self.chart.api[0].Border.LineStyle
+        visible_only = self.chart.api[1].PlotVisibleOnly
+        has_legend = self.chart.api[1].HasLegend
+        include_in_layout = self.chart.api[1].Legend.IncludeInLayout
+
+        return self.__class__(
+            row=row,
+            column=column,
+            chart_type=self.chart_type,
+            sheet=self.sheet,
+            left=left,
+            top=top,
+            width=self.chart.width,
+            height=self.chart.height,
+            border_width=border_width,
+            visible_only=visible_only,
+            has_legend=has_legend,
+            include_in_layout=include_in_layout,
+        )
 
     @property
     def xaxis(self):  # noqa: ANN201
