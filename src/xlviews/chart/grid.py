@@ -118,10 +118,13 @@ class Grid:
             r, c = key
             if isinstance(r, int) and isinstance(c, int):
                 return self.axes[r][c]
+
             if isinstance(r, slice) and isinstance(c, int):
                 return Series([row[c] for row in self.axes[r]])
+
             if isinstance(r, int) and isinstance(c, slice):
                 return Series(self.axes[r][c])
+
             if isinstance(r, slice) and isinstance(c, slice):
                 return Grid([row[c] for row in self.axes[r]])
 
