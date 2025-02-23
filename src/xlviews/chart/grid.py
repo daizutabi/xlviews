@@ -23,27 +23,15 @@ class Series:
             self.axes = ax
             return
 
-        left = ax.chart.left
-        top = ax.chart.top
-        width = ax.chart.width
-        height = ax.chart.height
+        if axis == 0:
+            series = Grid(ax, 1, n)[0, :]
+        elif axis == 1:
+            series = Grid(ax, n, 1)[:, 0]
+        else:
+            msg = f"Invalid axis: {axis}"
+            raise ValueError(msg)
 
-        axes = []
-        for k in range(n):
-            if k == 0:
-                axes.append(ax)
-            else:
-                if axis == 0:
-                    left_ = left + k * width
-                    top_ = top
-                else:
-                    left_ = left
-                    top_ = top + k * height
-
-                new = ax.copy(left=left_, top=top_)
-                axes.append(new)
-
-        self.axes = axes
+        self.axes = list(series)
 
     @overload
     def __getitem__(self, key: int) -> Axes: ...
@@ -130,10 +118,13 @@ class Grid:
             r, c = key
             if isinstance(r, int) and isinstance(c, int):
                 return self.axes[r][c]
+
             if isinstance(r, slice) and isinstance(c, int):
                 return Series([row[c] for row in self.axes[r]])
+
             if isinstance(r, int) and isinstance(c, slice):
                 return Series(self.axes[r][c])
+
             if isinstance(r, slice) and isinstance(c, slice):
                 return Grid([row[c] for row in self.axes[r]])
 
