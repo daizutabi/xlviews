@@ -1,42 +1,20 @@
 import pytest
-from pandas import DataFrame
 from xlwings import Sheet
 
 from xlviews.chart.axes import Axes
-from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.config import rcParams
 from xlviews.testing import is_app_available
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
-
-@pytest.mark.parametrize(
-    ("pos", "left", "top"),
-    [("right", 312, 18), ("inside", 134, 66), ("bottom", 52, 90)],
-)
-def test_set_first_position(sheet: Sheet, pos: str, left: float, top: float):
-    from xlviews.chart.axes import (
-        FIRST_POSITION,
-        clear_first_position,
-        set_first_position,
-    )
-
-    df = DataFrame([[1, 2, 3], [4, 5, 6]], columns=["a", "b", "c"])
-    sf = SheetFrame(2, 2, data=df, sheet=sheet)
-
-    set_first_position(sf, pos)
-    assert FIRST_POSITION["left"] == left
-    assert FIRST_POSITION["top"] == top
-    clear_first_position()
+LEFT = rcParams["chart.left"]
+TOP = rcParams["chart.top"]
 
 
-@pytest.mark.parametrize(
-    ("args", "expected"),
-    [((10, 20), (10, 20)), ((None, None), (50, 50)), ((0, None), (50, 50))],
-)
-def test_chart_position(sheet: Sheet, args, expected):
-    from xlviews.chart.axes import chart_position
-
-    assert chart_position(sheet, *args) == expected
+def test_chart_position_none(sheet: Sheet):
+    axes = Axes(sheet=sheet)
+    assert axes.chart.left == LEFT
+    assert axes.chart.top == TOP
 
 
 def test_chart_position_from_cell(sheet: Sheet):
@@ -45,22 +23,47 @@ def test_chart_position_from_cell(sheet: Sheet):
     assert axes.chart.top == 4 * sheet.cells(1, 1).height
 
 
-def test_chart_position_from_chart(sheet: Sheet):
-    from xlviews.chart.axes import clear_first_position
-
-    clear_first_position()
-
+def test_chart_position_right(sheet: Sheet):
     a = Axes(sheet=sheet)
-    assert a.chart.left == 50
-    assert abs(a.chart.top - 50) <= 0.5
-
     b = Axes(sheet=sheet)
-    assert b.chart.left == a.chart.left + a.chart.width
+    assert b.chart.left == LEFT + a.chart.width
+    assert a.chart.top == TOP
 
-    c = Axes(0, None, width=200, sheet=sheet)
-    assert c.chart.left == a.chart.left
-    assert abs(c.chart.top - (a.chart.top + a.chart.height)) <= 0.5
 
-    d = Axes(sheet=sheet)
-    assert abs(d.chart.left - (c.chart.left + 200)) <= 0.5
-    assert abs(d.chart.top - c.chart.top) <= 0.5
+def test_chart_position_bottom(sheet: Sheet):
+    a = Axes(sheet=sheet)
+    b = Axes(sheet=sheet, top=-1)
+    assert b.chart.left == LEFT
+    assert b.chart.top == TOP + a.chart.height
+
+
+def test_chart_position_left(sheet: Sheet):
+    a = Axes(sheet=sheet)
+    Axes(sheet=sheet)
+    c = Axes(sheet=sheet, left=0)
+    assert c.chart.left == LEFT
+    assert c.chart.top == a.chart.top + a.chart.height
+
+
+def test_chart_position_left_top(sheet: Sheet):
+    Axes(sheet=sheet)
+    Axes(sheet=sheet)
+    c = Axes(sheet=sheet, left=0, top=100)
+    assert c.chart.left == LEFT
+    assert c.chart.top == 100
+
+
+def test_chart_position_top(sheet: Sheet):
+    a = Axes(sheet=sheet)
+    Axes(sheet=sheet, top=-1)
+    c = Axes(sheet=sheet, top=0)
+    assert c.chart.left == a.chart.left + a.chart.width
+    assert c.chart.top == TOP
+
+
+def test_chart_position_top_left(sheet: Sheet):
+    Axes(sheet=sheet)
+    Axes(sheet=sheet, top=-1)
+    c = Axes(sheet=sheet, top=0, left=200)
+    assert c.chart.left == 200
+    assert c.chart.top == TOP
