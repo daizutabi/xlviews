@@ -23,10 +23,11 @@ if __name__ == "__main__":
     sheet = create_sheet()
     fc = Base(sheet, style=True)
     sf = fc.sf
+    sf.set_adjacent_column_width(1)
 
     data = sf.agg(include_sheetname=True)
-    ax = Axes(100, 20, chart_type=ChartType.xlXYScatter)
-    s = ax.add_series(data["x"], data["y"], label="label")
+    ax = Axes(2, 8, chart_type=ChartType.xlXYScatter)
+    s = ax.add_series(data["x"], data["y"])  # , label=Non"a")  # "label")
     s.marker("o", color="red", alpha=0.6)
 
     ax.set(

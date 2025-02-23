@@ -3,20 +3,12 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING
 
 from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.core.address import reference
 from xlviews.utils import set_font_api
-
-if TYPE_CHECKING:
-    from xlwings import Range as RangeImpl
-    from xlwings import Sheet
-
-    from xlviews.core.range import Range
 
 COLORS = [
     "#1f77b4",
@@ -85,10 +77,9 @@ def get_axis_label(axis) -> str | None:  # noqa: ANN001
 
 def set_axis_label(
     axis,  # noqa: ANN001
-    label: str | tuple[int, int] | Range | RangeImpl | None = None,
+    label: str | None = None,
     name: str | None = None,
     size: float | None = None,
-    sheet: Sheet | None = None,
     **kwargs,
 ) -> None:
     if not label:
@@ -97,7 +88,7 @@ def set_axis_label(
 
     axis.HasTitle = True
     axis_title = axis.AxisTitle
-    axis_title.Text = reference(label, sheet)
+    axis_title.Text = label
 
     name = name or rcParams["chart.font.name"]
     size = size or rcParams["chart.axis.title.font.size"]

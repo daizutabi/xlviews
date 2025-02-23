@@ -52,20 +52,3 @@ def column_name_to_index(col: str) -> int:
         index = index * 26 + (ord(char) - ord("A") + 1)
 
     return index
-
-
-def reference(
-    cell: str | tuple[int, int] | Range | RangeImpl,
-    sheet: Sheet | None = None,
-) -> str:
-    """Return a reference to a cell with sheet name for chart."""
-    if isinstance(cell, str):
-        return cell
-
-    if isinstance(cell, tuple):
-        if sheet is None:
-            raise ValueError("`sheet` is required when `cell` is a tuple")
-
-        cell = sheet.range(*cell)
-
-    return "=" + cell.get_address(include_sheetname=True)
