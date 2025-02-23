@@ -54,6 +54,12 @@ def test_series_iter(seriesx: Series):
     assert ax.chart.top == 40
 
 
+def test_series_axis_error(seriesx):
+    ax = seriesx[0]
+    with pytest.raises(ValueError, match="Invalid axis: 2"):
+        Series(ax, 1, axis=2)  # type: ignore
+
+
 @pytest.fixture(scope="module")
 def grid(sheet_module: Sheet):
     ax = Axes(left=30, top=40, width=120, height=150, sheet=sheet_module)

@@ -25,8 +25,11 @@ class Series:
 
         if axis == 0:
             series = Grid(ax, 1, n)[0, :]
-        else:
+        elif axis == 1:
             series = Grid(ax, n, 1)[:, 0]
+        else:
+            msg = f"Invalid axis: {axis}"
+            raise ValueError(msg)
 
         self.axes = list(series)
 
