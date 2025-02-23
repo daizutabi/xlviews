@@ -31,31 +31,6 @@ if TYPE_CHECKING:
     from xlwings import Range as RangeImpl
 
     from xlviews.core.range import Range
-    from xlviews.dataframes.sheet_frame import SheetFrame
-
-FIRST_POSITION = {"left": 50, "top": 50}
-
-
-def clear_first_position(left: int = 50, top: int = 50) -> None:
-    FIRST_POSITION["left"] = left
-    FIRST_POSITION["top"] = top
-
-
-def set_first_position(sf: SheetFrame, pos: str = "right") -> None:
-    if pos == "right":
-        cell = sf.get_adjacent_cell(offset=0)
-        FIRST_POSITION["left"] = cell.left
-        FIRST_POSITION["top"] = cell.top
-
-    elif pos == "inside":
-        cell = sf.cell.offset(sf.columns.nlevels, sf.index.nlevels)
-        FIRST_POSITION["left"] = cell.left + 30
-        FIRST_POSITION["top"] = cell.top + 30
-
-    elif pos == "bottom":
-        cell = sf.cell.offset(sf.columns.nlevels + len(sf) + 1)
-        FIRST_POSITION["left"] = cell.left
-        FIRST_POSITION["top"] = cell.top
 
 
 def chart_position(
@@ -63,33 +38,38 @@ def chart_position(
     left: float | None,
     top: float | None,
 ) -> tuple[float, float]:
-    """Return the position of the chart.
-
-    If left is 0 and top is None, it will create a new row.
-    If left is None and top is None, it will be placed to the right.
-    """
-    if left is not None and top is not None:
+    """Return the position of the chart."""
+    if left and left > 0 and top and top > 0:
         return left, top
 
     if not sheet.charts:
-        return left or FIRST_POSITION["left"], top or FIRST_POSITION["top"]
+        return left or rcParams["chart.left"], top or rcParams["chart.top"]
 
-    if left == 0 and top is None:  # New row
-        left = FIRST_POSITION["left"]
-        top = FIRST_POSITION["top"]
-
+    if left == 0:
         for chart in sheet.charts:
-            top = max(top, chart.top)
-            left = chart.left if left < 0 else min(left, chart.left)
-
+            left = chart.left if left == 0 else min(left, chart.left)
+        if top and top > 0:
+            return left, top
+        top = 0
         for chart in sheet.charts:
-            if chart.top == top:
-                top = max(top, chart.top + chart.height)
+            top = max(top, chart.top + chart.height)
+        return left, top
 
+    if top == 0:
+        for chart in sheet.charts:
+            top = chart.top if top == 0 else min(top, chart.top)
+        if left and left > 0:
+            return left, top
+        left = 0
+        for chart in sheet.charts:
+            left = max(left, chart.left + chart.width)
         return left, top
 
     chart = sheet.charts[-1]
-    return chart.left + chart.width, chart.top
+    if left is None and top is None:
+        return chart.left + chart.width, chart.top
+
+    return chart.left, chart.top + chart.height
 
 
 class Axes:
