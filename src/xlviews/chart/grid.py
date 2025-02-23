@@ -23,27 +23,12 @@ class Series:
             self.axes = ax
             return
 
-        left = ax.chart.left
-        top = ax.chart.top
-        width = ax.chart.width
-        height = ax.chart.height
+        if axis == 0:
+            series = Grid(ax, 1, n)[0, :]
+        else:
+            series = Grid(ax, n, 1)[:, 0]
 
-        axes = []
-        for k in range(n):
-            if k == 0:
-                axes.append(ax)
-            else:
-                if axis == 0:
-                    left_ = left + k * width
-                    top_ = top
-                else:
-                    left_ = left
-                    top_ = top + k * height
-
-                new = ax.copy(left=left_, top=top_)
-                axes.append(new)
-
-        self.axes = axes
+        self.axes = list(series)
 
     @overload
     def __getitem__(self, key: int) -> Axes: ...
