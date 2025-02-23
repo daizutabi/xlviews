@@ -6,7 +6,6 @@ from xlwings import Range as RangeImpl
 from xlwings.constants import LineStyle
 
 from xlviews.colors import Color, rgb
-from xlviews.core.address import reference
 from xlviews.core.range import Range
 from xlviews.core.range_collection import RangeCollection
 
@@ -15,29 +14,26 @@ from .style import get_line_style, get_marker_style
 if TYPE_CHECKING:
     from typing import Any, Self
 
-    from xlwings import Sheet
-
     from .axes import Axes
 
 
 class Series:
     axes: Axes
     api: Any
-    label: str
+    # label: str
 
     def __init__(
         self,
         axes: Axes,
         x: Any,
         y: Any | None = None,
-        label: str | tuple[int, int] | Range | RangeImpl = "",
+        label: str | None = None,
         chart_type: int | None = None,
-        sheet: Sheet | None = None,
     ) -> None:
         self.axes = axes
         self.api = axes.chart.api[1].SeriesCollection().NewSeries()
-        self.label = label if isinstance(label, str) else reference(label, sheet)
-        self.name = self.label
+        self.label = label
+        # self.name = self.label
 
         if chart_type is not None:
             self.chart_type = chart_type
@@ -50,12 +46,12 @@ class Series:
             self.y = x
 
     @property
-    def name(self) -> str:
+    def label(self) -> str:
         return str(self.api.Name)
 
-    @name.setter
-    def name(self, name: str) -> None:
-        self.api.Name = name
+    @label.setter
+    def label(self, label: str | None) -> None:
+        self.api.Name = label or ""
 
     @property
     def chart_type(self) -> int:

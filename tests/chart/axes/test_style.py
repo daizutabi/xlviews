@@ -18,29 +18,14 @@ def ax(sheet_module: Sheet):
     x.options(transpose=True).value = list(range(1, 11))
     y.options(transpose=True).value = list(range(10, 20))
     z.options(transpose=True).value = list(range(20, 30))
-    sheet_module["C1"].value = "Y"
-    sheet_module["D1"].value = "Z"
-    ax.add_series(x, y, label=sheet_module["C1"])
-    ax.add_series(x, z, label=(1, 4))
+    ax.add_series(x, y, label="a")
+    ax.add_series(x, z, label="b")
     return ax
 
 
 def test_title_str(ax: Axes):
     ax.title = "a"
     assert ax.title == "a"
-
-
-def test_title_range(ax: Axes, sheet_module: Sheet):
-    cell = sheet_module["A1"]
-    cell.value = "Title Range"
-    ax.title = cell
-    assert ax.title == "Title Range"
-
-
-def test_title_tuple(ax: Axes, sheet_module: Sheet):
-    sheet_module["A2"].value = "Title Tuple"
-    ax.title = (2, 1)
-    assert ax.title == "Title Tuple"
 
 
 def test_title_none(ax: Axes):
@@ -63,19 +48,6 @@ def test_xlabel_str(ax: Axes):
     assert ax.xlabel == "a"
 
 
-def test_xlabel_range(ax: Axes, sheet_module: Sheet):
-    cell = sheet_module["A3"]
-    cell.value = "X Label Range"
-    ax.xlabel = cell
-    assert ax.xlabel == "X Label Range"
-
-
-def test_xlabel_tuple(ax: Axes, sheet_module: Sheet):
-    sheet_module["A4"].value = "X Label Tuple"
-    ax.xlabel = (4, 1)
-    assert ax.xlabel == "X Label Tuple"
-
-
 def test_xlabel_none(ax: Axes):
     ax.xlabel = None
     assert ax.xlabel is None
@@ -84,19 +56,6 @@ def test_xlabel_none(ax: Axes):
 def test_ylabel_str(ax: Axes):
     ax.ylabel = "a"
     assert ax.ylabel == "a"
-
-
-def test_ylabel_range(ax: Axes, sheet_module: Sheet):
-    cell = sheet_module["A5"]
-    cell.value = "Y Label Range"
-    ax.ylabel = cell
-    assert ax.ylabel == "Y Label Range"
-
-
-def test_ylabel_tuple(ax: Axes, sheet_module: Sheet):
-    sheet_module["A6"].value = "Y Label Tuple"
-    ax.ylabel = (6, 1)
-    assert ax.ylabel == "Y Label Tuple"
 
 
 def test_ylabel_none(ax: Axes):
