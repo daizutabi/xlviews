@@ -29,7 +29,7 @@ def ax(sheet_module: Sheet):
 
 
 @pytest.mark.parametrize(
-    ("marker", "value", "size"),
+    ("style", "value", "size"),
     [
         ("o", MarkerStyle.xlMarkerStyleCircle, 10),
         ("^", MarkerStyle.xlMarkerStyleTriangle, 9),
@@ -43,11 +43,28 @@ def ax(sheet_module: Sheet):
         (None, MarkerStyle.xlMarkerStyleNone, 5),
     ],
 )
-def test_series_style_marker(ax: Axes, x, y, marker, value, size):
+def test_series_style_marker(ax: Axes, x, y, style, value, size):
     series = ax.add_series(x, y, label="a")
-    series.set(marker=marker, size=size)
+    series.marker(style, size=size)
     assert series.api.MarkerStyle == value
     assert series.api.MarkerSize == size
+    series.delete()
+
+
+@pytest.mark.parametrize(
+    ("style", "value", "weight"),
+    [
+        ("-", LineStyle.xlContinuous, 1),
+        ("--", LineStyle.xlDash, 2),
+        ("-.", LineStyle.xlDashDot, 1),
+        (".", LineStyle.xlDot, 2),
+        (None, LineStyle.xlLineStyleNone, 2),
+    ],
+)
+def test_series_style_line(ax: Axes, x, y, style, value, weight):
+    series = ax.add_series(x, y, label="a")
+    series.line(style, weight=weight)
+    assert series.api.Border.LineStyle == value
     series.delete()
 
 
@@ -62,23 +79,6 @@ def test_series_style_marker(ax: Axes, x, y, marker, value, size):
 )
 def test_series_style_color(ax: Axes, x, y, color, value, alpha):
     series = ax.add_series(x, y, label="a")
-    series.set(marker="o", color=color, alpha=alpha)
+    series.line("-", color=color, alpha=alpha)
     assert value == series.api.Format.Line.ForeColor.RGB
-    series.delete()
-
-
-@pytest.mark.parametrize(
-    ("line", "value", "weight"),
-    [
-        ("-", LineStyle.xlContinuous, 1),
-        ("--", LineStyle.xlDash, 2),
-        ("-.", LineStyle.xlDashDot, 1),
-        (".", LineStyle.xlDot, 2),
-        (None, LineStyle.xlLineStyleNone, 2),
-    ],
-)
-def test_series_style_line(ax: Axes, x, y, line, value, weight):
-    series = ax.add_series(x, y, label="a")
-    series.set(marker=None, line=line, weight=weight)
-    assert series.api.Border.LineStyle == value
     series.delete()
