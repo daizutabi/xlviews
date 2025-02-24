@@ -165,7 +165,7 @@ class Axes:
         self,
         x: Any,
         y: Any | None = None,
-        label: str = "",
+        label: str | None = None,
         chart_type: int | None = None,
     ) -> Series:
         if chart_type is None:

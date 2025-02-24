@@ -3,6 +3,7 @@ from __future__ import annotations
 from itertools import chain
 from typing import TYPE_CHECKING, Any, TypeAlias
 
+import pandas as pd
 from pandas import DataFrame
 from xlwings.constants import ChartType
 
@@ -46,17 +47,27 @@ def get_by(df: DataFrame, styles: Iterable[Style]) -> list[str]:
 
 def plot(
     ax: Axes,
-    data: DataFrame,
+    data: DataFrame | pd.Series,
     x: str,
     y: str,
     color: Style = None,
     label: Label = None,
 ) -> Series:
+    if isinstance(data, pd.Series):
+        label = label if isinstance(label, str) else None
+        return ax.add_series(data[x], data[y], label=label).set()
+
     by = get_by(data, [color])
+
     if not by:
+        label = label if isinstance(label, str) else None
         return ax.add_series(data[x], data[y], label=label)
-    series = ax.add_series(data[x], data[y], label=label, by=by)
-    return Series(series)
+
+    for key, s in data.iterrows():
+        print(key, s)
+
+    # series = ax.add_series(data[x], data[y], label=label, by=by)
+    # return Series(series)
 
 
 # def get_range(

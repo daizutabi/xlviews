@@ -24,6 +24,7 @@ COLORS = [
 ]
 
 MARKER_DICT: dict[str, int] = {
+    "": MarkerStyle.xlMarkerStyleNone,
     "o": MarkerStyle.xlMarkerStyleCircle,
     "^": MarkerStyle.xlMarkerStyleTriangle,
     "s": MarkerStyle.xlMarkerStyleSquare,
@@ -36,6 +37,7 @@ MARKER_DICT: dict[str, int] = {
 }
 
 LINE_DICT: dict[str, int] = {
+    "": LineStyle.xlLineStyleNone,
     "-": LineStyle.xlContinuous,
     "--": LineStyle.xlDash,
     "-.": LineStyle.xlDashDot,
@@ -43,29 +45,24 @@ LINE_DICT: dict[str, int] = {
 }
 
 
-def get_marker_style(marker: int | str | None) -> int:
-    if isinstance(marker, int):
+def get_marker_style(marker: int | str | None) -> int | None:
+    if isinstance(marker, int | None):
         return marker
-
-    if marker is None:
-        return MarkerStyle.xlMarkerStyleNone
 
     return MARKER_DICT[marker]
 
 
-def get_line_style(line: int | str | None) -> int:
-    if isinstance(line, int):
+def get_line_style(line: int | str | None) -> int | None:
+    if isinstance(line, int | None):
         return line
-
-    if line is None:
-        return LineStyle.xlLineStyleNone
 
     return LINE_DICT[line]
 
 
 def marker_palette(n: int) -> list[str]:
     """Return a list of markers of length n."""
-    return list(itertools.islice(itertools.cycle(MARKER_DICT), n))
+    markers = (m for m in MARKER_DICT if m != "")
+    return list(itertools.islice(itertools.cycle(markers), n))
 
 
 def get_axis_label(axis) -> str | None:  # noqa: ANN001

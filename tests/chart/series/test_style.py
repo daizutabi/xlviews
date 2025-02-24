@@ -31,6 +31,7 @@ def ax(sheet_module: Sheet):
 @pytest.mark.parametrize(
     ("style", "value", "size"),
     [
+        ("", MarkerStyle.xlMarkerStyleNone, 5),
         ("o", MarkerStyle.xlMarkerStyleCircle, 10),
         ("^", MarkerStyle.xlMarkerStyleTriangle, 9),
         ("s", MarkerStyle.xlMarkerStyleSquare, 8),
@@ -40,7 +41,6 @@ def ax(sheet_module: Sheet):
         (".", MarkerStyle.xlMarkerStyleDot, 4),
         ("-", MarkerStyle.xlMarkerStyleDash, 3),
         ("*", MarkerStyle.xlMarkerStyleStar, 2),
-        (None, MarkerStyle.xlMarkerStyleNone, 5),
     ],
 )
 def test_series_style_marker(ax: Axes, x, y, style, value, size):
@@ -54,11 +54,11 @@ def test_series_style_marker(ax: Axes, x, y, style, value, size):
 @pytest.mark.parametrize(
     ("style", "value", "weight"),
     [
+        ("", LineStyle.xlLineStyleNone, 2),
         ("-", LineStyle.xlContinuous, 1),
         ("--", LineStyle.xlDash, 2),
         ("-.", LineStyle.xlDashDot, 1),
         (".", LineStyle.xlDot, 2),
-        (None, LineStyle.xlLineStyleNone, 2),
     ],
 )
 def test_series_style_line(ax: Axes, x, y, style, value, weight):
