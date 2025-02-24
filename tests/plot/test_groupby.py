@@ -25,7 +25,7 @@ def df():
     ],
 )
 def test_iter_by(df: DataFrame, style, by):
-    from xlviews.chart.grid import iter_by
+    from xlviews.plot.groupby import iter_by
 
     assert list(iter_by(df, style)) == by
 
@@ -39,6 +39,6 @@ def test_iter_by(df: DataFrame, style, by):
     ],
 )
 def test_get_by(df: DataFrame, styles, by):
-    from xlviews.chart.grid import get_by
+    from xlviews.plot.groupby import get_by
 
     assert get_by(df, styles) == by

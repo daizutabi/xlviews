@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from itertools import chain
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 import pandas as pd
 from pandas import DataFrame
 from xlwings.constants import ChartType
 
+from xlviews.chart.axes import Axes
 from xlviews.dataframes.sheet_frame import SheetFrame
 
-from .axes import Axes
+from .style import format_label
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Iterable, Iterator
@@ -26,45 +26,48 @@ def plot_series(
     s: pd.Series,
     x: str,
     y: str,
-    label: str | dict[Hashable, str] | Callable[[Hashable], str] = None,
-    marker: Style = None,
-    color: Style = None,
-    alpha: float | None = None,
-    weight: float | None = None,
-    size: int | None = None,
+    label: str | None = None,
+    # label: str | dict[Hashable, str] | Callable[[Hashable], str] = None,
+    # marker: Style = None,
+    # color: Style = None,
+    # alpha: float | None = None,
+    # weight: float | None = None,
+    # size: int | None = None,
 ) -> Series:
-    pass
+    label = format_label(label, s.name)
+
+    return ax.add_series(s[x], s[y], label=label)
 
 
-def plot(
-    ax: Axes,
-    data: DataFrame | pd.Series,
-    x: str,
-    y: str,
-    label: Label = None,
-    marker: Style = None,
-    color: Style = None,
-    alpha: float | None = None,
-    weight: float | None = None,
-    size: int | None = None,
-) -> Series:
-    if isinstance(data, pd.Series):
-        label = label if isinstance(label, str) else None
-        marker = marker if isinstance(marker, str) else None
-        color = color if isinstance(color, str) else None
-        s = ax.add_series(data[x], data[y], label=label).set(marker, color)
+# def plot(
+#     ax: Axes,
+#     data: DataFrame | pd.Series,
+#     x: str,
+#     y: str,
+#     label: Label = None,
+#     marker: Style = None,
+#     color: Style = None,
+#     alpha: float | None = None,
+#     weight: float | None = None,
+#     size: int | None = None,
+# ) -> Series:
+#     if isinstance(data, pd.Series):
+#         label = label if isinstance(label, str) else None
+#         marker = marker if isinstance(marker, str) else None
+#         color = color if isinstance(color, str) else None
+#         s = ax.add_series(data[x], data[y], label=label).set(marker, color)
 
-    by = get_by(data, [color])
+#     by = get_by(data, [color])
 
-    if not by:
-        label = label if isinstance(label, str) else None
-        return ax.add_series(data[x], data[y], label=label)
+#     if not by:
+#         label = label if isinstance(label, str) else None
+#         return ax.add_series(data[x], data[y], label=label)
 
-    for key, s in data.iterrows():
-        print(key, s)
+#     for key, s in data.iterrows():
+#         print(key, s)
 
-    # series = ax.add_series(data[x], data[y], label=label, by=by)
-    # return Series(series)
+# series = ax.add_series(data[x], data[y], label=label, by=by)
+# return Series(series)
 
 
 # def get_range(

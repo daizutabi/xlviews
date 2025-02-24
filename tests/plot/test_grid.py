@@ -2,7 +2,7 @@ import pytest
 from xlwings import Sheet
 
 from xlviews.chart.axes import Axes
-from xlviews.chart.grid import Grid, Series
+from xlviews.plot.grid import Grid, Series
 
 
 @pytest.fixture(scope="module")

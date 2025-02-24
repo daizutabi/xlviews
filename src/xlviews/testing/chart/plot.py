@@ -3,7 +3,7 @@ from __future__ import annotations
 from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
-from xlviews.chart.plot import plot
+from xlviews.plot.core import plot_series
 from xlviews.testing.common import create_sheet
 
 from .base import Base
@@ -14,11 +14,15 @@ if __name__ == "__main__":
     sf = fc.sf
     sf.set_adjacent_column_width(1)
 
-    data = sf.agg(include_sheetname=True)
-    print(data)
-    print(type(data))
-    print(data.index)
-    print(data.index.names)
-    print(data.name)
-    # ax = Axes(2, 8, chart_type=ChartType.xlXYScatter)
-    # plot(ax, data, "x", "y")
+    s = sf.agg(include_sheetname=True)
+    ax = Axes(2, 8, chart_type=ChartType.xlXYScatter)
+    s.name = ("a", "b")
+    plot_series(ax, s, "x", "y", label="a{0}b{1}c")
+
+    ax.set(
+        xlabel="xlabel",
+        ylabel="ylabel",
+        title="title",
+        xticks=(0, 10, 2),
+        legend=(1, -1),
+    )
