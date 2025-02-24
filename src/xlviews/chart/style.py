@@ -59,6 +59,11 @@ def get_line_style(line: int | str | None) -> int | None:
     return LINE_DICT[line]
 
 
+def color_palette(n: int) -> list[str]:
+    """Return a list of colors of length n."""
+    return list(itertools.islice(itertools.cycle(COLORS), n))
+
+
 def marker_palette(n: int) -> list[str]:
     """Return a list of markers of length n."""
     markers = (m for m in MARKER_DICT if m != "")

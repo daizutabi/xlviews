@@ -19,42 +19,41 @@ if TYPE_CHECKING:
     from xlviews.dataframes.groupby import GroupBy
 
 
-Label: TypeAlias = str | dict[Hashable, str] | Callable[[Hashable], str] | None
-Style: TypeAlias = (
-    str | int | dict[Hashable, str | int] | Callable[[Hashable], str | int] | None
-)
+# class Style:
+
+# Style: TypeAlias = (
+#     float | str|list[str]|dict[Hashable, str | int] | tuple[tuple[str,...], dict[Hashable, str]]
+# )
+
+# def make_style(style: Style,names:list[str],index:list[tuple[Hashable,...]])->tuple[tuple[str,...], dict[Hashable, str]]:
+
+Label: TypeAlias = str | Callable[[dict[str, Hashable]], str] | None
 
 
-def format_label(label: Label, name: Hashable | None) -> str | None:
+def format_label(label: Label, key: dict[str, Hashable]) -> str | None:
     if label is None:
         return None
 
     if isinstance(label, str):
-        if name is None:
-            return label
-        if isinstance(name, tuple):
-            return label.format(*name)
-        return label.format(name)
-
-    if isinstance(label, dict):
-        return label[name]
+        return label.format(**key)
 
     if callable(label):
-        return label(name)
+        return label(key)
 
     msg = f"Invalid label: {label}"
     raise ValueError(msg)
 
 
-def format_style(style: Style, name: Hashable | None) -> str | int | None:
-    if style is None or isinstance(style, int | str):
-        return style
+# def format_style(style: Style, key: dict[str, Hashable]) -> str | int | None:
+#     return None
+#     if style is None or isinstance(style, int | str):
+#         return style
 
-    if isinstance(style, dict):
-        return style[name]
+#     if isinstance(style, dict):
+#         return style[name]
 
-    if callable(style):
-        return style(name)
+#     if callable(style):
+#         return style(name)
 
-    msg = f"Invalid style: {style}"
-    raise ValueError(msg)
+#     msg = f"Invalid style: {style}"
+#     raise ValueError(msg)
