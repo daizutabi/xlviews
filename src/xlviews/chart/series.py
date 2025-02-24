@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from xlwings import Range as RangeImpl
-from xlwings.constants import ChartType, LineStyle
+from xlwings.constants import ChartType
 
 from xlviews.colors import Color, rgb
 from xlviews.core.range import Range
