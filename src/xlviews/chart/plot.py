@@ -12,7 +12,7 @@ from xlviews.dataframes.sheet_frame import SheetFrame
 from .axes import Axes
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Callable, Hashable, Iterable, Iterator
 
     from xlwings import Range, Sheet
 
@@ -20,29 +20,20 @@ if TYPE_CHECKING:
     from xlviews.core.range_collection import RangeCollection
     from xlviews.dataframes.groupby import GroupBy
 
-Style: TypeAlias = str | list[str] | dict[str | tuple[str, ...], Any] | None
-Label: TypeAlias = str | dict[str | tuple[str, ...], str] | None
 
-
-def iter_by(df: DataFrame, style: Style) -> Iterator[str]:
-    names = [*df.index.names, *df.columns]
-
-    if isinstance(style, str) and style in names:
-        yield style
-
-    elif isinstance(style, list):
-        yield from (s for s in style if s in names)
-
-    elif isinstance(style, dict):
-        for keys in style:
-            for key in keys if isinstance(keys, tuple) else (keys,):
-                if key in names:
-                    yield key
-
-
-def get_by(df: DataFrame, styles: Iterable[Style]) -> list[str]:
-    it = (iter_by(df, style) for style in styles)
-    return sorted(set(chain.from_iterable(it)))
+def plot_series(
+    ax: Axes,
+    s: pd.Series,
+    x: str,
+    y: str,
+    label: str | dict[Hashable, str] | Callable[[Hashable], str] = None,
+    marker: Style = None,
+    color: Style = None,
+    alpha: float | None = None,
+    weight: float | None = None,
+    size: int | None = None,
+) -> Series:
+    pass
 
 
 def plot(
@@ -50,12 +41,18 @@ def plot(
     data: DataFrame | pd.Series,
     x: str,
     y: str,
-    color: Style = None,
     label: Label = None,
+    marker: Style = None,
+    color: Style = None,
+    alpha: float | None = None,
+    weight: float | None = None,
+    size: int | None = None,
 ) -> Series:
     if isinstance(data, pd.Series):
         label = label if isinstance(label, str) else None
-        return ax.add_series(data[x], data[y], label=label).set()
+        marker = marker if isinstance(marker, str) else None
+        color = color if isinstance(color, str) else None
+        s = ax.add_series(data[x], data[y], label=label).set(marker, color)
 
     by = get_by(data, [color])
 

@@ -1,16 +1,13 @@
 import pytest
 from pandas import DataFrame
 
-# from xlwings import Sheet
-
-# from xlviews.sheetframe import SheetFrame
-
 
 @pytest.fixture(scope="module")
 def df():
-    return DataFrame(
+    df = DataFrame(
         {"x": [1, 1, 1, 2, 2, 2, 3, 3, 3], "y": [4, 5, 6, 4, 5, 6, 4, 5, 6]},
-    ).set_index("x")
+    )
+    return df.set_index("x")
 
 
 @pytest.mark.parametrize(
@@ -28,7 +25,7 @@ def df():
     ],
 )
 def test_iter_by(df: DataFrame, style, by):
-    from xlviews.chart.plot import iter_by
+    from xlviews.chart.grid import iter_by
 
     assert list(iter_by(df, style)) == by
 
@@ -42,6 +39,6 @@ def test_iter_by(df: DataFrame, style, by):
     ],
 )
 def test_get_by(df: DataFrame, styles, by):
-    from xlviews.chart.plot import get_by
+    from xlviews.chart.grid import get_by
 
     assert get_by(df, styles) == by
