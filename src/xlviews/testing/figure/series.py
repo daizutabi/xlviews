@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     # data = sf.agg(include_sheetname=True)
     data = sf.groupby("b").agg(include_sheetname=True)
+    print(data)
     # data = sf.groupby(["b", "c"]).agg(include_sheetname=True)
 
     p = Plot(ax, data).add("x", "y")

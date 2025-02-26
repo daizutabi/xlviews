@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from itertools import islice
 from typing import TYPE_CHECKING, TypeVar
 
@@ -47,7 +48,9 @@ def get_index(
 T = TypeVar("T")
 
 
-class Palette[T]:
+class Palette[T](ABC):
+    """A palette of items."""
+
     index: dict[tuple[Hashable, ...], int]
     items: list[T]
 
@@ -73,25 +76,27 @@ class Palette[T]:
         n = len(self.index) - len(default)
         self.items = [*defaults, *islice(self.cycle(defaults), n)]
 
+    @abstractmethod
     def cycle(self, defaults: Iterable[T]) -> Iterator[T]:
-        raise NotImplementedError
+        """Generate an infinite iterator of items."""
 
-    def get(self, value: tuple[Hashable, ...] | Hashable) -> int:
+    def get(self, value: Hashable) -> int:
         if not isinstance(value, tuple):
             value = (value,)
 
         return self.index[value]
 
-    def __call__(self, value: tuple[Hashable, ...] | Hashable) -> T:
-        index = self.get(value)
-        return self.items[index]
+    def __getitem__(self, value: Hashable) -> T:
+        return self.items[self.get(value)]
 
 
 class MarkerPalette(Palette[str]):
     def cycle(self, defaults: Iterable[str]) -> Iterator[str]:
+        """Generate an infinite iterator of markers."""
         return cycle_markers(defaults)
 
 
 class ColorPalette(Palette[str]):
     def cycle(self, defaults: Iterable[str]) -> Iterator[str]:
+        """Generate an infinite iterator of colors."""
         return cycle_colors(defaults)
