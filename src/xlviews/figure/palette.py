@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from itertools import islice
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from xlviews.chart.style import cycle_colors, cycle_markers
 
@@ -48,7 +48,7 @@ def get_index(
 T = TypeVar("T")
 
 
-class Palette[T](ABC):
+class Palette(Generic[T], ABC):
     """A palette of items."""
 
     index: dict[tuple[Hashable, ...], int]
