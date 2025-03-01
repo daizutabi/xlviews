@@ -2,10 +2,10 @@ import pytest
 from pandas import DataFrame, MultiIndex
 from xlwings import Sheet
 
+from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_app_available
-from xlviews.utils import rgb
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 

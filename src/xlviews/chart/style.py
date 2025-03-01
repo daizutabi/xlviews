@@ -6,7 +6,7 @@ from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
-from xlviews.utils import set_font_api
+from xlviews.style import set_font_api
 
 COLORS = [
     "#1f77b4",
