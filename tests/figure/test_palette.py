@@ -23,25 +23,6 @@ def test_get_columns_default(df: DataFrame):
     assert default == {}
 
 
-def test_get_columns_default_new_default(df: DataFrame):
-    from xlviews.figure.palette import get_columns_default
-
-    columns, default = get_columns_default(df, "red")
-    assert columns == ["a", "b", "c"]
-    assert all(x == "red" for x in default.values())
-
-
-def test_get_columns_default_new_default_list(df: DataFrame):
-    from xlviews.figure.palette import get_columns_default
-
-    columns, default = get_columns_default(df, ["red", "blue", "green"])
-    assert columns == ["a", "b", "c"]
-    v = list(default.values())
-    assert all(x == "red" for x in v[::3])
-    assert all(x == "blue" for x in v[1::3])
-    assert all(x == "green" for x in v[2::3])
-
-
 def test_get_columns_default_with_default_list(df: DataFrame):
     from xlviews.figure.palette import get_columns_default
 
@@ -198,17 +179,6 @@ def test_color_palette_default_list(df: DataFrame, key, value):
     assert p[key] == value
 
 
-def test_series():
-    from pandas import Series
-
-    from xlviews.figure.palette import MarkerPalette
-
-    s = Series([1, 2, 3], index=["a", "b", "c"])
-    data = s.to_frame().T
-    p = MarkerPalette(data, "x")
-    assert p[{None: 0}] == "x"
-
-
 def test_get_palette_none(df: DataFrame):
     from xlviews.figure.palette import MarkerPalette, get_palette
 
@@ -256,3 +226,35 @@ def test_get_palette_tuple_dict(df: DataFrame):
     assert p[(5,)] == "Y"
     assert p[(6,)] == "o"
     assert p[(7,)] == "^"
+
+
+def test_series():
+    from pandas import Series
+
+    from xlviews.figure.palette import MarkerPalette, get_palette
+
+    s = Series([1, 2, 3], index=["a", "b", "c"])
+    data = s.to_frame().T
+    p = get_palette(MarkerPalette, data, "x")
+    assert p
+    assert p[{None: 0}] == "x"
+
+
+def test_get_palette_new_default(df: DataFrame):
+    from xlviews.figure.palette import ColorPalette, get_palette
+
+    p = get_palette(ColorPalette, df, "red")
+    assert p
+    assert p[(1, 4, 10)] == "red"
+    assert p[(2, 5, 10)] == "red"
+
+
+def test_get_palette_new_default_list(df: DataFrame):
+    from xlviews.figure.palette import ColorPalette, get_palette
+
+    p = get_palette(ColorPalette, df, ["red", "blue", "green"])
+    assert p
+    assert p[(1, 4, 10)] == "red"
+    assert p[(2, 5, 10)] == "blue"
+    assert p[(2, 6, 11)] == "green"
+    assert p[(3, 7, 11)] == "red"

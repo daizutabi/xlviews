@@ -13,9 +13,13 @@ if __name__ == "__main__":
     sf = fc.sf
     sf.set_adjacent_column_width(1)
 
-    ax = Axes(2, 8, chart_type=ChartType.xlXYScatter)
+    ax = Axes(2, 8)
     data = sf.agg(include_sheetname=True)
-    p = Plot(ax, data).add("x", "y").set(label="abc", marker="o", color="red")
+    p = (
+        Plot(ax, data)
+        .add("x", "y", ChartType.xlXYScatter)
+        .set(label="abc", marker="o", color="blue", alpha=0.6)
+    )
 
     ax = Axes(chart_type=ChartType.xlXYScatterLines)
     data = sf.groupby("b").agg(include_sheetname=True)

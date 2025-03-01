@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from itertools import cycle, islice
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar
 
 from xlviews.chart.style import COLORS, MARKER_DICT
 
@@ -13,28 +13,22 @@ if TYPE_CHECKING:
     from pandas import DataFrame
 
 
+T = TypeVar("T")
+
+
 def get_columns_default(
     data: DataFrame,
     columns: str | list[str],
-    default: dict[Hashable, str] | list[str] | None = None,
-) -> tuple[list[str], dict[Hashable, str]]:
+    default: dict[Hashable, T] | list[T] | None = None,
+) -> tuple[list[str], dict[Hashable, T]]:
     if isinstance(columns, str):
         columns = [columns]
-
-    if any(c not in data for c in columns):
-        data = data.drop_duplicates()
-        values = [tuple(t) for t in data.itertuples(index=False)]
-        default = dict(zip(values, cycle(columns), strict=False))
-        return data.columns.tolist(), default
 
     if default is None:
         return columns, {}
 
     if isinstance(default, dict):
         return columns, default
-
-    if isinstance(default, str):
-        default = [default]
 
     data = data[columns].drop_duplicates()
     values = [tuple(t) for t in data.itertuples(index=False)]
@@ -76,18 +70,18 @@ def get_index(
     return index
 
 
-class Palette(ABC):
+class Palette(ABC, Generic[T]):
     """A palette of items."""
 
     columns: list[str]
     index: dict[tuple[Hashable, ...], int]
-    items: list[str]
+    items: list[T]
 
     def __init__(
         self,
         data: DataFrame,
         columns: str | list[str],
-        default: dict[Hashable, str] | list[str] | None = None,
+        default: dict[Hashable, T] | list[T] | None = None,
     ) -> None:
         self.columns, default = get_columns_default(data, columns, default)
         self.index = get_index(data[self.columns], default)
@@ -97,7 +91,7 @@ class Palette(ABC):
         self.items = [*defaults, *islice(self.cycle(defaults), n)]
 
     @abstractmethod
-    def cycle(self, defaults: Iterable[str]) -> Iterator[str]:
+    def cycle(self, defaults: Iterable[T]) -> Iterator[T]:
         """Generate an infinite iterator of items."""
 
     def get(self, value: Hashable) -> int:
@@ -106,7 +100,7 @@ class Palette(ABC):
 
         return self.index[value]
 
-    def __getitem__(self, value: Hashable | dict) -> str:
+    def __getitem__(self, value: Hashable | dict) -> T:
         if value == {None: 0}:  # from series
             return self.items[0]
 
@@ -116,7 +110,7 @@ class Palette(ABC):
         return self.items[self.get(value)]
 
 
-class MarkerPalette(Palette):
+class MarkerPalette(Palette[str]):
     def cycle(self, defaults: Iterable[str]) -> Iterator[str]:
         """Generate an infinite iterator of markers."""
         return cycle_markers(defaults)
@@ -133,7 +127,7 @@ def cycle_markers(skips: Iterable[str] | None = None) -> Iterator[str]:
             yield marker
 
 
-class ColorPalette(Palette):
+class ColorPalette(Palette[str]):
     def cycle(self, defaults: Iterable[str]) -> Iterator[str]:
         """Generate an infinite iterator of colors."""
         return cycle_colors(defaults)
@@ -176,4 +170,15 @@ def get_palette(
     if isinstance(style, tuple):
         return cls(data, *style)
 
-    return cls(data, style)
+    columns = style
+
+    if isinstance(columns, str):
+        columns = [columns]
+
+    if any(c not in data for c in columns):
+        data = data.drop_duplicates()
+        values = [tuple(t) for t in data.itertuples(index=False)]
+        default = dict(zip(values, cycle(columns), strict=False))
+        return cls(data, data.columns.tolist(), default)  # type: ignore
+
+    return cls(data, columns)
