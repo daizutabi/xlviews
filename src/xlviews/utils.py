@@ -7,15 +7,12 @@ import xlwings
 from pandas import DataFrame, Series
 from xlwings.constants import DVType, FormatConditionOperator
 
-from xlviews.colors import Color, rgb
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
     from numpy.typing import NDArray
     from pandas import Index
     from xlwings import Range as RangeImpl
-    from xlwings._xlwindows import COMRetryObjectWrapper
 
     from xlviews.core.range import Range
 
@@ -105,28 +102,6 @@ def iter_group_locs(
     it = zip(idx, [*idx[1:], len(s)], strict=True)
     for k, (start, end) in enumerate(it):
         yield (start + offset + padding * k, end + offset + padding * k - 1)
-
-
-def set_font_api(
-    api: COMRetryObjectWrapper,
-    name: str | None = None,
-    *,
-    size: float | None = None,
-    bold: bool | None = None,
-    italic: bool | None = None,
-    color: Color | None = None,
-) -> None:
-    font = api.Font
-    if name:
-        font.Name = name  # type: ignore
-    if size:
-        font.Size = size  # type: ignore
-    if bold is not None:
-        font.Bold = bold  # type: ignore
-    if italic is not None:
-        font.Italic = italic  # type: ignore
-    if color is not None:
-        font.Color = rgb(color)  # type: ignore
 
 
 def add_validate_list(

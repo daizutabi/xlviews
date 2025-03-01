@@ -1,26 +1,22 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Hashable
 from itertools import product
-from typing import TYPE_CHECKING, Any, TypeAlias, overload
+from typing import TYPE_CHECKING, TypeAlias
 
 import pandas as pd
 from pandas import DataFrame
-from xlwings.constants import ChartType
 
-from xlviews.chart.axes import Axes
-from xlviews.dataframes.sheet_frame import SheetFrame
-
-from .style import Label, format_label
+from .palette import ColorPalette, MarkerPalette, PaletteStyle, get_palette
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Hashable, Iterable, Iterator
+    from collections.abc import Iterator
     from typing import Self
 
-    from xlwings import Range, Sheet
-
+    from xlviews.chart.axes import Axes
     from xlviews.chart.series import Series
-    from xlviews.core.range_collection import RangeCollection
-    from xlviews.dataframes.groupby import GroupBy
+
+Label: TypeAlias = str | Callable[[dict[str, Hashable]], str]
 
 
 class Plot:
@@ -66,26 +62,36 @@ class Plot:
 
     def set(
         self,
-        label: Label = None,
-        # marker: Style = None,
-        # color: Style = None,
-        # alpha: float | None = None,
-        # weight: float | None = None,
-        # size: int | None = None,
+        label: Label | None = None,
+        marker: PaletteStyle | None = None,
+        color: PaletteStyle | None = None,
+        alpha: float | None = None,
+        weight: float | None = None,
+        size: int | None = None,
     ) -> Self:
-        for key, s in zip(self.keys(), self.series_collection, strict=True):
-            print(key)
-            # label_ = format_label(label, key)
-            # marker_ = format_style(marker, key)
-            # color_ = format_style(color, key)
+        index = self.data.index.to_frame(index=False)
+        marker_palette = get_palette(MarkerPalette, index, marker)
+        color_palette = get_palette(ColorPalette, index, color)
 
+        for key, s in zip(self.keys(), self.series_collection, strict=True):
             s.set(
-                label=format_label(label, key),
-                # marker=marker_,
-                # color=color_,
-                # alpha=alpha,
-                # weight=weight,
-                # size=size,
+                label=label and get_label(label, key),
+                color=color_palette and color_palette[key],
+                marker=marker_palette and marker_palette[key],
+                alpha=alpha,
+                weight=weight,
+                size=size,
             )
 
         return self
+
+
+def get_label(label: Label, key: dict[str, Hashable]) -> str:
+    if isinstance(label, str):
+        return label.format(**key)
+
+    if callable(label):
+        return label(key)
+
+    msg = f"Invalid label: {label}"
+    raise ValueError(msg)

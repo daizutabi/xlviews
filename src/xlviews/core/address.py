@@ -1,13 +1,6 @@
 from __future__ import annotations
 
 from functools import cache
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from xlwings import Range as RangeImpl
-    from xlwings import Sheet
-
-    from xlviews.core.range import Range
 
 
 @cache

@@ -17,9 +17,11 @@ from xlwings.constants import (
 from xlviews.colors import Color, rgb
 from xlviews.config import rcParams
 from xlviews.core.range import Range
-from xlviews.utils import constant, set_font_api
+from xlviews.utils import constant
 
 if TYPE_CHECKING:
+    from xlwings._xlwindows import COMRetryObjectWrapper
+
     from .core.range_collection import RangeCollection
 
 
@@ -94,6 +96,28 @@ def set_fill(
 ) -> None:
     if color is not None:
         rng.api.Interior.Color = rgb(color)
+
+
+def set_font_api(
+    api: COMRetryObjectWrapper,
+    name: str | None = None,
+    *,
+    size: float | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    color: Color | None = None,
+) -> None:
+    font = api.Font
+    if name:
+        font.Name = name  # type: ignore
+    if size:
+        font.Size = size  # type: ignore
+    if bold is not None:
+        font.Bold = bold  # type: ignore
+    if italic is not None:
+        font.Italic = italic  # type: ignore
+    if color is not None:
+        font.Color = rgb(color)  # type: ignore
 
 
 def set_font(
