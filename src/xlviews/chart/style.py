@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
-
 from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
@@ -57,12 +55,6 @@ def get_line_style(line: int | str | None) -> int | None:
         return line
 
     return LINE_DICT[line]
-
-
-def marker_palette(n: int) -> list[str]:
-    """Return a list of markers of length n."""
-    markers = (m for m in MARKER_DICT if m != "")
-    return list(itertools.islice(itertools.cycle(markers), n))
 
 
 def get_axis_label(axis) -> str | None:  # noqa: ANN001

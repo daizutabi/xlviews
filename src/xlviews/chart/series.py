@@ -86,14 +86,18 @@ class Series:
 
     def set(
         self,
-        style: str | None = None,
+        style: str | int | None = None,
         color: Color | None = None,
-        alpha: float = 0,
+        alpha: float | None = None,
         weight: float | None = None,
-        marker: str | None = None,
+        marker: str | int | None = None,
         size: int | None = None,
         line: str | None = None,
+        label: str | None = None,
     ) -> Self:
+        if label is not None:
+            self.label = label
+
         if self.chart_type == ChartType.xlXYScatter:  # marker
             weight = weight or 1
             return self.marker(style or marker, size, color, alpha, weight)
@@ -103,28 +107,28 @@ class Series:
 
     def marker(
         self,
-        style: str | None = None,
+        style: str | int | None = None,
         size: int | None = None,
         color: Color | None = None,
-        alpha: float = 0,
-        weight: float = 1,
+        alpha: float | None = None,
+        weight: float | None = None,
     ) -> Self:
         set_marker(self.api, get_marker_style(style), size)
 
         if color is not None:
             set_fill(self.api, rgb(color), alpha)
-            alpha = alpha / 2 if weight else alpha
+            alpha = alpha / 2 if weight and alpha is not None else alpha
             set_line(self.api, get_line_style(""), rgb(color), alpha, weight)
 
         return self
 
     def line(
         self,
-        style: str | None = None,
-        weight: float = 2,
+        style: str | int | None = None,
+        weight: float | None = None,
         color: Color | None = None,
-        alpha: float = 0,
-        marker: str | None = None,
+        alpha: float | None = None,
+        marker: str | int | None = None,
         size: int | None = None,
     ) -> Self:
         if color is not None:
