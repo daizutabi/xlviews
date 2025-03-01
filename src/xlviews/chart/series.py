@@ -103,7 +103,7 @@ class Series:
             return self.marker(style or marker, size, color, alpha, weight)
 
         weight = weight or 2
-        return self.line(style or line, weight, color, alpha, marker, size)
+        return self.line(style or line or "-", weight, color, alpha, marker, size)
 
     def marker(
         self,
