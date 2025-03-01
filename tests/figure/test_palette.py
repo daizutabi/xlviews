@@ -89,6 +89,17 @@ def test_marker_palette(df: DataFrame, key, value):
     assert p[key] == value
 
 
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [({"a": 1, "b": 0}, "o"), ({"x": 0, "a": 2}, "^"), ({"a": 3}, "s")],
+)
+def test_marker_palette_dict(df: DataFrame, key, value):
+    from xlviews.figure.palette import MarkerPalette
+
+    p = MarkerPalette(df, "a")
+    assert p[key] == value
+
+
 @pytest.mark.parametrize(("key", "value"), [(1, "^"), (2, "o"), (3, "x")])
 def test_marker_palette_default(df: DataFrame, key, value):
     from xlviews.figure.palette import MarkerPalette
@@ -102,6 +113,21 @@ def test_marker_palette_default(df: DataFrame, key, value):
     [((1, 4), "o"), ((2, 5), "^"), ((2, 6), "s")],
 )
 def test_marker_palette_multi(df: DataFrame, key, value):
+    from xlviews.figure.palette import MarkerPalette
+
+    p = MarkerPalette(df, ["a", "b"])
+    assert p[key] == value
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ({"a": 1, "b": 4, "c": 2}, "o"),
+        ({"a": 2, "b": 5, "c": 2}, "^"),
+        ({"a": 2, "b": 6, "c": 2}, "s"),
+    ],
+)
+def test_marker_palette_multi_dict(df: DataFrame, key, value):
     from xlviews.figure.palette import MarkerPalette
 
     p = MarkerPalette(df, ["a", "b"])

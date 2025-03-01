@@ -51,6 +51,7 @@ T = TypeVar("T")
 class Palette(Generic[T], ABC):
     """A palette of items."""
 
+    columns: list[str]
     index: dict[tuple[Hashable, ...], int]
     items: list[T]
 
@@ -66,6 +67,8 @@ class Palette(Generic[T], ABC):
             columns = [columns]
         else:
             columns = list(columns)
+
+        self.columns = columns
 
         if default is None:
             default = {}
@@ -86,7 +89,10 @@ class Palette(Generic[T], ABC):
 
         return self.index[value]
 
-    def __getitem__(self, value: Hashable) -> T:
+    def __getitem__(self, value: Hashable | dict[str, Hashable]) -> T:
+        if isinstance(value, dict):
+            value = tuple(value[k] for k in self.columns)
+
         return self.items[self.get(value)]
 
 
