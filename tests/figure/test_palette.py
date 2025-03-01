@@ -15,6 +15,43 @@ def df():
     )
 
 
+def test_get_columns_default(df: DataFrame):
+    from xlviews.figure.palette import get_columns_default
+
+    columns, default = get_columns_default(df, "a")
+    assert columns == ["a"]
+    assert default == {}
+
+
+def test_get_columns_default_new_default(df: DataFrame):
+    from xlviews.figure.palette import get_columns_default
+
+    columns, default = get_columns_default(df, "red")
+    assert columns == ["a", "b", "c"]
+    assert all(x == "red" for x in default.values())
+
+
+def test_get_columns_default_new_default_list(df: DataFrame):
+    from xlviews.figure.palette import get_columns_default
+
+    columns, default = get_columns_default(df, ["red", "blue", "green"])
+    assert columns == ["a", "b", "c"]
+    v = list(default.values())
+    assert all(x == "red" for x in v[::3])
+    assert all(x == "blue" for x in v[1::3])
+    assert all(x == "green" for x in v[2::3])
+
+
+def test_get_columns_default_with_default_list(df: DataFrame):
+    from xlviews.figure.palette import get_columns_default
+
+    columns, default = get_columns_default(df, "a", ["red", "blue"])
+    assert columns == ["a"]
+    assert default[(1,)] == "red"
+    assert default[(2,)] == "blue"
+    assert default[(3,)] == "red"
+
+
 @pytest.mark.parametrize(
     ("columns", "index"),
     [
@@ -121,6 +158,17 @@ def test_marker_palette_multi(df: DataFrame, key, value):
 
 @pytest.mark.parametrize(
     ("key", "value"),
+    [((1, 4), "o"), ((2, 5), "x"), ((2, 6), "o")],
+)
+def test_marker_palette_multi_default_list(df: DataFrame, key, value):
+    from xlviews.figure.palette import MarkerPalette
+
+    p = MarkerPalette(df, ["a", "b"], ["o", "x"])
+    assert p[key] == value
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
     [
         ({"a": 1, "b": 4, "c": 2}, "o"),
         ({"a": 2, "b": 5, "c": 2}, "^"),
@@ -138,5 +186,73 @@ def test_marker_palette_multi_dict(df: DataFrame, key, value):
 def test_color_palette(df: DataFrame, key, value):
     from xlviews.figure.palette import ColorPalette
 
-    p = ColorPalette(df, "b", {5: "red", 6: "blue"})
+    p = ColorPalette(df, "b", {5: "red", 6: "blue", 7: "green"})
     assert p[key] == value
+
+
+@pytest.mark.parametrize(("key", "value"), [(4, "red"), (5, "blue"), (6, "red")])
+def test_color_palette_default_list(df: DataFrame, key, value):
+    from xlviews.figure.palette import ColorPalette
+
+    p = ColorPalette(df, "b", ["red", "blue"])
+    assert p[key] == value
+
+
+def test_series():
+    from pandas import Series
+
+    from xlviews.figure.palette import MarkerPalette
+
+    s = Series([1, 2, 3], index=["a", "b", "c"])
+    data = s.to_frame().T
+    p = MarkerPalette(data, "x")
+    assert p[{None: 0}] == "x"
+
+
+def test_get_palette_none(df: DataFrame):
+    from xlviews.figure.palette import MarkerPalette, get_palette
+
+    assert get_palette(MarkerPalette, df, None) is None
+
+
+def test_get_palette(df: DataFrame):
+    from xlviews.figure.palette import MarkerPalette, get_palette
+
+    p = get_palette(MarkerPalette, df, "a")
+    assert p
+    assert p[(1,)] == "o"
+    assert p[(2,)] == "^"
+    assert p[(3,)] == "s"
+
+    assert get_palette(MarkerPalette, df, p) is p
+
+
+def test_get_palette_dict(df: DataFrame):
+    from xlviews.figure.palette import MarkerPalette, get_palette
+
+    p = get_palette(MarkerPalette, df, {(1, 4, 10): "x"})
+    assert p
+    assert p[(1, 4, 10)] == "x"
+    assert p[(2, 5, 10)] == "o"
+
+
+def test_get_palette_tuple_list(df: DataFrame):
+    from xlviews.figure.palette import MarkerPalette, get_palette
+
+    p = get_palette(MarkerPalette, df, ("b", ["o", "x"]))
+    assert p
+    assert p[(4,)] == "o"
+    assert p[(5,)] == "x"
+    assert p[(6,)] == "o"
+    assert p[(7,)] == "x"
+
+
+def test_get_palette_tuple_dict(df: DataFrame):
+    from xlviews.figure.palette import MarkerPalette, get_palette
+
+    p = get_palette(MarkerPalette, df, ("b", {"4": "X", "5": "Y"}))
+    assert p
+    assert p[(4,)] == "X"
+    assert p[(5,)] == "Y"
+    assert p[(6,)] == "o"
+    assert p[(7,)] == "^"
