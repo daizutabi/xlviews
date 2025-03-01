@@ -70,14 +70,14 @@ def _aggregate(
     if func is None:
         return column
 
-    if isinstance(func, str) and func in AGG_FUNCS:
-        return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"
+    if isinstance(func, str):
+        if func in AGG_FUNCS:
+            return f"AGGREGATE({AGG_FUNCS[func]},{option},{column})"
 
-    if isinstance(func, Range | RangeImpl):
-        ref = func.get_address(column_absolute=False, row_absolute=False)
-    else:
-        ref = func
+        msg = f"Invalid aggregate function: {func}"
+        raise ValueError(msg)
 
+    ref = func.get_address(column_absolute=False, row_absolute=False)
     func = f"LOOKUP({ref},{{{AGG_FUNC_NAMES}}},{{{AGG_FUNC_INTS}}})"
     soa = aggregate("soa", ranges, option=option, **kwargs)
     return f'IF({ref}="soa",{soa},AGGREGATE({func},{option},{column}))'
