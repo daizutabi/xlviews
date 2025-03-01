@@ -18,7 +18,7 @@ def test_chart_position_none(sheet: Sheet):
 
 
 def test_chart_position_from_cell(sheet: Sheet):
-    axes = Axes(sheet=sheet, row=5, column=10)
+    axes = Axes(5, 10, sheet=sheet)
     assert axes.chart.left == 9 * sheet.cells(1, 1).width
     assert axes.chart.top == 4 * sheet.cells(1, 1).height
 

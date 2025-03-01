@@ -7,7 +7,7 @@ import xlwings
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
-from xlviews.core.address import reference
+from xlviews.style import set_font_api
 from xlviews.utils import suspend_screen_updates
 
 from .series import Series
@@ -19,7 +19,6 @@ from .style import (
     set_axis_label,
     set_axis_scale,
     set_dimensions,
-    set_font_api,
     set_tick_labels,
     set_ticks,
 )
@@ -28,9 +27,6 @@ if TYPE_CHECKING:
     from typing import Any, Self
 
     from xlwings import Chart, Sheet
-    from xlwings import Range as RangeImpl
-
-    from xlviews.core.range import Range
 
 
 def chart_position(
@@ -81,15 +77,15 @@ class Axes:
     @suspend_screen_updates
     def __init__(
         self,
+        row: int | None = None,
+        column: int | None = None,
+        chart_type: int = ChartType.xlXYScatter,
+        sheet: Sheet | None = None,
+        *,
         left: float | None = None,
         top: float | None = None,
         width: float = 0,
         height: float = 0,
-        *,
-        row: int | None = None,
-        column: int | None = None,
-        sheet: Sheet | None = None,
-        chart_type: int = ChartType.xlXYScatter,
         border_width: int = 0,
         visible_only: bool = True,
         has_legend: bool = True,
@@ -125,6 +121,35 @@ class Axes:
 
         self.series_collection = []
 
+    @suspend_screen_updates
+    def copy(
+        self,
+        row: int | None = None,
+        column: int | None = None,
+        *,
+        left: float | None = None,
+        top: float | None = None,
+    ) -> Self:
+        border_width = self.chart.api[0].Border.LineStyle
+        visible_only = self.chart.api[1].PlotVisibleOnly
+        has_legend = self.chart.api[1].HasLegend
+        include_in_layout = self.chart.api[1].Legend.IncludeInLayout
+
+        return self.__class__(
+            row=row,
+            column=column,
+            chart_type=self.chart_type,
+            sheet=self.sheet,
+            left=left,
+            top=top,
+            width=self.chart.width,
+            height=self.chart.height,
+            border_width=border_width,
+            visible_only=visible_only,
+            has_legend=has_legend,
+            include_in_layout=include_in_layout,
+        )
+
     @property
     def xaxis(self):  # noqa: ANN201
         chart = self.chart.api[1]
@@ -140,16 +165,13 @@ class Axes:
         self,
         x: Any,
         y: Any | None = None,
-        label: str | tuple[int, int] | Range | RangeImpl = "",
+        label: str | None = None,
         chart_type: int | None = None,
-        sheet: Sheet | None = None,
     ) -> Series:
-        sheet = sheet or self.sheet
-
         if chart_type is None:
             chart_type = self.chart_type
 
-        series = Series(self, x, y, label, chart_type, sheet)
+        series = Series(self, x, y, label, chart_type)
         self.series_collection.append(series)
 
         return series
@@ -164,16 +186,15 @@ class Axes:
         return None
 
     @title.setter
-    def title(self, value: str | tuple[int, int] | Range | RangeImpl | None) -> None:
+    def title(self, value: str | None) -> None:
         self.set_title(value)
 
     def set_title(
         self,
-        title: str | tuple[int, int] | Range | RangeImpl | None = None,
+        title: str | None = None,
         *,
         name: str | None = None,
         size: int | None = None,
-        sheet: Sheet | None = None,
         **kwargs,
     ) -> None:
         api = self.chart.api[1]
@@ -184,7 +205,7 @@ class Axes:
 
         api.HasTitle = True
         chart_title = api.ChartTitle
-        chart_title.Text = reference(title, sheet or self.chart.parent)
+        chart_title.Text = title
 
         name = name or rcParams["chart.font.name"]
         size = size or rcParams["chart.title.font.size"]
@@ -195,7 +216,7 @@ class Axes:
         return get_axis_label(self.xaxis)
 
     @xlabel.setter
-    def xlabel(self, value: str | tuple[int, int] | Range | RangeImpl | None) -> None:
+    def xlabel(self, value: str | None) -> None:
         self.set_xlabel(value)
 
     @property
@@ -203,26 +224,14 @@ class Axes:
         return get_axis_label(self.yaxis)
 
     @ylabel.setter
-    def ylabel(self, value: str | tuple[int, int] | Range | RangeImpl | None) -> None:
+    def ylabel(self, value: str | None) -> None:
         self.set_ylabel(value)
 
-    def set_xlabel(
-        self,
-        label: str | tuple[int, int] | Range | RangeImpl | None = None,
-        sheet: Sheet | None = None,
-        **kwargs,
-    ) -> None:
-        sheet = sheet or self.chart.parent
-        set_axis_label(self.xaxis, label, sheet=sheet, **kwargs)
+    def set_xlabel(self, label: str | None = None, **kwargs) -> None:
+        set_axis_label(self.xaxis, label, **kwargs)
 
-    def set_ylabel(
-        self,
-        label: str | tuple[int, int] | Range | RangeImpl | None = None,
-        sheet: Sheet | None = None,
-        **kwargs,
-    ) -> None:
-        sheet = sheet or self.chart.parent
-        set_axis_label(self.yaxis, label, sheet=sheet, **kwargs)
+    def set_ylabel(self, label: str | None = None, **kwargs) -> None:
+        set_axis_label(self.yaxis, label, **kwargs)
 
     @property
     def xticks(self) -> tuple[float, float, float, float]:
@@ -271,13 +280,13 @@ class Axes:
     @suspend_screen_updates
     def set(
         self,
-        xlabel: str | tuple[int, int] | Range | RangeImpl | None = "",
-        ylabel: str | tuple[int, int] | Range | RangeImpl | None = "",
+        xlabel: str | None = "",
+        ylabel: str | None = "",
         xticks: tuple[float, ...] | None = None,
         yticks: tuple[float, ...] | None = None,
         xscale: str | None = None,
         yscale: str | None = None,
-        title: str | tuple[int, int] | Range | RangeImpl | None = None,
+        title: str | None = None,
         style: bool = True,
         tight_layout: bool = True,
         legend: bool | tuple[float, float] = False,

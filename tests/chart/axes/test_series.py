@@ -3,6 +3,7 @@ from xlwings import Sheet
 from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
+from xlviews.core.range import Range
 from xlviews.testing import is_app_available
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
@@ -11,7 +12,7 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
 @pytest.fixture
 def ax(sheet: Sheet):
     ct = ChartType.xlXYScatterLines
-    return Axes(300, 10, chart_type=ct, sheet=sheet)
+    return Axes(2, 2, ct, sheet)
 
 
 def test_add_series_xy(ax: Axes):
@@ -57,12 +58,13 @@ def test_add_series_chart_type(ax: Axes):
 
 def test_add_series_name_range(ax: Axes):
     x = ax.sheet.range("A2:A5")
-    label = ax.sheet.range("A1")
+    rng = Range(1, 1, ax.sheet)
+    label = rng.get_address(include_sheetname=True, formula=True)
     s = ax.add_series(x, label=label)
 
-    label.value = "Series Name"
-    assert s.name == "Series Name"
-    assert s.label.endswith("!$A$1")
+    rng.value = "Series Name"
+    assert s.api.Name == "Series Name"
+    assert s.label == "Series Name"
 
 
 def test_add_series_xy_range_collection(ax: Axes):

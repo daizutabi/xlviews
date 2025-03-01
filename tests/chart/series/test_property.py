@@ -49,4 +49,4 @@ def test_chart_type(series: Series):
 
 
 def test_name(series: Series):
-    assert series.name == "xy"
+    assert series.label == "xy"
