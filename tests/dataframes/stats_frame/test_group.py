@@ -1,4 +1,5 @@
 import pytest
+from pandas import DataFrame
 
 from xlviews.dataframes.groupby import GroupBy
 from xlviews.dataframes.sheet_frame import SheetFrame
@@ -37,3 +38,9 @@ def test_get_frame_offset(gr: GroupBy):
     assert df["y"].iloc[-1] == "=$D$16"
     assert df["a"].iloc[0] == "=AGGREGATE(1,7,$F$4:$F$7,$F$20:$F$23)"
     assert df["c"].iloc[-1] == "=AGGREGATE(1,7,$H$16:$H$19)"
+
+
+def test_get_by_none(sf_parent: SheetFrame):
+    from xlviews.dataframes.stats_frame import get_by
+
+    assert get_by(sf_parent, None) == ["x", "y", "z"]
