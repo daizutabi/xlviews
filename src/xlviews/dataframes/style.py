@@ -264,11 +264,8 @@ def _set_heat_border(sf: HeatFrame) -> None:
     ec = rcParams["heat.border.color"]
 
     for row in iter_group_locs(sf.index, offset=r):
-        if row[0] == row[1]:
-            continue
-
         for col in iter_group_locs(sf.columns, offset=c):
-            if col[0] == col[1]:
+            if row[0] == row[1] and col[0] == col[1]:
                 continue
 
             rng = sf.sheet.range((row[0], col[0]), (row[1], col[1]))
