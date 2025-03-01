@@ -1,3 +1,5 @@
+from itertools import islice
+
 import pytest
 from pandas import DataFrame
 
@@ -49,6 +51,34 @@ def test_get_index_default(df: DataFrame, columns, default, index):
     from xlviews.figure.palette import get_index
 
     assert get_index(df[columns], default) == index
+
+
+def test_cycle_colors():
+    from xlviews.figure.palette import cycle_colors
+
+    x = list(islice(cycle_colors(), 3))
+    assert x == ["#1f77b4", "#ff7f0e", "#2ca02c"]
+
+
+def test_cycle_colors_skips():
+    from xlviews.figure.palette import cycle_colors
+
+    x = list(islice(cycle_colors(["#ff7f0e"]), 3))
+    assert x == ["#1f77b4", "#2ca02c", "#d62728"]
+
+
+def test_cycle_markers():
+    from xlviews.figure.palette import cycle_markers
+
+    x = list(islice(cycle_markers(), 3))
+    assert x == ["o", "^", "s"]
+
+
+def test_cycle_markers_skips():
+    from xlviews.figure.palette import cycle_markers
+
+    x = list(islice(cycle_markers(["o"]), 3))
+    assert x == ["^", "s", "d"]
 
 
 @pytest.mark.parametrize(("key", "value"), [(1, "o"), (2, "^"), (3, "s")])

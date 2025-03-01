@@ -2,17 +2,11 @@
 
 from __future__ import annotations
 
-import itertools
-from typing import TYPE_CHECKING
-
 from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.utils import set_font_api
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
 
 COLORS = [
     "#1f77b4",
@@ -61,27 +55,6 @@ def get_line_style(line: int | str | None) -> int | None:
         return line
 
     return LINE_DICT[line]
-
-
-def cycle_colors(skips: Iterable[str] | None = None) -> Iterator[str]:
-    """Cycle through the colors."""
-    if skips is None:
-        skips = []
-
-    for color in itertools.cycle(COLORS):
-        if color not in skips:
-            yield color
-
-
-def cycle_markers(skips: Iterable[str] | None = None) -> Iterator[str]:
-    """Cycle through the markers."""
-    if skips is None:
-        skips = []
-
-    markers = (m for m in MARKER_DICT if m != "")
-    for marker in itertools.cycle(markers):
-        if marker not in skips:
-            yield marker
 
 
 def get_axis_label(axis) -> str | None:  # noqa: ANN001

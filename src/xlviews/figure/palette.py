@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from itertools import islice
+from itertools import cycle, islice
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from xlviews.chart.style import cycle_colors, cycle_markers
+from xlviews.chart.style import COLORS, MARKER_DICT
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterable, Iterator
@@ -96,7 +96,28 @@ class MarkerPalette(Palette[str]):
         return cycle_markers(defaults)
 
 
+def cycle_markers(skips: Iterable[str] | None = None) -> Iterator[str]:
+    """Cycle through the markers."""
+    if skips is None:
+        skips = []
+
+    markers = (m for m in MARKER_DICT if m != "")
+    for marker in cycle(markers):
+        if marker not in skips:
+            yield marker
+
+
 class ColorPalette(Palette[str]):
     def cycle(self, defaults: Iterable[str]) -> Iterator[str]:
         """Generate an infinite iterator of colors."""
         return cycle_colors(defaults)
+
+
+def cycle_colors(skips: Iterable[str] | None = None) -> Iterator[str]:
+    """Cycle through the colors."""
+    if skips is None:
+        skips = []
+
+    for color in cycle(COLORS):
+        if color not in skips:
+            yield color
