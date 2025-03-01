@@ -7,9 +7,9 @@ import xlwings
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
 
 from xlviews.config import rcParams
+from xlviews.style import set_font_api
 from xlviews.utils import suspend_screen_updates
 
-from ..style import set_font_api
 from .series import Series
 from .style import (
     get_axis_label,
