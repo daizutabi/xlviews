@@ -67,3 +67,15 @@ def test_chart_position_top_left(sheet: Sheet):
     c = Axes(sheet=sheet, top=0, left=200)
     assert c.chart.left == 200
     assert c.chart.top == TOP
+
+
+def test_copy_right(sheet: Sheet):
+    a = Axes(sheet=sheet)
+    b = a.copy(left=0)
+    assert b.chart.left == a.chart.left + a.chart.width
+
+
+def test_copy_bottom(sheet: Sheet):
+    a = Axes(sheet=sheet)
+    b = a.copy(top=0)
+    assert b.chart.top == a.chart.top + a.chart.height
