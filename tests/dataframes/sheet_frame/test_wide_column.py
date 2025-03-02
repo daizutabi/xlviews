@@ -1,7 +1,6 @@
 import pytest
 from xlwings import Sheet
 
-from xlviews.dataframes.groupby import groupby
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import WideColumn
