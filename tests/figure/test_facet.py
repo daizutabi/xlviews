@@ -1,7 +1,6 @@
 import pytest
 from xlwings import Sheet
 
-from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.figure.plot import Plot
 from xlviews.testing import is_app_available
@@ -48,5 +47,4 @@ def test_iterrows_none():
 
     from xlviews.figure.plot import iterrows
 
-    it = iterrows(Index([]), None)
-    assert next(it) == {}
+    assert list(iterrows(Index([]), None)) == [{}]
