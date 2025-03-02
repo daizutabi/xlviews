@@ -27,7 +27,7 @@ def sf(fc: Pivot):
 
 @pytest.fixture(scope="module")
 def hfs(sf: SheetFrame):
-    return [hf for _, hf in pair(sf)]
+    return [hf for _, hf in pair(sf, values=None, columns="A", axis=1)]
 
 
 def test_len(hfs: list[HeatFrame]):

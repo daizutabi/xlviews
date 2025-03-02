@@ -135,6 +135,14 @@ class Axes:
         has_legend = self.chart.api[1].HasLegend
         include_in_layout = self.chart.api[1].Legend.IncludeInLayout
 
+        if left == 0:
+            left = self.chart.left + self.chart.width
+            top = self.chart.top
+
+        if top == 0:
+            left = self.chart.left
+            top = self.chart.top + self.chart.height
+
         return self.__class__(
             row=row,
             column=column,
