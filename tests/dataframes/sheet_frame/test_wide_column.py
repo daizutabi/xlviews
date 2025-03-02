@@ -50,6 +50,11 @@ def test_iter(sf: SheetFrame):
     assert list(sf) == ["a", "b", "u", "v"]
 
 
+def test_get_number_format(sf: SheetFrame):
+    assert sf.number_format(u="0.00")
+    assert sf.get_number_format("u") == "0.00"
+
+
 # @pytest.mark.parametrize(
 #     ("column", "index"),
 #     [

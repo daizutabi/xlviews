@@ -35,8 +35,8 @@ def test_sigma_value(value, expected):
     np.testing.assert_allclose(value, expected)
 
 
-def test_sigma_value_error():
+def test_sigma_value_error(sheet_module: Sheet):
     from xlviews.dataframes.dist_frame import sigma_value
 
     with pytest.raises(ValueError, match="unknown distribution"):
-        sigma_value(Range((1, 1), (1, 1)), 10, "unknown")
+        sigma_value(Range((1, 1), (1, 1), sheet_module), 10, "unknown")
