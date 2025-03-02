@@ -198,11 +198,9 @@ def xs(
     columns: dict[Hashable, Any] | None,
 ) -> DataFrame:
     if index:
-        for key, value in index.items():
-            df = df.xs(value, level=key, axis=0)  # type: ignore
+        df = df.xs(tuple(index.values()), 0, tuple(index.keys()))  # type: ignore
 
     if columns:
-        for key, value in columns.items():
-            df = df.xs(value, level=key, axis=1)  # type: ignore
+        df = df.xs(tuple(columns.values()), 1, tuple(columns.keys()))  # type: ignore
 
     return df

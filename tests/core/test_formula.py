@@ -103,6 +103,12 @@ def test_aggregate_formula(ranges: list[Range]):
     assert x == "=AGGREGATE(4,7,$B$100:$B$110,$C$100:$C$110)"
 
 
+def test_aggreate_range_range(ranges: list[Range]):
+    from xlviews.core.formula import aggregate
+
+    assert aggregate("max", ranges[0]) == "AGGREGATE(4,7,$B$100:$B$110)"
+
+
 FUNC_VALUES = [
     ("count", 20),
     ("sum", 210),
@@ -135,3 +141,10 @@ def test_aggregate_range(ranges: list[Range], func, value, apply):
     cell = ranges[0].sheet.range("D100")
     cell.value = "=" + formula
     assert cell.value == value
+
+
+def test_aggreate_func_invalid():
+    from xlviews.core.formula import aggregate
+
+    with pytest.raises(ValueError, match="Invalid aggregate function: sin"):
+        aggregate("sin", "A1:A10")

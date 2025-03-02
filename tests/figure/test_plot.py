@@ -47,7 +47,7 @@ def test_plot_series(ax: Axes, sf: SheetFrame):
     p = (
         Plot(ax, data)
         .add("x", "y", ChartType.xlXYScatter)
-        .set(label="abc", marker="o", color="blue")
+        .set(label="abc", marker="o", color="blue", alpha=0.6)
     )
     s = p.series_collection[0]
     assert s.label == "abc"
@@ -60,7 +60,7 @@ def test_plot_index(ax: Axes, sf: SheetFrame):
     data = sf.groupby("b").agg(include_sheetname=True)
     p = (
         Plot(ax, data)
-        .add("x", "y")
+        .add("x", "y", ChartType.xlXYScatterLines)
         .set(label="b={b}", marker=["o", "s"], color={"s": "red", "t": "blue"})
     )
     assert len(p.series_collection) == 2
@@ -78,7 +78,7 @@ def test_plot_multi_index(ax: Axes, sf: SheetFrame):
     data = sf.groupby(["b", "c"]).agg(include_sheetname=True)
     p = (
         Plot(ax, data)
-        .add("x", "y")
+        .add("x", "y", ChartType.xlXYScatterLinesNoMarkers)
         .set(
             label=lambda x: f"{x['b']},{x['c']}",
             marker="b",

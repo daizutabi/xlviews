@@ -112,3 +112,9 @@ def test_agg(sf: SheetFrame):
     assert df_sf.equals(df_melt)
     assert df_sf.index.equals(df_melt.index)
     assert df_sf.columns.equals(df_melt.columns)
+
+
+def test_number_format(sf: SheetFrame):
+    sf.number_format("0.000", s="a", r=3, autofit=True)
+    i = sf.get_indexer({"s": "a", "r": 3})
+    assert sf.sheet.range(6, i[0]).number_format == "0.000"
