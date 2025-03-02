@@ -89,3 +89,7 @@ def test_get_address(sf: SheetFrame):
     assert df.index.name == "name"
     assert df.index.to_list() == ["x", "x", "y", "y"]
     assert df.to_numpy()[0, 0] == "=C9"
+
+
+def test_get_adjacent_cell(sf: SheetFrame):
+    assert sf.get_adjacent_cell(0).get_address() == "$F$8"

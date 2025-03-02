@@ -119,6 +119,8 @@ def test_set(ax: Axes):
         yticks=(2, 20, 4, 1),
         xscale="linear",
         yscale="linear",
+        title="Title",
+        legend=True,
     )
     assert ax.xlabel == "1"
     assert ax.ylabel == "2"
@@ -126,6 +128,22 @@ def test_set(ax: Axes):
     assert ax.yticks == (2, 20, 4, 1)
     assert ax.xscale == "linear"
     assert ax.yscale == "linear"
+    assert ax.title == "Title"
+
+
+@pytest.fixture
+def ax2(sheet: Sheet):
+    ct = ChartType.xlXYScatterLines
+    ax = Axes(2, 2, ct, sheet)
+    x = sheet["B2:B11"]
+    y = sheet["C2:C11"]
+    z = sheet["D2:D11"]
+    x.options(transpose=True).value = list(range(1, 11))
+    y.options(transpose=True).value = list(range(10, 20))
+    z.options(transpose=True).value = list(range(20, 30))
+    ax.add_series(x, y, label="a")
+    ax.add_series(x, z, label="b")
+    return ax
 
 
 @pytest.mark.parametrize(
@@ -138,12 +156,12 @@ def test_set(ax: Axes):
         ((1, -1), 145, 148),
     ],
 )
-def test_legend_position(ax: Axes, loc, left, top):
-    ax.legend(loc=loc)
-    assert ax.chart.api[1].HasLegend
-    # legend = ax2.chart.api[1].Legend
-    # assert left - 3 < legend.Left < left + 3
-    # assert top - 3 < legend.Top < top + 3
+def test_legend_position(ax2: Axes, loc, left, top):
+    ax2.set(legend=loc)
+    assert ax2.chart.api[1].HasLegend
+    legend = ax2.chart.api[1].Legend
+    assert left - 2 < legend.Left < left + 2
+    assert top - 2 < legend.Top < top + 2
 
 
 def test_tight_layout(ax: Axes):

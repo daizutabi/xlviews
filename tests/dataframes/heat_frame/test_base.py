@@ -70,3 +70,9 @@ def test_colorbar(sf: HeatFrame, i: int, value: int):
     v = sf.sheet.range(f"M{i}").value
     assert isinstance(v, float)
     np.testing.assert_allclose(v, value)
+
+
+def test_number_format(sf: HeatFrame):
+    sf.number_format("0.00")
+    assert sf.sheet.range("H4").api.NumberFormatLocal == "0.00"
+    assert sf.sheet.range("K8").api.NumberFormatLocal == "0.00"

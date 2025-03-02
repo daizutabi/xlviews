@@ -68,6 +68,15 @@ def test_series_style_line(ax: Axes, x, y, style, value, weight):
     series.delete()
 
 
+def test_series_style_line_none(x, y, sheet: Sheet):
+    ct = ChartType.xlXYScatterLines
+    ax = Axes(300, 10, chart_type=ct, sheet=sheet)
+    series = ax.add_series(x, y, label="a")
+    style = series.api.Border.LineStyle
+    series.line()
+    assert series.api.Border.LineStyle == style
+
+
 @pytest.mark.parametrize(
     ("color", "value", "alpha"),
     [

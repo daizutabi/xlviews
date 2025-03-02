@@ -9,12 +9,17 @@ from xlviews.testing.sheet_frame.pivot import Pivot
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
-    from typing import Any
+    from typing import Any, Literal
 
     from xlviews.dataframes.sheet_frame import SheetFrame
 
 
-def pair(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
+def pair(
+    sf: SheetFrame,
+    values: str | list[str] | None = None,
+    columns: str | list[str] | None = None,
+    axis: Literal[0, 1] | None = None,
+) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
     sf.set_adjacent_column_width(1)
 
     rng = sf.get_range("u")
@@ -27,7 +32,15 @@ def pair(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
 
     df = sf.pivot_table(["u", "v"], ["B", "Y", "y"], ["A", "X", "x"], formula=True)
 
-    for key, frame in HeatFrame.pair(2, 13, df, index="B", columns="A", axis=1):
+    for key, frame in HeatFrame.pair(
+        2,
+        13,
+        df,
+        values=values,
+        index="B",
+        columns=columns,
+        axis=axis,
+    ):
         frame.autofit()
         frame.set_adjacent_column_width(1)
         if key["value"] == "u":
@@ -42,4 +55,6 @@ def pair(sf: SheetFrame) -> Iterator[tuple[dict[Hashable, Any], HeatFrame]]:
 if __name__ == "__main__":
     sheet = create_sheet()
     fc = Pivot(sheet, style=True)
-    list(pair(fc.sf))
+    # list(pair(fc.sf, values="u", columns=None))
+    # list(pair(fc.sf, values=None, columns="A", axis=1))
+    list(pair(fc.sf, values="v", columns="A"))
