@@ -5,6 +5,8 @@ from collections.abc import Hashable
 from itertools import cycle, islice
 from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar
 
+from pandas import MultiIndex
+
 from xlviews.chart.style import COLORS, MARKER_DICT
 
 if TYPE_CHECKING:
@@ -164,6 +166,9 @@ def get_palette(
     if style is None:
         return None
 
+    if data.index.name is not None or isinstance(data.index, MultiIndex):
+        data = data.index.to_frame(index=False)
+
     if isinstance(style, dict):
         return cls(data, data.columns.to_list(), style)
 
@@ -182,3 +187,17 @@ def get_palette(
         return cls(data, data.columns.tolist(), default)  # type: ignore
 
     return cls(data, columns)
+
+
+def get_marker_palette(
+    data: DataFrame,
+    marker: PaletteStyle | None,
+) -> MarkerPalette | None:
+    return get_palette(MarkerPalette, data, marker)  # type: ignore
+
+
+def get_color_palette(
+    data: DataFrame,
+    color: PaletteStyle | None,
+) -> ColorPalette | None:
+    return get_palette(ColorPalette, data, color)  # type: ignore
