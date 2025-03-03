@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from itertools import cycle, islice
 from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar
 
@@ -102,12 +102,11 @@ class Palette(ABC, Generic[T]):
 
         return self.index[value]
 
-    def __getitem__(self, value: Hashable | dict) -> T:
-        if value == {None: 0}:  # from series
+    def __getitem__(self, key: dict) -> T:
+        if key == {None: 0}:  # from series
             return self.items[0]
 
-        if isinstance(value, dict):
-            value = tuple(value[k] for k in self.columns)
+        value = tuple(key[k] for k in self.columns)
 
         return self.items[self.get(value)]
 
@@ -145,12 +144,31 @@ def cycle_colors(skips: Iterable[str] | None = None) -> Iterator[str]:
             yield color
 
 
+class FunctionPalette(Generic[T]):
+    columns: str | list[str]
+    func: Callable[[Hashable], T]
+
+    def __init__(self, columns: str | list[str], func: Callable[[Hashable], T]) -> None:
+        self.columns = columns
+        self.func = func
+
+    def __getitem__(self, key: dict) -> T:
+        if isinstance(self.columns, str):
+            return self.func(key[self.columns])
+
+        value = tuple(key[k] for k in self.columns)
+        return self.func(value)
+
+
 PaletteStyle: TypeAlias = (
     str
     | list[str]
     | dict[Hashable, str]
-    | tuple[str | list[str], dict[Hashable, str] | list[str]]
+    | Callable[[Hashable], str]
+    | tuple[str | list[str], list[str] | dict[Hashable, str]]
+    | tuple[str | list[str], Callable[[Hashable], str]]
     | Palette
+    | FunctionPalette
 )
 
 
@@ -158,13 +176,18 @@ def get_palette(
     cls: type[Palette],
     data: DataFrame,
     style: PaletteStyle | None,
-) -> Palette | None:
+) -> Palette | FunctionPalette | None:
     """Get a palette from a style."""
-    if isinstance(style, Palette):
+    if isinstance(style, Palette | FunctionPalette):
         return style
 
     if style is None:
         return None
+
+    if isinstance(style, Callable):
+        if isinstance(data.index, MultiIndex):
+            return FunctionPalette(data.index.names, style)
+        return FunctionPalette(data.index.name, style)
 
     if data.index.name is not None or isinstance(data.index, MultiIndex):
         data = data.index.to_frame(index=False)
@@ -173,7 +196,11 @@ def get_palette(
         return cls(data, data.columns.to_list(), style)
 
     if isinstance(style, tuple):
-        return cls(data, *style)
+        columns, default = style
+        if callable(default):
+            return FunctionPalette(columns, default)
+
+        return cls(data, columns, default)
 
     columns = style
 
@@ -192,12 +219,12 @@ def get_palette(
 def get_marker_palette(
     data: DataFrame,
     marker: PaletteStyle | None,
-) -> MarkerPalette | None:
+) -> MarkerPalette | FunctionPalette | None:
     return get_palette(MarkerPalette, data, marker)  # type: ignore
 
 
 def get_color_palette(
     data: DataFrame,
     color: PaletteStyle | None,
-) -> ColorPalette | None:
+) -> ColorPalette | FunctionPalette | None:
     return get_palette(ColorPalette, data, color)  # type: ignore
