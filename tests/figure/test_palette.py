@@ -101,6 +101,17 @@ def test_cycle_markers_skips():
 
 @pytest.mark.parametrize(
     ("key", "value"),
+    [(1, 0), ((1,), 0), (3, 2), ((3,), 2)],
+)
+def test_marker_palette_get(df: DataFrame, key, value):
+    from xlviews.figure.palette import MarkerPalette
+
+    p = MarkerPalette(df, "a")
+    assert p.get(key) == value
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
     [({"a": 1}, "o"), ({"a": 2}, "^"), ({"a": 3}, "s")],
 )
 def test_marker_palette(df: DataFrame, key, value):
@@ -264,3 +275,66 @@ def test_get_palette_new_default_list(df: DataFrame):
     assert p[{"a": 2, "b": 5, "c": 10}] == "blue"
     assert p[{"a": 2, "b": 6, "c": 11}] == "green"
     assert p[{"a": 3, "b": 7, "c": 11}] == "red"
+
+
+def test_function_palette_str():
+    from xlviews.figure.palette import FunctionPalette
+
+    p = FunctionPalette("a", lambda x: x)
+    assert p[{"a": 1}] == 1
+
+
+def test_function_palette_list():
+    from xlviews.figure.palette import FunctionPalette
+
+    p = FunctionPalette(["a"], lambda x: x[0])  # type: ignore
+    assert p[{"a": 1}] == 1
+
+
+def test_get_palette_callable_str(df: DataFrame):
+    from xlviews.figure.palette import ColorPalette, get_palette
+
+    df = df.set_index("a")
+    p = get_palette(ColorPalette, df, lambda x: str(x))
+    assert p
+    assert p[{"a": 1}] == "1"
+
+
+def test_get_palette_callable_list(df: DataFrame):
+    from xlviews.figure.palette import ColorPalette, get_palette
+
+    df = df.set_index(["a", "b"])
+    p = get_palette(ColorPalette, df, lambda x: str(x))
+    assert p
+    assert p[{"a": 1, "b": 4}] == "(1, 4)"
+
+
+def test_get_palette_callable_multi_index(df: DataFrame):
+    from xlviews.figure.palette import ColorPalette, get_palette
+
+    df = df.set_index(["a", "b"])
+    p = get_palette(ColorPalette, df, ("a", lambda x: str(x)))
+    assert p
+    assert p[{"a": 1, "b": 4}] == "1"
+
+
+def test_get_marker_palette_callable(df: DataFrame):
+    from xlviews.figure.palette import get_marker_palette
+
+    df = df.set_index(["a", "b"])
+    p = get_marker_palette(df, "a")
+    assert p
+    assert p[{"a": 1, "b": 4}] == "o"
+    assert p[{"a": 2, "b": 5}] == "^"
+    assert p[{"a": 3, "b": 6}] == "s"
+
+
+def test_get_color_palette_callable(df: DataFrame):
+    from xlviews.figure.palette import get_color_palette
+
+    df = df.set_index(["a", "b"])
+    p = get_color_palette(df, "b")
+    assert p
+    assert p[{"a": 1, "b": 4}] == "#1f77b4"
+    assert p[{"a": 2, "b": 5}] == "#ff7f0e"
+    assert p[{"a": 3, "b": 6}] == "#2ca02c"

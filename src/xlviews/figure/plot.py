@@ -69,9 +69,8 @@ class Plot:
         weight: float | None = None,
         size: int | None = None,
     ) -> Self:
-        index = self.data.index.to_frame(index=False)
-        marker_palette = get_marker_palette(index, marker)
-        color_palette = get_color_palette(index, color)
+        marker_palette = get_marker_palette(self.data, marker)
+        color_palette = get_color_palette(self.data, color)
 
         for key, s in zip(self.keys(), self.series_collection, strict=True):
             s.set(
