@@ -4,6 +4,9 @@ from scipy.stats import norm
 from xlwings import Sheet
 
 from xlviews.core.range import Range
+from xlviews.testing import is_app_available
+
+pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 @pytest.fixture(params=["norm", "weibull"])

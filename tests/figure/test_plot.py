@@ -4,7 +4,10 @@ from xlwings.constants import ChartType, MarkerStyle
 
 from xlviews.chart.axes import Axes
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.testing import is_app_available
 from xlviews.testing.chart import Base
+
+pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 @pytest.mark.parametrize(
