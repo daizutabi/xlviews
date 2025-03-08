@@ -26,19 +26,19 @@ Issues = "https://github.com/daizutabi/xlviews/issues"
 
 [dependency-groups]
 dev = [
-  "pytest-benchmark>=5.1",
-  "pytest-clarity>=1",
-  "pytest-cov>=6.0",
-  "pytest-randomly>=3.16",
+  "pytest-benchmark>=5.1.0",
+  "pytest-clarity>=1.0.1",
+  "pytest-cov>=6.0.0",
+  "pytest-randomly>=3.16.0",
   "pytest-skip-slow>=0.0.5",
-  "scipy>=1.15",
+  "scipy>=1.15.2",
 ]
 
 [tool.pytest.ini_options]
 markers = ["app: mark test as app"]
 addopts = [
-  "--benchmark-skip",
   "--benchmark-columns=min,mean,max",
+  "--benchmark-skip",
   "--cov-report=lcov:lcov.info",
   "--cov=xlviews",
   "--doctest-modules",
