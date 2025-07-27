@@ -118,7 +118,7 @@ class Table:
            - other: specify the value.
         """
         if clear:
-            clear_filter = {x: None for x in self.columns}
+            clear_filter = dict.fromkeys(self.columns)
             clear_filter.update(field_criteria)
             field_criteria = clear_filter
 

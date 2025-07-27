@@ -199,7 +199,7 @@ def get_init_data(index: Index, columns: list[str]) -> DataFrame:
 
 def get_dist_func(dist: str | dict[str, str], columns: list[str]) -> dict[str, str]:
     if isinstance(dist, str):
-        return {column: dist for column in columns}
+        return dict.fromkeys(columns, dist)
 
     dist = dist.copy()
     for column in columns:

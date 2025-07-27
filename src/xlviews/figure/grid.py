@@ -99,9 +99,6 @@ class Grid:
     def __getitem__(self, key: tuple[int, int]) -> Axes: ...
 
     @overload
-    def __getitem__(self, key: tuple[int, int]) -> Axes: ...
-
-    @overload
     def __getitem__(self, key: tuple[slice, int]) -> Series: ...
 
     @overload

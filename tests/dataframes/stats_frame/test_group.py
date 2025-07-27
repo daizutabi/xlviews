@@ -1,5 +1,4 @@
 import pytest
-from pandas import DataFrame
 
 from xlviews.dataframes.groupby import GroupBy
 from xlviews.dataframes.sheet_frame import SheetFrame

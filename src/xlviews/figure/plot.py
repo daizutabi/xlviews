@@ -58,7 +58,7 @@ class Plot:
         names = self.data.index.names
 
         for index in self.index:
-            yield dict(zip(names, index, strict=True))
+            yield dict(zip(names, index, strict=True))  # type: ignore
 
     def set(
         self,

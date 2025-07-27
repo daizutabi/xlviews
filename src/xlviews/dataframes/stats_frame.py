@@ -81,7 +81,7 @@ def get_func(func: str | list[str] | None) -> list[str]:
 
 def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
     if not by:
-        return sf.index.names
+        return sf.index.names  # type: ignore
 
     return list(iter_columns(sf.index.names, by))
 
@@ -142,7 +142,7 @@ def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None
     idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
 
     columns = (*parent.index.names, *parent.columns)
-    formats = [None, *[parent.get_number_format(column) for column in columns]]
+    formats = [None, *[parent.get_number_format(column) for column in columns]]  # type: ignore
 
     for (func,), rows in sf.groupby(func_column_name).items():
         for col, fmt in zip(idx, formats, strict=True):

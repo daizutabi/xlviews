@@ -612,8 +612,8 @@ class SheetFrame:
                     continue
 
                 for pattern, number_format in columns_format.items():
-                    if re.match(pattern, column):
-                        rng = self.get_range(column).impl
+                    if re.match(pattern, column):  # type: ignore
+                        rng = self.get_range(column).impl  # type: ignore
                         rng.number_format = number_format
                         if autofit:
                             rng.autofit()

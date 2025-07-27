@@ -128,6 +128,8 @@ def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
 
     @wraps(func)
     def _func(*args: P.args, **kwargs: P.kwargs) -> R:
+        is_updating = False
+
         if app := xlwings.apps.active:
             is_updating = app.screen_updating
             app.screen_updating = False

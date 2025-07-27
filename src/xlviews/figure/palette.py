@@ -186,8 +186,8 @@ def get_palette(
 
     if isinstance(style, Callable):
         if isinstance(data.index, MultiIndex):
-            return FunctionPalette(data.index.names, style)
-        return FunctionPalette(data.index.name, style)
+            return FunctionPalette(data.index.names, style)  # type: ignore
+        return FunctionPalette(data.index.name, style)  # type: ignore
 
     if data.index.name is not None or isinstance(data.index, MultiIndex):
         data = data.index.to_frame(index=False)

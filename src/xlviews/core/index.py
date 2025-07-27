@@ -62,7 +62,7 @@ class Index:
 
     @property
     def names(self) -> list[str]:
-        return self.index.names
+        return self.index.names  # type: ignore
 
     @property
     def nlevels(self) -> int:

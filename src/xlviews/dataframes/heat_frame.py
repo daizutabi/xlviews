@@ -42,7 +42,7 @@ class HeatFrame(SheetFrame):
 
         super().__init__(row, column, data, sheet)
 
-        self.columns = data.columns
+        self.columns = data.columns  # type: ignore
 
         start = self.row + 1, self.column + 1
         end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
