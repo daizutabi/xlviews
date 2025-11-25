@@ -26,12 +26,13 @@ Issues = "https://github.com/daizutabi/xlviews/issues"
 
 [dependency-groups]
 dev = [
-  "pytest-benchmark>=5.1.0",
+  "pytest>=9.0.1",
+  "pytest-benchmark>=5.2.3",
   "pytest-clarity>=1.0.1",
-  "pytest-cov>=6.0.0",
-  "pytest-randomly>=3.16.0",
+  "pytest-cov>=7.0.0",
+  "pytest-randomly>=4.0.1",
   "pytest-skip-slow>=0.0.5",
-  "scipy>=1.15.2",
+  "scipy>=1.16.3",
 ]
 
 [tool.pytest.ini_options]
