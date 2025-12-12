@@ -75,7 +75,6 @@ ignore = [
   "ERA001",
   "FBT001",
   "FBT002",
-  "PD901",
   "PERF401",
   "PGH003",
   "PLC0415",

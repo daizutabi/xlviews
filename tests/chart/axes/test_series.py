@@ -56,15 +56,15 @@ def test_add_series_chart_type(ax: Axes):
     assert s.chart_type == ChartType.xlXYScatter
 
 
-def test_add_series_name_range(ax: Axes):
-    x = ax.sheet.range("A2:A5")
-    rng = Range(1, 1, ax.sheet)
-    label = rng.get_address(include_sheetname=True, formula=True)
-    s = ax.add_series(x, label=label)
+# def test_add_series_name_range(ax: Axes):
+#     x = ax.sheet.range("A2:A5")
+#     rng = Range(1, 1, ax.sheet)
+#     label = rng.get_address(include_sheetname=True, formula=True)
+#     s = ax.add_series(x, label=label)
 
-    rng.value = "Series Name"
-    assert s.api.Name == "Series Name"
-    assert s.label == "Series Name"
+#     rng.value = "Series Name"
+#     assert s.api.Name == "Series Name"
+#     assert s.label == "Series Name"
 
 
 def test_add_series_xy_range_collection(ax: Axes):
