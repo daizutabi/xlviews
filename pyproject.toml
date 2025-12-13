@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "xlviews"
-version = "0.3.2"
+version = "0.3.3"
 description = "DataFrames for Excel"
 readme = "README.md"
 license = { file = "LICENSE" }
