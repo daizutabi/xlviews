@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v6
@@ -35,16 +35,21 @@ jobs:
       # run: ruff check
       - name: Install the project
         run: uv sync
-      - name: Run test
-        run: uv run pytest --junitxml=junit.xml
-      - name: Upload Codecov Results
-        if: success()
+      - name: Upload local coverage (lcov.info) if present
+        if: hashFiles('lcov.info') != ''
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: lcov.info
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+          files: lcov.info
+          flags: local
+          fail_ci_if_error: false
+      - name: Run tests
+        run: uv run pytest --cov-report=lcov:github-lcov.info
+      - name: Upload CI coverage (github-lcov.info) if present
+        if: success() && hashFiles('github-lcov.info') != ''
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: github-lcov.info
+          flags: ci
+          fail_ci_if_error: false
