@@ -27,6 +27,7 @@ Issues = "https://github.com/daizutabi/xlviews/issues"
 
 [dependency-groups]
 dev = [
+  "pandas-stubs>=3.0.0.260204",
   "pytest>=9.0.1",
   "pytest-benchmark>=5.2.3",
   "pytest-clarity>=1.0.1",

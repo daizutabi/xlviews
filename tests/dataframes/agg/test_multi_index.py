@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 import numpy as np
 import pytest
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -162,10 +164,17 @@ def test_df_group_str_str(df: DataFrame):
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_df_group_str_str_as_index_false(df: DataFrame):
     a = df.groupby("x", as_index=False).agg("sum")
-    assert a.columns.to_list() == ["a", "b"]
-    assert a.index.to_list() == [0, 1]
-    assert a.index.name is None
-    np.testing.assert_array_equal(a, [[10, 50], [26, 66]])
+    if version("pandas").startswith("3."):
+        assert a.columns.to_list() == ["x", "a", "b"]
+        assert a.index.to_list() == [0, 1]
+        assert a.index.name is None
+        np.testing.assert_array_equal(a, [[1, 10, 50], [2, 26, 66]])
+
+    else:
+        assert a.columns.to_list() == ["a", "b"]
+        assert a.index.to_list() == [0, 1]
+        assert a.index.name is None
+        np.testing.assert_array_equal(a, [[10, 50], [26, 66]])
 
 
 def test_df_group_list_str(df: DataFrame):
