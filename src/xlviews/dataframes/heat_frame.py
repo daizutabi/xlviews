@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 from pandas import DataFrame, Index, MultiIndex
 
@@ -15,7 +15,6 @@ from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator, Sequence
-    from typing import Any, Literal, Self
 
     from pandas import Index
     from xlwings import Sheet
@@ -42,7 +41,7 @@ class HeatFrame(SheetFrame):
 
         super().__init__(row, column, data, sheet)
 
-        self.columns = data.columns  # type: ignore
+        self.columns = data.columns  # pyright: ignore[reportIncompatibleVariableOverride]
 
         start = self.row + 1, self.column + 1
         end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
@@ -198,9 +197,9 @@ def xs(
     columns: dict[Hashable, Any] | None,
 ) -> DataFrame:
     if index:
-        df = df.xs(tuple(index.values()), 0, tuple(index.keys()))  # type: ignore
+        df = df.xs(tuple(index.values()), 0, tuple(index.keys()))  # pyright: ignore[reportAssignmentType]
 
     if columns:
-        df = df.xs(tuple(columns.values()), 1, tuple(columns.keys()))  # type: ignore
+        df = df.xs(tuple(columns.values()), 1, tuple(columns.keys()))  # pyright: ignore[reportAssignmentType]
 
     return df

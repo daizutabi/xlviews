@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Self
 
 import xlwings
 
@@ -17,8 +17,6 @@ from xlviews.style import (
 )
 
 if TYPE_CHECKING:
-    from typing import Literal, Self
-
     from xlwings import Sheet
 
 
@@ -152,6 +150,6 @@ class Colorbar:
     def set_adjacent_column_width(self, width: float, offset: int = 1) -> None:
         """Set the width of the adjacent empty column."""
         if self.orientation == "vertical":
-            self.range.offset(0, 1).impl.column_width = width
+            self.range.offset(0, offset).impl.column_width = width
         else:
-            self.range.last_cell.offset(0, 2).impl.column_width = width
+            self.range.last_cell.offset(0, offset + 1).impl.column_width = width

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import numpy as np
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -22,7 +22,7 @@ T = TypeVar("T")
 
 
 def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
-    result = {}
+    result: dict[H, list[T]] = {}
 
     for key, value in zip(keys, values, strict=True):
         result.setdefault(key, []).append(value)
@@ -31,9 +31,9 @@ def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
 
 
 def create_group_index(
-    a: Sequence | Series | DataFrame,
+    a: Sequence[Any] | Series | DataFrame,
     sort: bool = True,
-) -> dict[tuple, list[tuple[int, int]]]:
+) -> dict[tuple[Any, ...], list[tuple[int, int]]]:
     if isinstance(a, DataFrame):
         df = a.reset_index(drop=True)
     else:
@@ -60,7 +60,7 @@ def groupby(
     by: str | list[str] | None,
     *,
     sort: bool = True,
-) -> dict[tuple, list[tuple[int, int]]]:
+) -> dict[tuple[Any, ...], list[tuple[int, int]]]:
     """Group by the specified column and return the group key and row number."""
     if sf.columns.nlevels != 1:
         raise NotImplementedError
@@ -83,7 +83,7 @@ def groupby(
 class GroupBy:
     sf: SheetFrame
     by: list[str]
-    group: dict[tuple, list[tuple[int, int]]]
+    group: dict[tuple[Any, ...], list[tuple[int, int]]]
 
     def __init__(
         self,
@@ -99,19 +99,19 @@ class GroupBy:
     def __len__(self) -> int:
         return len(self.group)
 
-    def keys(self) -> Iterator[tuple]:
+    def keys(self) -> Iterator[tuple[Any, ...]]:
         yield from self.group.keys()
 
     def values(self) -> Iterator[list[tuple[int, int]]]:
         yield from self.group.values()
 
-    def items(self) -> Iterator[tuple[tuple, list[tuple[int, int]]]]:
+    def items(self) -> Iterator[tuple[tuple[Any, ...], list[tuple[int, int]]]]:
         yield from self.group.items()
 
-    def __iter__(self) -> Iterator[tuple]:
+    def __iter__(self) -> Iterator[tuple[Any, ...]]:
         return self.keys()
 
-    def __getitem__(self, key: tuple) -> list[tuple[int, int]]:
+    def __getitem__(self, key: tuple[Any, ...]) -> list[tuple[int, int]]:
         return self.group[key]
 
     def index(
@@ -153,7 +153,7 @@ class GroupBy:
 
     def agg(
         self,
-        func: Func | dict | Sequence[Func] = None,
+        func: Func | dict[str, str] | Sequence[Func] = None,
         columns: str | list[str] | None = None,
         as_address: bool = False,
         row_absolute: bool = True,
@@ -206,7 +206,7 @@ class GroupBy:
         columns_ = MultiIndex.from_tuples([(c, f) for c in columns for f in func])
         return DataFrame(values, index=index, columns=columns_)
 
-    def _agg(self, func: Func, column: int, **kwargs) -> Iterator[str]:
+    def _agg(self, func: Func, column: int, **kwargs: Any) -> Iterator[str]:
         if func == "first":
             func = None
             for row in self.values():

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from xlwings import Range
 from xlwings.constants import AutoFilterOperator, ListObjectSourceType, YesNoGuess
@@ -42,9 +42,10 @@ class Table:
             )
         elif sheet and api:
             self.api = api
-            self.cell = sheet.range(api.Range.Row, api.Range.Column)  # type: ignore
+            self.cell = sheet.range(api.Range.Row, api.Range.Column)  # pyright: ignore[reportUnknownMemberType, reportArgumentType, reportAttributeAccessIssue]
         else:
-            raise ValueError("Either range or sheet and api must be provided")
+            msg = "Either range or sheet and api must be provided"
+            raise ValueError(msg)
 
         self.sheet = self.cell.sheet
 
@@ -79,7 +80,7 @@ class Table:
         if not isinstance(names, list):
             raise NotImplementedError
 
-        return [c or "" for c in names]
+        return [name or "" for name in names]  # pyright: ignore[reportUnknownVariableType]
 
     def add_const_header(
         self,
@@ -103,7 +104,12 @@ class Table:
                 set_font(const_header, size=8, italic=True, color="blue")
                 set_alignment(const_header, "center")
 
-    def auto_filter(self, *args, clear: bool = False, **field_criteria) -> None:
+    def auto_filter(
+        self,
+        *args: Any,
+        clear: bool = False,
+        **field_criteria: Any,
+    ) -> None:
         """Filter the table by the given criteria.
 
         Args:
@@ -123,12 +129,12 @@ class Table:
             field_criteria = clear_filter
 
         if args and isinstance(args[0], dict):
-            field_criteria.update(args[0])
+            field_criteria.update(args[0])  # pyright: ignore[reportUnknownArgumentType]
         else:
             for name, criteria in zip(args[::2], args[1::2], strict=True):
                 field_criteria[name] = criteria
 
-        auto_filter = self.api.Range.AutoFilter  # type: ignore
+        auto_filter = self.api.Range.AutoFilter  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
 
         columns = self.columns
 
@@ -138,7 +144,7 @@ class Table:
             if isinstance(criteria, list):
                 auto_filter(
                     Field=field,
-                    Criteria1=[str(x) for x in criteria],
+                    Criteria1=[str(x) for x in criteria],  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
                     Operator=AutoFilterOperator.xlFilterValues,
                 )
 

@@ -57,7 +57,8 @@ class DistFrame(SheetFrame):
 
             for row in group.values():
                 if len(row) != 1:
-                    raise ValueError("group must be continuous")
+                    msg = "group must be continuous"
+                    raise ValueError(msg)
 
                 start = row[0][0]
                 length = row[0][1] - start + 1
@@ -92,7 +93,7 @@ class DistFrame(SheetFrame):
     # ):
     #     if ylabel == "auto":
     #         dist = self.dist_func[x] if isinstance(x, str) else self.dist_func[x[0]]
-    #         ylabel = "σ" if dist == "norm" else "ln(-ln(1-F))"
+    #         ylabel = "σ" if dist == "norm" else "ln(-ln(1-F))"  # noqa: RUF003
     #     plot = None
     #     if isinstance(x, str) and xlabel == "auto":
     #         x_ = x.split("_")[0]
@@ -170,7 +171,7 @@ class DistFrame(SheetFrame):
     #     cell = self.sheet.range(row, column)
     #     range_ = self.sheet.range(cell, cell.offset(len(self) - 1))
     #     range_.api.NumberFormatLocal = "0.00_ "
-    #     formula = f"=IF(AND({cell_ref}>=-{sigma},{cell_ref}<={sigma}),{cell_ref},NA())"
+    #     formula = f"=IF(AND({cell_ref}>=-{sigma},{cell_ref}<={sigma}),{cell_ref},NA())"  # noqa: E501
     #     range_.value = formula
     #     return column_
 

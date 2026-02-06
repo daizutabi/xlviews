@@ -45,9 +45,7 @@ class StatsFrame(SheetFrame):
 
         # Store the position of the parent SheetFrame before moving down.
         row = parent.row
-        column = parent.column
-        if isinstance(funcs, list):
-            column -= 1
+        column = parent.column - 1
 
         move_down(parent, offset)
 
@@ -59,12 +57,11 @@ class StatsFrame(SheetFrame):
         self.as_table(autofit=False, const_header=True)
         self.style()
 
-        if isinstance(funcs, list):
-            set_style(self, parent, func_column_name)
+        set_style(self, parent, func_column_name)
 
         self.alignment("left")
 
-        if self.table and auto_filter and isinstance(funcs, list) and len(funcs) > 1:
+        if self.table and auto_filter and len(funcs) > 1:
             func = default if default in funcs else funcs[0]
             self.table.auto_filter(func_column_name, func)
 
@@ -81,18 +78,16 @@ def get_func(func: str | list[str] | None) -> list[str]:
 
 def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
     if not by:
-        return sf.index.names  # type: ignore
+        return sf.index.names  # pyright: ignore[reportReturnType]
 
     return list(iter_columns(sf.index.names, by))
 
 
-def get_length(sf: SheetFrame, by: list[str], funcs: list | dict) -> int:
-    n = 1 if isinstance(funcs, dict) else len(funcs)
-
+def get_length(sf: SheetFrame, by: list[str], funcs: list[str]) -> int:
     if not by:
-        return n
+        return len(funcs)
 
-    return len(sf.index.to_frame()[by].drop_duplicates()) * n
+    return len(sf.index.to_frame()[by].drop_duplicates()) * len(funcs)
 
 
 def get_frame(
@@ -122,7 +117,7 @@ def has_header(sf: SheetFrame) -> bool:
     if not isinstance(value, list):
         raise NotImplementedError
 
-    return any(value)
+    return any(value)  # pyright: ignore[reportUnknownArgumentType]
 
 
 def move_down(sf: SheetFrame, length: int) -> int:
@@ -142,13 +137,13 @@ def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None
     idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
 
     columns = (*parent.index.names, *parent.columns)
-    formats = [None, *[parent.get_number_format(column) for column in columns]]  # type: ignore
+    formats = [None, *[parent.get_number_format(column) for column in columns]]  # pyright: ignore[reportArgumentType]
 
     for (func,), rows in sf.groupby(func_column_name).items():
         for col, fmt in zip(idx, formats, strict=True):
             rc = RangeCollection(rows, col, sf.sheet)
 
-            if func in ["median", "min", "mean", "max", "std", "sum"] and fmt:
+            if func in {"median", "min", "mean", "max", "std", "sum"} and fmt:
                 set_number_format(rc, fmt)
 
             color = rcParams.get(f"stats.{func}.color")
