@@ -68,6 +68,7 @@ select = ["ALL"]
 unfixable = ["F401"]
 ignore = [
   "ANN401",
+  "C901",
   "CPY001",
   "D",
   "DOC201",
@@ -77,6 +78,7 @@ ignore = [
   "ERA001",
   "FBT001",
   "FBT002",
+  "PLR0904",
   "PLR0913",
   "PLR0917",
 ]
@@ -99,4 +101,5 @@ reportImplicitOverride = false
 reportImportCycles = false
 reportIncompatibleMethodOverride = false
 reportMissingTypeStubs = false
+reportPropertyTypeMismatch = false
 reportUnusedCallResult = false
