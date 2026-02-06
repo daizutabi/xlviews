@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 import xlwings
@@ -11,7 +11,6 @@ from .address import index_to_column_name
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-    from typing import Any, Self
 
     from pandas._typing import Axes
     from xlwings import Sheet
