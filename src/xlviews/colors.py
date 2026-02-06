@@ -39,7 +39,7 @@ def rgb(
     if isinstance(color, str):
         color = cnames.get(color, color)
 
-        if not isinstance(color, str) or not color.startswith("#") or len(color) != 7:
+        if not color.startswith("#") or len(color) != 7:  # noqa: PLR2004
             msg = "Invalid color format. Expected int, tuple[int, int, int], or str."
             raise ValueError(msg)
 

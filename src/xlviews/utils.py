@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 import xlwings
 from pandas import DataFrame, Series
@@ -10,6 +10,7 @@ from xlwings.constants import DVType, FormatConditionOperator
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
+    import numpy as np
     from numpy.typing import NDArray
     from pandas import Index
     from xlwings import Range as RangeImpl
@@ -37,13 +38,13 @@ def constant(type_: str, name: str | None = None) -> int:
     if not name.startswith("xl"):
         name = "xl" + name[0].upper() + name[1:]
 
-    type_ = getattr(xlwings.constants, type_)
+    type_ = getattr(xlwings.constants, type_)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
 
     return getattr(type_, name)
 
 
 def iter_columns(
-    iterable: Iterable | DataFrame,
+    iterable: Iterable[Any] | DataFrame,
     columns: str | list[str],
 ) -> Iterator[str]:
     """Yield the columns in the order of appearance with colon notation.
@@ -73,7 +74,7 @@ def iter_columns(
 
 
 def iter_group_locs(
-    index: list | NDArray | Index | Series,
+    index: list[int] | NDArray[np.integer] | Index | Series,
     offset: int = 0,
     padding: int = 0,
 ) -> Iterator[tuple[int, int]]:

@@ -109,15 +109,15 @@ def set_font_api(
 ) -> None:
     font = api.Font
     if name:
-        font.Name = name  # type: ignore
+        font.Name = name  # pyright: ignore[reportAttributeAccessIssue]
     if size:
-        font.Size = size  # type: ignore
+        font.Size = size  # pyright: ignore[reportAttributeAccessIssue]
     if bold is not None:
-        font.Bold = bold  # type: ignore
+        font.Bold = bold  # pyright: ignore[reportAttributeAccessIssue]
     if italic is not None:
-        font.Italic = italic  # type: ignore
+        font.Italic = italic  # pyright: ignore[reportAttributeAccessIssue]
     if color is not None:
-        font.Color = rgb(color)  # type: ignore
+        font.Color = rgb(color)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def set_font(
