@@ -27,14 +27,18 @@ Issues = "https://github.com/daizutabi/xlviews/issues"
 
 [dependency-groups]
 dev = [
+  "basedpyright>=1.37.3",
   "pandas-stubs>=3.0.0.260204",
-  "pytest>=9.0.1",
+  "prek>=0.3.1",
   "pytest-benchmark>=5.2.3",
   "pytest-clarity>=1.0.1",
   "pytest-cov>=7.0.0",
   "pytest-randomly>=4.0.1",
   "pytest-skip-slow>=0.0.5",
-  "scipy>=1.16.3",
+  "pytest>=9.0.1",
+  "ruff>=0.15.0",
+  "scipy-stubs>=1.17.0",
+  "scipy>=1.17.0",
 ]
 
 [tool.pytest.ini_options]
@@ -59,43 +63,39 @@ line-length = 88
 target-version = "py311"
 
 [tool.ruff.lint]
+preview = true
 select = ["ALL"]
 unfixable = ["F401"]
 ignore = [
-  "ANN002",
-  "ANN003",
   "ANN401",
-  "ARG001",
-  "ARG002",
-  "C901",
+  "CPY001",
   "D",
-  "D105",
-  "D107",
-  "D203",
-  "D213",
-  "EM101",
+  "DOC201",
+  "DOC402",
+  "DOC501",
+  "DOC502",
   "ERA001",
   "FBT001",
   "FBT002",
-  "PERF401",
-  "PGH003",
-  "PLC0415",
-  "PLR",
-  "RUF001",
-  "RUF003",
-  "SIM102",
-  "SIM108",
-  "TD",
-  "TRY003",
+  "PLR0913",
+  "PLR0917",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "ARG", "D", "FBT", "PLR", "RUF", "S", "SLF"]
+"tests/*" = ["ANN", "ARG", "D", "PLC2701", "PLR2004", "PT011", "S", "SLF001"]
 "src/xlviews/testing/*" = ["T201"]
 
-[tool.pyright]
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.format]
+preview = true
+
+[tool.basedpyright]
 include = ["src", "tests"]
+reportAny = false
+reportExplicitAny = false
+reportImportCycles = false
+reportImplicitOverride = false
+reportUnusedCallResult = false
 reportIncompatibleMethodOverride = false
-strictDictionaryInference = true
-strictListInference = true
-strictSetInference = true

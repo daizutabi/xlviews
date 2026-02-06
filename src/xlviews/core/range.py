@@ -67,7 +67,8 @@ class Range:
             key += len(self)
 
         if key < 0 or key >= len(self):
-            raise IndexError("Index out of range")
+            msg = "Index out of range"
+            raise IndexError(msg)
 
         row = self.row + key // (self.column_end - self.column + 1)
         column = self.column + key % (self.column_end - self.column + 1)
@@ -139,7 +140,7 @@ class Range:
         self.impl.value = value
 
     @property
-    def api(self):  # noqa: ANN201
+    def api(self) -> Any:
         return self.impl.api
 
     @property

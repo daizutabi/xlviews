@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .range import Range, iter_addresses
 
@@ -34,7 +34,6 @@ class RangeCollection:
 
     def get_address(
         self,
-        *,
         row_absolute: bool = True,
         column_absolute: bool = True,
         include_sheetname: bool = False,
@@ -68,7 +67,7 @@ class RangeCollection:
         )
 
     @property
-    def api(self):  # noqa: ANN201
+    def api(self) -> Any:
         api = self.ranges[0].api
 
         if len(self.ranges) == 1:
