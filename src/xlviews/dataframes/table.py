@@ -12,13 +12,12 @@ from .style import set_table_style
 
 if TYPE_CHECKING:
     from xlwings import Sheet
-    from xlwings._xlwindows import COMRetryObjectWrapper
 
 
 class Table:
     sheet: Sheet
     cell: Range
-    api: COMRetryObjectWrapper
+    api: Any
 
     def __init__(
         self,
@@ -28,7 +27,7 @@ class Table:
         const_header: bool = False,
         style: bool = False,
         sheet: Sheet | None = None,
-        api: COMRetryObjectWrapper | None = None,
+        api: Any | None = None,
         index_nlevels: int | None = None,
     ) -> None:
         if isinstance(rng, Range):
@@ -42,7 +41,7 @@ class Table:
             )
         elif sheet and api:
             self.api = api
-            self.cell = sheet.range(api.Range.Row, api.Range.Column)  # pyright: ignore[reportUnknownMemberType, reportArgumentType, reportAttributeAccessIssue]
+            self.cell = sheet.range(api.Range.Row, api.Range.Column)
         else:
             msg = "Either range or sheet and api must be provided"
             raise ValueError(msg)
@@ -134,7 +133,7 @@ class Table:
             for name, criteria in zip(args[::2], args[1::2], strict=True):
                 field_criteria[name] = criteria
 
-        auto_filter = self.api.Range.AutoFilter  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownVariableType]
+        auto_filter = self.api.Range.AutoFilter
 
         columns = self.columns
 

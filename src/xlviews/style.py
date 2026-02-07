@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import xlwings
 from xlwings import Range as RangeImpl
@@ -20,8 +20,6 @@ from xlviews.core.range import Range
 from xlviews.utils import constant
 
 if TYPE_CHECKING:
-    from xlwings._xlwindows import COMRetryObjectWrapper
-
     from .core.range_collection import RangeCollection
 
 
@@ -99,7 +97,7 @@ def set_fill(
 
 
 def set_font_api(
-    api: COMRetryObjectWrapper,
+    api: Any,
     name: str | None = None,
     *,
     size: float | None = None,
@@ -109,15 +107,15 @@ def set_font_api(
 ) -> None:
     font = api.Font
     if name:
-        font.Name = name  # pyright: ignore[reportAttributeAccessIssue]
+        font.Name = name
     if size:
-        font.Size = size  # pyright: ignore[reportAttributeAccessIssue]
+        font.Size = size
     if bold is not None:
-        font.Bold = bold  # pyright: ignore[reportAttributeAccessIssue]
+        font.Bold = bold
     if italic is not None:
-        font.Italic = italic  # pyright: ignore[reportAttributeAccessIssue]
+        font.Italic = italic
     if color is not None:
-        font.Color = rgb(color)  # pyright: ignore[reportAttributeAccessIssue]
+        font.Color = rgb(color)
 
 
 def set_font(
