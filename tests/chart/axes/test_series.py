@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
-from xlviews.core.range import Range
+from xlviews.core.range_collection import RangeCollection
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -56,19 +62,7 @@ def test_add_series_chart_type(ax: Axes):
     assert s.chart_type == ChartType.xlXYScatter
 
 
-# def test_add_series_name_range(ax: Axes):
-#     x = ax.sheet.range("A2:A5")
-#     rng = Range(1, 1, ax.sheet)
-#     label = rng.get_address(include_sheetname=True, formula=True)
-#     s = ax.add_series(x, label=label)
-
-#     rng.value = "Series Name"
-#     assert s.api.Name == "Series Name"
-#     assert s.label == "Series Name"
-
-
 def test_add_series_xy_range_collection(ax: Axes):
-    from xlviews.core.range_collection import RangeCollection
 
     ax.sheet.range("A1:A10").options(transpose=True).value = list(range(10))
     ax.sheet.range("B1:B10").options(transpose=True).value = list(range(10, 20))

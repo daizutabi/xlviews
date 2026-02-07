@@ -1,10 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
-from xlviews.chart.series import Series
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.chart.series import Series
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
