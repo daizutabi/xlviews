@@ -1,34 +1,35 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 from pandas import Index, MultiIndex
 from scipy.stats import norm
 
-from xlviews.dataframes.dist_frame import DistFrame
-from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.dataframes.dist_frame import get_init_data, select_index
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlviews.dataframes.dist_frame import DistFrame
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 def test_select_index():
-    from xlviews.dataframes.dist_frame import select_index
-
     index = Index(["a", "b"], name="x")
     x = select_index(index, ["x"])
     assert x.equals(index)
 
 
 def test_select_index_none():
-    from xlviews.dataframes.dist_frame import select_index
-
     index = Index(["a", "b"], name="x")
     x = select_index(index, ["y"])
     assert x.equals(Index([0, 1]))
 
 
 def test_select_index_multi_one():
-    from xlviews.dataframes.dist_frame import select_index
-
     index = MultiIndex.from_tuples([(1, 2), (3, 4)], names=["x", "y"])
     x = select_index(index, ["x"])
     assert isinstance(x, Index)
@@ -38,8 +39,6 @@ def test_select_index_multi_one():
 
 
 def test_select_index_multi_two():
-    from xlviews.dataframes.dist_frame import select_index
-
     index = MultiIndex.from_tuples([(1, 2), (3, 4)], names=["x", "y"])
     x = select_index(index, ["x", "y"])
     assert isinstance(x, MultiIndex)
@@ -47,16 +46,12 @@ def test_select_index_multi_two():
 
 
 def test_select_index_multi_none():
-    from xlviews.dataframes.dist_frame import select_index
-
     index = MultiIndex.from_tuples([(1, 2), (3, 4)], names=["x", "y"])
     x = select_index(index, [])
     assert x.equals(Index([0, 1]))
 
 
 def test_init_data(sf_parent: SheetFrame):
-    from xlviews.dataframes.dist_frame import get_init_data
-
     df = get_init_data(sf_parent.index, ["a", "b"])
     c = ["a_n", "a_v", "a_s", "b_n", "b_v", "b_s"]
     assert df.columns.to_list() == c

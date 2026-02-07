@@ -1,10 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 from scipy.stats import norm
-from xlwings import Sheet
 
 from xlviews.core.range import Range
+from xlviews.dataframes.dist_frame import set_formula, sigma_value
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -16,8 +24,6 @@ def dist(request: pytest.FixtureRequest):
 
 @pytest.fixture
 def value(sheet_module: Sheet, dist: str):
-    from xlviews.dataframes.dist_frame import set_formula, sigma_value
-
     rng = Range((1, 1), (10, 1), sheet_module)
     rng.value = [[x] for x in range(1, 11)]
     cell = rng[0]
@@ -34,12 +40,10 @@ def expected(dist: str):
     return np.log(-np.log(1 - np.arange(1, 11) / 11))
 
 
-def test_sigma_value(value, expected):
+def test_sigma_value(value: list[float], expected: NDArray[np.float64]):
     np.testing.assert_allclose(value, expected)
 
 
 def test_sigma_value_error(sheet_module: Sheet):
-    from xlviews.dataframes.dist_frame import sigma_value
-
     with pytest.raises(ValueError, match="unknown distribution"):
         sigma_value(Range((1, 1), (1, 1), sheet_module), 10, "unknown")

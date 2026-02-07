@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews.dataframes.dist_frame import DistFrame
-from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.testing import FrameContainer
 from xlviews.testing.dist_frame import Parent
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
+    from xlviews.testing import FrameContainer
 
 
 @pytest.fixture(scope="module")
