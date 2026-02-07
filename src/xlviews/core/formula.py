@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 from xlwings import Range as RangeImpl
 
@@ -10,7 +10,7 @@ from .range_collection import RangeCollection
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-Func: TypeAlias = str | Range | RangeImpl | None
+type Func = str | Range | RangeImpl | None
 
 NONCONST_VALUE = "*"
 
