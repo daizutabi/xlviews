@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from xlwings.constants import LineStyle, MarkerStyle, ScaleType
 
 from xlviews.colors import rgb
@@ -57,7 +59,7 @@ def get_line_style(line: int | str | None) -> int | None:
     return LINE_DICT[line]
 
 
-def get_axis_label(axis) -> str | None:  # noqa: ANN001
+def get_axis_label(axis: Any) -> str | None:
     if not axis.HasTitle:
         return None
 
@@ -65,11 +67,11 @@ def get_axis_label(axis) -> str | None:  # noqa: ANN001
 
 
 def set_axis_label(
-    axis,  # noqa: ANN001
+    axis: Any,
     label: str | None = None,
     name: str | None = None,
     size: float | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     if not label:
         axis.HasTitle = False
@@ -85,7 +87,7 @@ def set_axis_label(
     set_font_api(axis_title, name, size=size, **kwargs)
 
 
-def get_ticks(axis) -> tuple[float, float, float, float]:  # noqa: ANN001
+def get_ticks(axis: Any) -> tuple[float, float, float, float]:
     return (
         axis.MinimumScale,
         axis.MaximumScale,
@@ -95,20 +97,20 @@ def get_ticks(axis) -> tuple[float, float, float, float]:  # noqa: ANN001
 
 
 def set_ticks(
-    axis,  # noqa: ANN001
-    *args,
+    axis: Any,
+    *args: float,
     min: float | None = None,  # noqa: A002
     max: float | None = None,  # noqa: A002
     major: float | None = None,
     minor: float | None = None,
     gridlines: bool = True,
 ) -> None:
-    args = [*args, None, None, None, None][:4]
+    args_ = [*args, None, None, None, None][:4]
 
-    min = min or args[0]  # noqa: A001
-    max = max or args[1]  # noqa: A001
-    major = major or args[2]
-    minor = minor or args[3]
+    min = min or args_[0]  # noqa: A001
+    max = max or args_[1]  # noqa: A001
+    major = major or args_[2]
+    minor = minor or args_[3]
 
     if min is not None:
         axis.MinimumScale = min
@@ -137,7 +139,7 @@ def set_ticks(
 
 
 def set_tick_labels(
-    axis,  # noqa: ANN001
+    axis: Any,
     name: str | None = None,
     size: float | None = None,
     number_format: str | None = None,
@@ -150,7 +152,7 @@ def set_tick_labels(
         axis.TickLabels.NumberFormatLocal = number_format
 
 
-def get_axis_scale(axis) -> str:  # noqa: ANN001
+def get_axis_scale(axis: Any) -> str:
     if axis.ScaleType == ScaleType.xlScaleLogarithmic:
         return "log"
 
@@ -160,7 +162,7 @@ def get_axis_scale(axis) -> str:  # noqa: ANN001
     raise NotImplementedError
 
 
-def set_axis_scale(axis, scale: str) -> None:  # noqa: ANN001
+def set_axis_scale(axis: Any, scale: str) -> None:
     if scale == "log":
         axis.ScaleType = ScaleType.xlScaleLogarithmic
         return
@@ -173,7 +175,7 @@ def set_axis_scale(axis, scale: str) -> None:  # noqa: ANN001
 
 
 def set_dimensions(
-    api,  # noqa: ANN001
+    api: Any,
     left: float | None = None,
     top: float | None = None,
     width: float | None = None,
@@ -193,7 +195,7 @@ def set_dimensions(
 
 
 def set_area_format(
-    api,  # noqa: ANN001
+    api: Any,
     border: str | int | tuple[int, int, int] | None = None,
     fill: str | int | tuple[int, int, int] | None = None,
     alpha: float | None = None,

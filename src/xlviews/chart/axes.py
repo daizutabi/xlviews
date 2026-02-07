@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Self
 
 import xlwings
 from xlwings.constants import AxisType, ChartType, Placement, TickMark
@@ -24,8 +24,6 @@ from .style import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Self
-
     from xlwings import Chart, Sheet
 
 
@@ -103,7 +101,7 @@ class Axes:
         width = width or rcParams["chart.width"]
         height = height or rcParams["chart.height"]
 
-        self.chart = self.sheet.charts.add(left, top, width, height)  # type: ignore
+        self.chart = self.sheet.charts.add(left, top, width, height)
 
         self.chart_type = chart_type
         self.chart.api[1].ChartType = chart_type
@@ -159,12 +157,12 @@ class Axes:
         )
 
     @property
-    def xaxis(self):  # noqa: ANN201
+    def xaxis(self) -> Any:
         chart = self.chart.api[1]
         return chart.Axes(AxisType.xlCategory)
 
     @property
-    def yaxis(self):  # noqa: ANN201
+    def yaxis(self) -> Any:
         chart = self.chart.api[1]
         return chart.Axes(AxisType.xlValue)
 
@@ -203,7 +201,7 @@ class Axes:
         *,
         name: str | None = None,
         size: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         api = self.chart.api[1]
 
@@ -235,10 +233,10 @@ class Axes:
     def ylabel(self, value: str | None) -> None:
         self.set_ylabel(value)
 
-    def set_xlabel(self, label: str | None = None, **kwargs) -> None:
+    def set_xlabel(self, label: str | None = None, **kwargs: Any) -> None:
         set_axis_label(self.xaxis, label, **kwargs)
 
-    def set_ylabel(self, label: str | None = None, **kwargs) -> None:
+    def set_ylabel(self, label: str | None = None, **kwargs: Any) -> None:
         set_axis_label(self.yaxis, label, **kwargs)
 
     @property
@@ -257,16 +255,26 @@ class Axes:
     def yticks(self, value: tuple[float, ...]) -> None:
         set_ticks(self.yaxis, *value)
 
-    def set_xticks(self, *args, **kwargs) -> None:
-        set_ticks(self.xaxis, *args, **kwargs)
+    def set_xticks(
+        self,
+        *args: float,
+        gridlines: bool = True,
+        **kwargs: float | None,
+    ) -> None:
+        set_ticks(self.xaxis, *args, gridlines=gridlines, **kwargs)
 
-    def set_yticks(self, *args, **kwargs) -> None:
-        set_ticks(self.yaxis, *args, **kwargs)
+    def set_yticks(
+        self,
+        *args: float,
+        gridlines: bool = True,
+        **kwargs: float | None,
+    ) -> None:
+        set_ticks(self.yaxis, *args, gridlines=gridlines, **kwargs)
 
-    def set_xtick_labels(self, *args, **kwargs) -> None:
+    def set_xtick_labels(self, *args: Any, **kwargs: Any) -> None:
         set_tick_labels(self.xaxis, *args, **kwargs)
 
-    def set_ytick_labels(self, *args, **kwargs) -> None:
+    def set_ytick_labels(self, *args: Any, **kwargs: Any) -> None:
         set_tick_labels(self.yaxis, *args, **kwargs)
 
     @property
@@ -299,9 +307,9 @@ class Axes:
         tight_layout: bool = True,
         legend: bool | tuple[float, float] = False,
     ) -> Self:
-        if xlabel != "":
+        if xlabel != "":  # noqa: PLC1901
             self.xlabel = xlabel
-        if ylabel != "":
+        if ylabel != "":  # noqa: PLC1901
             self.ylabel = ylabel
         if xticks:
             self.xticks = xticks
@@ -360,7 +368,7 @@ class Axes:
             if not series.label:
                 entry.Delete()
 
-        if api.HasLegend is False:
+        if api.HasLegend is False:  # pyright: ignore[reportUnnecessaryComparison]
             return self
 
         name = name or rcParams["chart.font.name"]
