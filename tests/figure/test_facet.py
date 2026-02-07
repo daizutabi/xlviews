@@ -1,11 +1,20 @@
-import pytest
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.figure.plot import Plot
+from typing import TYPE_CHECKING
+
+import pandas as pd
+import pytest
+
+from xlviews.figure.plot import iterrows
 from xlviews.testing import is_app_available
 from xlviews.testing.figure.facet import facet
 from xlviews.testing.sheet_frame.pivot import Pivot
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
+    from xlviews.figure.plot import Plot
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -42,9 +51,21 @@ def test_title(plots: list[Plot], i: int, title: str):
     assert plots[i].axes.title == title
 
 
+def test_iterrows() -> None:
+    df = pd.DataFrame({"a": [1, 1, 2, 2], "b": [1, 2, 3, 4]})
+    df = df.set_index("a")
+    result = list(iterrows(df.index, "a"))
+    assert result == [{"a": 1}, {"a": 2}]
+
+
+def test_iterrows_multi() -> None:
+    df = pd.DataFrame({"a": [1, 1, 2, 2], "b": [1, 1, 3, 4], "c": range(4)})
+    df = df.set_index(["a", "b"])
+    result = list(iterrows(df.index, ["a"]))
+    assert result == [{"a": 1}, {"a": 2}]
+    result = list(iterrows(df.index, ["a", "b"]))
+    assert result == [{"a": 1, "b": 1}, {"a": 2, "b": 3}, {"a": 2, "b": 4}]
+
+
 def test_iterrows_none():
-    from pandas import Index
-
-    from xlviews.figure.plot import iterrows
-
-    assert list(iterrows(Index([]), None)) == [{}]
+    assert list(iterrows(pd.Index([]), None)) == [{}]

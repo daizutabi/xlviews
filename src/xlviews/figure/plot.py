@@ -10,7 +10,7 @@ from pandas import DataFrame
 from .palette import PaletteStyle, get_color_palette, get_marker_palette
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Mapping
 
     from xlviews.chart.axes import Axes
     from xlviews.chart.series import Series
@@ -111,7 +111,7 @@ class Plot:
                 yield key, cls(axes_, sub)
 
 
-def get_label(label: Label, key: dict[Hashable | None, Hashable]) -> str:
+def get_label(label: Label, key: Mapping[Hashable | None, Hashable]) -> str:
     key_ = {k: v for k, v in key.items() if isinstance(k, str)}
     return label(key_) if callable(label) else label.format(**key_)
 
