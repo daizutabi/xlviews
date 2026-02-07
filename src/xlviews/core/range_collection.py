@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from .range import Range, iter_addresses
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Iterator
 
     from xlwings import Sheet
 
@@ -87,15 +88,16 @@ def _iter_ranges_from_index(
     column: int | Sequence[int | tuple[int, int]],
     sheet: Sheet | None = None,
 ) -> Iterator[Range]:
-    if isinstance(row, int) and isinstance(column, int):
+    # row/column may be np.int
+    if not isinstance(row, Sequence) and not isinstance(column, Sequence):
         yield Range((row, column), sheet=sheet)
 
-    elif isinstance(row, int) and not isinstance(column, int):
+    elif not isinstance(row, Sequence) and isinstance(column, Sequence):
         for c in column:
             start, end = (c, c) if isinstance(c, int) else c
             yield Range((row, start), (row, end), sheet)
 
-    elif isinstance(column, int) and not isinstance(row, int):
+    elif not isinstance(column, Sequence) and isinstance(row, Sequence):
         for r in row:
             start, end = (r, r) if isinstance(r, int) else r
             yield Range((start, column), (end, column), sheet)

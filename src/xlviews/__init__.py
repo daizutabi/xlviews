@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from xlviews.chart.axes import Axes
 from xlviews.chart.series import Series
 from xlviews.core.formula import aggregate

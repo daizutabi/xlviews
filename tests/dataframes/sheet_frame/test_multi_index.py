@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
+
 import pytest
-from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews.dataframes.groupby import groupby
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import MultiIndex
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -42,7 +49,7 @@ def test_index_names(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(("x", "b"), [("x", False), ("b", True)])
-def test_contains(sf: SheetFrame, x, b):
+def test_contains(sf: SheetFrame, x: str, b: bool):
     assert (x in sf) is b
 
 
@@ -67,7 +74,12 @@ def test_value(sf: SheetFrame, df: DataFrame):
         ("y", None, "$G$3:$G$10"),
     ],
 )
-def test_get_range(sf: SheetFrame, column, offset, address):
+def test_get_range(
+    sf: SheetFrame,
+    column: str,
+    offset: Literal[0, -1] | None,
+    address: str,
+):
     assert sf.get_range(column, offset).get_address() == address
 
 
@@ -78,20 +90,25 @@ def test_get_range(sf: SheetFrame, column, offset, address):
         ("y", [(3, 4), (7, 8)], [(5, 6), (9, 10)]),
     ],
 )
-def test_groupby(sf: SheetFrame, by, v1, v2):
+def test_groupby(
+    sf: SheetFrame,
+    by: str,
+    v1: list[tuple[int, int]],
+    v2: list[tuple[int, int]],
+):
     g = groupby(sf, by)
     assert len(g) == 2
-    assert g[(1,)] == v1
-    assert g[(2,)] == v2
+    assert g[1,] == v1
+    assert g[2,] == v2
 
 
 def test_groupby_list(sf: SheetFrame):
     g = groupby(sf, ["x", "y"])
     assert len(g) == 4
-    assert g[(1, 1)] == [(3, 4)]
-    assert g[(1, 2)] == [(5, 6)]
-    assert g[(2, 1)] == [(7, 8)]
-    assert g[(2, 2)] == [(9, 10)]
+    assert g[1, 1] == [(3, 4)]
+    assert g[1, 2] == [(5, 6)]
+    assert g[2, 1] == [(7, 8)]
+    assert g[2, 2] == [(9, 10)]
 
 
 def test_get_address(sf: SheetFrame):

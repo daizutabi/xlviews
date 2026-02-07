@@ -1,10 +1,17 @@
-import pytest
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.sheet_frame import SheetFrame
-from xlviews.dataframes.table import Table
+from typing import TYPE_CHECKING
+
+import pytest
+
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import Index
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
+    from xlviews.dataframes.table import Table
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -31,7 +38,7 @@ def table(sf: SheetFrame):
 
 
 @pytest.mark.parametrize("value", ["x", "y"])
-def test_table(table: Table, value):
+def test_table(table: Table, value: str):
     table.auto_filter("name", value)
     header = table.const_header.value
     assert isinstance(header, list)

@@ -1,10 +1,17 @@
-import pytest
-from pandas import DataFrame
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.sheet_frame import SheetFrame
+from typing import TYPE_CHECKING, Literal
+
+import pytest
+
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import Index
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -44,7 +51,7 @@ def test_index_names(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(("x", "b"), [("name", False), ("a", True)])
-def test_contains(sf: SheetFrame, x, b):
+def test_contains(sf: SheetFrame, x: str, b: bool):
     assert (x in sf) is b
 
 
@@ -60,13 +67,13 @@ def test_value(sf: SheetFrame, df: DataFrame):
 
 
 @pytest.mark.parametrize(("column", "index"), [("name", 2), ("a", 3), ("b", 4)])
-def test_loc(sf: SheetFrame, column, index):
+def test_loc(sf: SheetFrame, column: str, index: int):
     assert sf.get_loc(column) == index
 
 
 @pytest.mark.parametrize(("column", "index"), [(["name", "b"], [2, 4])])
-def test_indexer(sf: SheetFrame, column, index):
-    assert sf.get_indexer(column) == index
+def test_indexer(sf: SheetFrame, column: list[str], index: list[int]):
+    assert sf.get_indexer(column).tolist() == index
 
 
 @pytest.mark.parametrize(
@@ -79,7 +86,12 @@ def test_indexer(sf: SheetFrame, column, index):
         ("a", None, "$C$9:$C$12"),
     ],
 )
-def test_get_range(sf: SheetFrame, column: str, offset, address):
+def test_get_range(
+    sf: SheetFrame,
+    column: str,
+    offset: Literal[0, -1] | None,
+    address: str,
+):
     assert sf.get_range(column, offset).get_address() == address
 
 

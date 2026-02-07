@@ -129,17 +129,11 @@ class SheetFrame:
 
         return self.columns.get_loc(column, self.column + self.index.nlevels)
 
-    @overload
-    def get_indexer(self, columns: list[str] | None) -> list[int]: ...
-
-    @overload
-    def get_indexer(self, columns: dict[str, Any]) -> NDArray[np.intp]: ...
-
     def get_indexer(
         self,
         columns: list[str] | dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> list[int] | NDArray[np.intp]:
+    ) -> NDArray[np.intp]:
         if isinstance(columns, dict) or (columns is None and kwargs):
             return self.columns.get_indexer(
                 columns,
@@ -152,10 +146,10 @@ class SheetFrame:
             columns = self.columns.to_list()
             start = column + self.index.nlevels
             end = start + len(columns)
-            return list(range(start, end))
+            return np.arange(start, end)
 
         cs = [*self.index.names, *self.columns]
-        return [cs.index(c) + column for c in columns]
+        return np.array([cs.index(c) + column for c in columns])
 
     @overload
     def get_range(
