@@ -1,12 +1,19 @@
-import pytest
-from pandas import DataFrame
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.heat_frame import HeatFrame
-from xlviews.dataframes.sheet_frame import SheetFrame
+from typing import TYPE_CHECKING
+
+import pytest
+
 from xlviews.testing import is_app_available
 from xlviews.testing.heat_frame.facet_agg import facet
 from xlviews.testing.sheet_frame.pivot import Pivot
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+    from xlwings import Sheet
+
+    from xlviews.dataframes.heat_frame import HeatFrame
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
