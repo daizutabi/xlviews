@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, Self, overload
 
@@ -387,7 +388,7 @@ class SheetFrame:
     @overload
     def agg(
         self,
-        func: Func | dict[str, str] = None,
+        func: Func | Mapping[str, str | None] = None,
         columns: str | list[str] | None = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
@@ -410,7 +411,7 @@ class SheetFrame:
 
     def agg(
         self,
-        func: Func | dict[str, str] | Sequence[Func] = None,
+        func: Func | Mapping[str, str | None] | Sequence[Func] = None,
         columns: str | list[str] | None = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
@@ -431,7 +432,7 @@ class SheetFrame:
 
             raise NotImplementedError
 
-        if isinstance(func, dict):
+        if isinstance(func, Mapping):
             columns = list(func.keys())
         elif isinstance(columns, str):
             columns = [columns]
@@ -458,7 +459,7 @@ class SheetFrame:
             formula=formula,
         )
 
-        if isinstance(func, dict):
+        if isinstance(func, Mapping):
             it = zip(rngs, func.values(), strict=True)
             return Series([agg(f, r) for r, f in it], index=columns)
 
