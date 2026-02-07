@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import xlwings
 from pandas import DataFrame, Series
@@ -120,11 +120,7 @@ def add_validate_list(
     rng.api.Validation.Add(Type=type_, Operator=operator, Formula1=formula)
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
+def suspend_screen_updates[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     """Suspend screen updates to speed up operations."""
 
     @wraps(func)

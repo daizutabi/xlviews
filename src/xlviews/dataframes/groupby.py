@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pandas import DataFrame, Index, MultiIndex, Series
@@ -17,11 +17,8 @@ if TYPE_CHECKING:
 
     from .sheet_frame import SheetFrame
 
-H = TypeVar("H")
-T = TypeVar("T")
 
-
-def to_dict(keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
+def to_dict[H, T](keys: Iterable[H], values: Iterable[T]) -> dict[H, list[T]]:
     result: dict[H, list[T]] = {}
 
     for key, value in zip(keys, values, strict=True):

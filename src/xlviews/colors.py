@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeAlias
-
-Color: TypeAlias = int | tuple[int, int, int] | str
+type Color = int | tuple[int, int, int] | str
 
 
 def rgb(
@@ -39,7 +37,7 @@ def rgb(
     if isinstance(color, str):
         color = cnames.get(color, color)
 
-        if not color.startswith("#") or len(color) != 7:  # noqa: PLR2004
+        if not color.startswith("#") or len(color) != 7:
             msg = "Invalid color format. Expected int, tuple[int, int, int], or str."
             raise ValueError(msg)
 
