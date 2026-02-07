@@ -1,10 +1,20 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 
 from xlviews.colors import rgb
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.stats_frame import StatsFrame
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlviews.dataframes.sheet_frame import SheetFrame
+
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnknownMemberType=false
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -39,7 +49,7 @@ def test_func(sf: StatsFrame, funcs: list[str]):
 )
 @pytest.mark.parametrize("c", ["func", "c"])
 @pytest.mark.parametrize("o", [0, 8])
-def test_color(sf: StatsFrame, funcs: list[str], func: str, color, c, o):
+def test_color(sf: StatsFrame, funcs: list[str], func: str, color: str, c: str, o: int):
     row = funcs.index(func) + sf.row + o + 1
     column = sf.get_loc(c)
     rng = sf.sheet.range(row, column)
@@ -49,7 +59,7 @@ def test_color(sf: StatsFrame, funcs: list[str], func: str, color, c, o):
 @pytest.mark.parametrize("func", ["soa", "sum"])
 @pytest.mark.parametrize("c", ["func", "a"])
 @pytest.mark.parametrize("o", [16, 24])
-def test_italic(sf: StatsFrame, funcs: list[str], func: str, c, o):
+def test_italic(sf: StatsFrame, funcs: list[str], func: str, c: str, o: int):
     row = funcs.index(func) + sf.row + o + 1
     column = sf.get_loc(c)
     rng = sf.sheet.range(row, column)
@@ -57,7 +67,7 @@ def test_italic(sf: StatsFrame, funcs: list[str], func: str, c, o):
 
 
 @pytest.mark.parametrize("c", ["a", "b"])
-def test_soa(sf: StatsFrame, funcs: list[str], c):
+def test_soa(sf: StatsFrame, funcs: list[str], c: str):
     row = funcs.index("soa") + sf.row + 1
     column = sf.get_loc(c)
     rng = sf.sheet.range(row, column)
@@ -66,7 +76,7 @@ def test_soa(sf: StatsFrame, funcs: list[str], c):
 
 @pytest.mark.parametrize("func", ["median", "min", "mean", "max", "std", "sum"])
 @pytest.mark.parametrize("o", [0, 16])
-def test_number_format(sf: StatsFrame, funcs: list[str], func, o):
+def test_number_format(sf: StatsFrame, funcs: list[str], func: str, o: int):
     row = funcs.index(func) + sf.row + o + 1
     column = sf.get_loc("c")
     rng = sf.sheet.range(row, column)

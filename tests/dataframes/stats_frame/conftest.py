@@ -1,8 +1,15 @@
-import pytest
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.testing import FrameContainer
+from typing import TYPE_CHECKING
+
+import pytest
+
 from xlviews.testing.stats_frame import Parent
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.testing import FrameContainer
 
 
 @pytest.fixture(scope="module")
