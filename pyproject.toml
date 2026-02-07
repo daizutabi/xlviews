@@ -12,12 +12,11 @@ authors = [{ name = "daizutabi", email = "daizutabi@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = ["numpy>=2", "pandas>=2", "xlwings>=0.33"]
 
 [project.urls]
@@ -60,7 +59,7 @@ skip_covered = true
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 preview = true
@@ -83,10 +82,11 @@ ignore = [
   "PLR0913",
   "PLR0914",
   "PLR0917",
+  "PLR2004",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "ARG", "D", "PLC2701", "PLR2004", "PT011", "S", "SLF001"]
+"tests/*" = ["ANN", "ARG", "D", "PLC2701", "PT011", "S", "SLF001"]
 "src/xlviews/testing/*" = ["T201"]
 
 [tool.ruff.lint.isort]
