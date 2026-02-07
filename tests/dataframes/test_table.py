@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from pandas import DataFrame
-from xlwings import Range, Sheet
 
 from xlviews.core.formula import NONCONST_VALUE
 from xlviews.dataframes.table import Table
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Range, Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -61,7 +67,7 @@ def test_add_const_header_clear(table: Table):
 
 
 def test_from_api(table: Table):
-    api = list(table.cell.sheet.api.ListObjects)[0]
+    api = next(iter(table.cell.sheet.api.ListObjects))
     table2 = Table(api=api, sheet=table.sheet)
     assert table2.cell.row == table.cell.row
     assert table2.cell.column == table.cell.column
@@ -92,7 +98,13 @@ def test_unlist(df: DataFrame, sheet: Sheet):
     ],
 )
 @pytest.mark.parametrize("to_dict", [True, False])
-def test_auto_filter(table: Table, name, value, const, to_dict):
+def test_auto_filter(
+    table: Table,
+    name: str,
+    value: int | list[int] | tuple[int, int],
+    const: list[int | str],
+    to_dict: bool,
+):
     table.add_const_header()
 
     if to_dict:

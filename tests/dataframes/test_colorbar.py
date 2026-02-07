@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 
 from xlviews.core.range import Range
+from xlviews.dataframes.colorbar import Colorbar
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -15,8 +22,6 @@ def rng(sheet_module: Sheet):
 
 
 def test_colorbar_vertical(rng: Range, sheet_module: Sheet):
-    from xlviews.dataframes.colorbar import Colorbar
-
     cb = Colorbar(2, 5, 6, sheet=sheet_module)
     cb.set(vmin=rng, vmax=rng, label="T", autofit=True)
     cb.set_adjacent_column_width(1)
@@ -29,8 +34,6 @@ def test_colorbar_vertical(rng: Range, sheet_module: Sheet):
 
 
 def test_colorbar_horizontal(rng: Range, sheet_module: Sheet):
-    from xlviews.dataframes.colorbar import Colorbar
-
     cb = Colorbar(2, 7, 10, orientation="horizontal", sheet=sheet_module)
     cb.set(vmin=rng, vmax=rng, label="T", autofit=True)
     cb.set_adjacent_column_width(1)

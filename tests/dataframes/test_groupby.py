@@ -1,11 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 import pytest
 from pandas import DataFrame, Series
-from xlwings import Sheet
 
-from xlviews.dataframes.groupby import GroupBy, to_dict
+from xlviews.dataframes.groupby import GroupBy, create_group_index, to_dict
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -20,29 +28,33 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
         ([None, None], ["a", "b"], {None: ["a", "b"]}),
     ],
 )
-def test_to_dict(keys, values, expected):
+def test_to_dict(
+    keys: list[int | str | bool | None],
+    values: list[str | float],
+    expected: dict[int | str | bool | None, list[str | float]],
+):
     assert to_dict(keys, values) == expected
 
 
-@pytest.mark.parametrize("func", [lambda x: x, np.array, Series])
-def test_create_group_index_series(func):
-    from xlviews.dataframes.groupby import create_group_index
+def identity[T](x: T) -> T:
+    return x
 
+
+@pytest.mark.parametrize("func", [identity, np.array, Series])
+def test_create_group_index_series(func: Callable[..., Any]):
     values = [1, 1, 2, 2, 2, 3, 3, 1, 1, 2, 2, 3, 3]
     index = create_group_index(func(values))
-    assert index[(1,)] == [(0, 1), (7, 8)]
-    assert index[(2,)] == [(2, 4), (9, 10)]
-    assert index[(3,)] == [(5, 6), (11, 12)]
+    assert index[1,] == [(0, 1), (7, 8)]
+    assert index[2,] == [(2, 4), (9, 10)]
+    assert index[3,] == [(5, 6), (11, 12)]
 
 
-@pytest.mark.parametrize("func", [lambda x: x, DataFrame])
-def test_create_group_index_dataframe(func):
-    from xlviews.dataframes.groupby import create_group_index
-
+@pytest.mark.parametrize("func", [identity, DataFrame])
+def test_create_group_index_dataframe(func: Callable[..., Any]):
     values = [[1, 2], [1, 2], [3, 4], [3, 4], [1, 2], [3, 4], [3, 4]]
     index = create_group_index(func(values))
-    assert index[(1, 2)] == [(0, 1), (4, 4)]
-    assert index[(3, 4)] == [(2, 3), (5, 6)]
+    assert index[1, 2] == [(0, 1), (4, 4)]
+    assert index[3, 4] == [(2, 3), (5, 6)]
 
 
 @pytest.fixture(scope="module")
@@ -69,7 +81,7 @@ def sf(sheet_module: Sheet):
         (["a", "b", "c"], 4),
     ],
 )
-def test_len(sf: SheetFrame, by, n: int):
+def test_len(sf: SheetFrame, by: str | list[str], n: int):
     gr = GroupBy(sf, by)
     assert len(gr) == n
 
@@ -104,7 +116,7 @@ def test_iter(gp: GroupBy):
         (("c", 200), [(5, 7), (10, 12)]),
     ],
 )
-def test_getitem(gp: GroupBy, key, value):
+def test_getitem(gp: GroupBy, key: tuple[str, int], value: list[tuple[int, int]]):
     assert gp[key] == value
 
 
@@ -126,7 +138,7 @@ def sf2(sheet: Sheet):
     ("by", "n"),
     [(None, 1), ("x", 2), (["x", "y"], 4), (["x", "y", "z"], 20)],
 )
-def test_by(sf2: SheetFrame, by, n):
+def test_by(sf2: SheetFrame, by: str | list[str] | None, n: int):
     gp = GroupBy(sf2, by)
     assert len(gp.group) == n
 

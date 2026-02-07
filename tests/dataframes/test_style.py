@@ -1,11 +1,25 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from pandas import DataFrame, MultiIndex
-from xlwings import Sheet
 
 from xlviews.colors import rgb
 from xlviews.config import rcParams
 from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.dataframes.style import (
+    _set_style,
+    set_frame_style,
+    set_table_style,
+    set_wide_column_style,
+)
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+# pyright: reportPrivateUsage=false
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -14,9 +28,7 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
     "name",
     ["index.name", "index", "columns.name", "columns", "values"],
 )
-def test_set_style(sheet: Sheet, name):
-    from xlviews.dataframes.style import _set_style
-
+def test_set_style(sheet: Sheet, name: str):
     rng = sheet["C3:E5"]
     _set_style(rng[0], rng[-1], name)
     param = f"frame.{name}.fill.color"
@@ -26,8 +38,6 @@ def test_set_style(sheet: Sheet, name):
 
 @pytest.fixture(scope="module")
 def sf_basic(sheet_module: Sheet):
-    from xlviews.dataframes.style import set_frame_style
-
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     sf = SheetFrame(2, 2, data=df, sheet=sheet_module)
     set_frame_style(sf)
@@ -44,8 +54,6 @@ def test_frame_style_basic(sf_basic: SheetFrame, cell: str, name: str):
 
 
 def test_frame_style_banding_succession(sheet_module: Sheet):
-    from xlviews.dataframes.style import set_frame_style
-
     df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     df = df.set_index("x")
     sf = SheetFrame(2, 6, data=df, sheet=sheet_module)
@@ -65,8 +73,6 @@ def df_mc():
 
 @pytest.fixture(scope="module")
 def sf_mc(sheet_module: Sheet, df_mc: DataFrame):
-    from xlviews.dataframes.style import set_frame_style
-
     sf = SheetFrame(9, 2, data=df_mc, sheet=sheet_module)
     set_frame_style(sf)
     return sf
@@ -104,8 +110,6 @@ def df_mic(df_mc: DataFrame):
 
 @pytest.fixture(scope="module")
 def sf_mic(sheet_module: Sheet, df_mic: DataFrame):
-    from xlviews.dataframes.style import set_frame_style
-
     sf = SheetFrame(9, 7, data=df_mic, sheet=sheet_module)
     set_frame_style(sf)
     return sf
@@ -133,8 +137,6 @@ def test_frame_style_multi_index_names(sf_mic: SheetFrame, cell: str, name: str)
 
 @pytest.fixture(scope="module")
 def sf_wide(sheet_module: Sheet):
-    from xlviews.dataframes.style import set_wide_column_style
-
     df = DataFrame({"x": ["i", "j"], "y": ["k", "l"], "a": [1, 2], "b": [3, 4]})
     sf = SheetFrame(24, 2, data=df, sheet=sheet_module)
     sf.add_wide_column("u", range(3), autofit=True)
@@ -153,8 +155,6 @@ def test_frame_style_wide(sf_wide: SheetFrame, cell: str, name: str):
 
 
 def test_table_style(sheet_module: Sheet):
-    from xlviews.dataframes.style import set_table_style
-
     df = DataFrame({"x": [1, 1, 2, 2], "a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     df = df.set_index("x")
     sf = SheetFrame(17, 2, data=df, sheet=sheet_module)
