@@ -1,3 +1,4 @@
+import types
 from collections.abc import Iterator
 from typing import Any, Self
 
@@ -139,7 +140,12 @@ class App:
     @property
     def books(self) -> Books: ...
     def __enter__(self) -> Self: ...
-    def __exit__(self, exc_type, exc_value, exc_tb) -> None: ...  # noqa: ANN001  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None: ...
 
 class Apps:
     @property
@@ -159,6 +165,7 @@ class Sheets:
         before: Sheet | None = None,
         after: Sheet | None = None,
     ) -> Sheet: ...
+    def __getitem__(self, key: Any) -> Sheet: ...
 
 class ActiveEngineApps(Apps): ...
 class ActiveAppBooks(Books): ...
