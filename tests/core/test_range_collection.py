@@ -1,8 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 
 from xlviews.core.range_collection import RangeCollection
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -16,7 +22,12 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
         (4, 1, "E4"),
     ],
 )
-def test_range_collection_row(row, n, address, sheet_module: Sheet):
+def test_range_collection_row(
+    row: int | list[int] | list[tuple[int, int]],
+    n: int,
+    address: str,
+    sheet_module: Sheet,
+):
     rc = RangeCollection(row, 5, sheet_module)
     assert len(rc) == n
     a = rc.get_address(row_absolute=False, column_absolute=False)
@@ -33,7 +44,12 @@ def test_range_collection_row(row, n, address, sheet_module: Sheet):
         (4, 1, "$D$5"),
     ],
 )
-def test_range_collection_column(column, n, address, sheet_module: Sheet):
+def test_range_collection_column(
+    column: int | list[int] | list[tuple[int, int]],
+    n: int,
+    address: str,
+    sheet_module: Sheet,
+):
     rc = RangeCollection(5, column, sheet_module)
     assert len(rc) == n
     assert rc.get_address() == address

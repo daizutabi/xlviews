@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from xlviews.core.index import Index, WideIndex
@@ -27,7 +29,7 @@ def test_wide_to_list(wide_index: WideIndex):
 
 
 @pytest.mark.parametrize(("key", "loc"), [("A", (0, 3)), ("B", (3, 7))])
-def test_wide_loc(wide_index: WideIndex, key, loc):
+def test_wide_loc(wide_index: WideIndex, key: str, loc: tuple[int, int]):
     assert wide_index.get_loc(key) == loc
 
 

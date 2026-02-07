@@ -1,10 +1,14 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+
 import numpy as np
 import pytest
 from pandas import DataFrame
 from xlwings import Range as RangeImpl
 from xlwings import Sheet
 
-from xlviews.core.formula import NONCONST_VALUE
+from xlviews.core.formula import NONCONST_VALUE, aggregate, const
 from xlviews.core.range import Range
 from xlviews.testing import is_app_available
 
@@ -35,7 +39,7 @@ def test_range_address(rng: Range | RangeImpl):
 def column(rng: Range | RangeImpl):
     start = rng[0].offset(1)
     end = start.offset(3)
-    return rng.__class__((start.row, start.column), (end.row, end.column))
+    return rng.__class__((start.row, start.column), (end.row, end.column))  # pyright: ignore[reportCallIssue]
 
 
 def test_column(column: Range | RangeImpl):
@@ -47,7 +51,7 @@ def const_header(rng: Range | RangeImpl):
     start = (rng[0].row, rng[0].column)
     rng_impl = rng if isinstance(rng, RangeImpl) else rng.impl
     end = rng_impl[0].expand("right")
-    return rng.__class__(start, (end[-1].row, end[-1].column)).offset(-1)
+    return rng.__class__(start, (end[-1].row, end[-1].column)).offset(-1)  # pyright: ignore[reportCallIssue]
 
 
 def test_header(const_header: Range | RangeImpl):
@@ -55,9 +59,12 @@ def test_header(const_header: Range | RangeImpl):
 
 
 @pytest.mark.parametrize(("k", "value"), [(0, 1), (1, NONCONST_VALUE), (2, 4)])
-def test_const(column: Range | RangeImpl, const_header: Range | RangeImpl, k, value):
-    from xlviews.core.formula import const
-
+def test_const(
+    column: Range | RangeImpl,
+    const_header: Range | RangeImpl,
+    k: int,
+    value: int,
+):
     const_header.value = "=" + const(column)
     assert const_header.value[k] == value
 
@@ -83,29 +90,21 @@ def test_ranges(ranges: list[Range]):
 
 
 def test_aggregate_value(ranges: list[Range]):
-    from xlviews.core.formula import aggregate
-
     x = aggregate("count", ranges)
     assert x == "AGGREGATE(2,7,$B$100:$B$110,$C$100:$C$110)"
 
 
 def test_aggregate_none(ranges: list[Range]):
-    from xlviews.core.formula import aggregate
-
     x = aggregate(None, ranges)
     assert x == "$B$100:$B$110,$C$100:$C$110"
 
 
 def test_aggregate_formula(ranges: list[Range]):
-    from xlviews.core.formula import aggregate
-
     x = aggregate("max", ranges, formula=True)
     assert x == "=AGGREGATE(4,7,$B$100:$B$110,$C$100:$C$110)"
 
 
 def test_aggreate_range_range(ranges: list[Range]):
-    from xlviews.core.formula import aggregate
-
     assert aggregate("max", ranges[0]) == "AGGREGATE(4,7,$B$100:$B$110)"
 
 
@@ -122,20 +121,23 @@ FUNC_VALUES = [
 
 
 @pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
-def test_aggregate_str(ranges: list[Range], func, value):
-    from xlviews.core.formula import aggregate
-
+def test_aggregate_str(ranges: list[Range], func: str, value: float):
     cell = ranges[0].sheet.range("D100")
     cell.value = aggregate(func, ranges, formula=True)
     assert cell.value == value
 
 
-@pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
-@pytest.mark.parametrize("apply", [lambda x: x, Range.from_range])
-def test_aggregate_range(ranges: list[Range], func, value, apply):
-    from xlviews.core.formula import aggregate
+type Cls = Callable[[RangeImpl], RangeImpl | Range]
 
-    ref = apply(ranges[0].sheet.range("E100"))
+
+def identity(x: RangeImpl) -> RangeImpl:
+    return x
+
+
+@pytest.mark.parametrize(("func", "value"), FUNC_VALUES)
+@pytest.mark.parametrize("cls", [identity, Range.from_range])
+def test_aggregate_range(ranges: list[Range], func: str, value: float, cls: Cls):
+    ref = cls(ranges[0].sheet.range("E100"))
     ref.value = func
     formula = aggregate(ref, ranges)
     cell = ranges[0].sheet.range("D100")
@@ -144,7 +146,5 @@ def test_aggregate_range(ranges: list[Range], func, value, apply):
 
 
 def test_aggreate_func_invalid():
-    from xlviews.core.formula import aggregate
-
     with pytest.raises(ValueError, match="Invalid aggregate function: sin"):
         aggregate("sin", "A1:A10")
