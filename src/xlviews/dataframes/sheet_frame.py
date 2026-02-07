@@ -599,7 +599,7 @@ class SheetFrame:
         number_format: str | dict[str, str] | None = None,
         *,
         autofit: bool = False,
-        **columns_format: str,
+        **columns_format: Any,
     ) -> Self:
         if isinstance(number_format, dict):
             columns_format.update(number_format)
