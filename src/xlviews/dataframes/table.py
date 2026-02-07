@@ -74,12 +74,7 @@ class Table:
 
     @property
     def columns(self) -> list[str]:
-        names = self.header.value
-
-        if not isinstance(names, list):
-            raise NotImplementedError
-
-        return [name or "" for name in names]  # pyright: ignore[reportUnknownVariableType]
+        return [str(name) if name is not None else "" for name in self.header.value]
 
     def add_const_header(
         self,

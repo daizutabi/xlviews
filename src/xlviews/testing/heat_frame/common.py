@@ -27,5 +27,5 @@ class HeatFrameContainer:
         self.sf.autofit()
 
     @classmethod
-    def dataframe(cls, sf: SheetFrame) -> DataFrame:
+    def dataframe(cls, sf: SheetFrame) -> DataFrame:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError

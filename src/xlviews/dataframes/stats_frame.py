@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pandas as pd
 from pandas import DataFrame
 from xlwings.constants import Direction
@@ -12,6 +14,9 @@ from xlviews.utils import iter_columns, suspend_screen_updates
 
 from .groupby import GroupBy
 from .sheet_frame import SheetFrame
+
+if TYPE_CHECKING:
+    from collections.abc import Hashable
 
 
 class StatsFrame(SheetFrame):
@@ -78,7 +83,7 @@ def get_func(func: str | list[str] | None) -> list[str]:
 
 def get_by(sf: SheetFrame, by: str | list[str] | None) -> list[str]:
     if not by:
-        return sf.index.names  # pyright: ignore[reportReturnType]
+        return [name for name in sf.index.names if isinstance(name, str)]
 
     return list(iter_columns(sf.index.names, by))
 
@@ -113,11 +118,7 @@ def has_header(sf: SheetFrame) -> bool:
     start = sf.cell.offset(-1)
     end = start.offset(0, sf.index.nlevels)
     value = sf.sheet.range(start, end).options(ndim=1).value
-
-    if not isinstance(value, list):
-        raise NotImplementedError
-
-    return any(value)  # pyright: ignore[reportUnknownArgumentType]
+    return any(value)
 
 
 def move_down(sf: SheetFrame, length: int) -> int:
@@ -134,10 +135,15 @@ def move_down(sf: SheetFrame, length: int) -> int:
 
 
 def set_style(sf: SheetFrame, parent: SheetFrame, func_column_name: str) -> None:
-    idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
 
+    def get_number_format(column: Hashable | None) -> str | None:
+        if isinstance(column, str):
+            return parent.get_number_format(column)
+        return None
+
+    idx = [sf.column + i for i in range(sf.index.nlevels + len(sf.columns))]
     columns = (*parent.index.names, *parent.columns)
-    formats = [None, *[parent.get_number_format(column) for column in columns]]  # pyright: ignore[reportArgumentType]
+    formats = [None, *[get_number_format(column) for column in columns]]
 
     for (func,), rows in sf.groupby(func_column_name).items():
         for col, fmt in zip(idx, formats, strict=True):

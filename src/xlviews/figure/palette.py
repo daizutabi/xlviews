@@ -216,15 +216,15 @@ def get_palette[T](
     return cls(data, columns)
 
 
-def get_marker_palette[T](
+def get_marker_palette(
     data: DataFrame,
-    marker: PaletteStyle[T] | None,
-) -> MarkerPalette | FunctionPalette[T] | None:
+    marker: PaletteStyle[str] | None,
+) -> MarkerPalette | FunctionPalette[str] | None:
     return get_palette(MarkerPalette, data, marker)
 
 
-def get_color_palette[T](
+def get_color_palette(
     data: DataFrame,
-    color: PaletteStyle[T] | None,
-) -> ColorPalette | FunctionPalette[T] | None:
+    color: PaletteStyle[str] | None,
+) -> ColorPalette | FunctionPalette[str] | None:
     return get_palette(ColorPalette, data, color)

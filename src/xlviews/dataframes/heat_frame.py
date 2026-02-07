@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Self
 
-from pandas import DataFrame, Index, MultiIndex
+import pandas as pd
+from pandas import DataFrame
 
 from xlviews.core.formula import aggregate
 from xlviews.core.range import Range
@@ -16,15 +17,14 @@ from .style import set_heat_frame_style
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator, Sequence
 
-    from pandas import Index
     from xlwings import Sheet
 
     from xlviews.colors import Color
 
 
 class HeatFrame(SheetFrame):
-    index: Index
-    columns: Index
+    index: pd.Index[Any]
+    columns: pd.Index[str]
     range: Range
 
     @suspend_screen_updates
@@ -156,10 +156,10 @@ class HeatFrame(SheetFrame):
 def clean_data(data: DataFrame) -> DataFrame:
     data = data.copy()
 
-    if isinstance(data.columns, MultiIndex):
+    if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.droplevel(list(range(1, data.columns.nlevels)))
 
-    if isinstance(data.index, MultiIndex):
+    if isinstance(data.index, pd.MultiIndex):
         data.index = data.index.droplevel(list(range(1, data.index.nlevels)))
 
     data.index.name = None
@@ -168,7 +168,7 @@ def clean_data(data: DataFrame) -> DataFrame:
 
 
 def iterrows(
-    index: Index,
+    index: pd.Index,
     levels: int | str | Sequence[int | str] | None,
     offset: int = 0,
     padding: int = 0,

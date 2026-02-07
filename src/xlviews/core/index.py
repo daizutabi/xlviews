@@ -7,11 +7,10 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Hashable, Iterable, Iterator
 
     from numpy.typing import NDArray
     from pandas import DataFrame
-    from pandas._typing import Axes
 
 
 class WideIndex(UserDict[str, list[Any]]):
@@ -46,7 +45,7 @@ class Index:
 
     def __init__(
         self,
-        index: Axes,
+        index: pd.Index | Iterable[Any],
         wide_index: WideIndex | dict[str, Any] | None = None,
     ) -> None:
         self.index = index if isinstance(index, pd.Index) else pd.Index(index)
@@ -62,8 +61,8 @@ class Index:
         return len(self.index) + len(self.wide_index)
 
     @property
-    def names(self) -> list[str]:
-        return self.index.names  # pyright: ignore[reportReturnType]
+    def names(self) -> list[Hashable | None]:
+        return self.index.names
 
     @property
     def nlevels(self) -> int:

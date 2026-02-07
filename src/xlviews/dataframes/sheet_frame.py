@@ -36,7 +36,7 @@ class SheetFrame:
 
     cell: RangeImpl
     sheet: Sheet
-    index: pd.Index
+    index: pd.Index[Any]
     columns: Index
     table: Table | None = None
 
@@ -187,9 +187,6 @@ class SheetFrame:
             case None:
                 start = self.row + 1
                 end = start + len(self) - 1
-            case _:  # pyright: ignore[reportUnnecessaryComparison]
-                msg = f"invalid offset: {offset}"  # pyright: ignore[reportUnreachable]
-                raise ValueError(msg)
 
         if isinstance(columns, str):
             loc = self.get_loc(columns)
@@ -209,17 +206,13 @@ class SheetFrame:
             for index in range(len(self.columns)):
                 yield Range((start, index + offset), (end, index + offset), self.sheet)
 
-        elif axis == 1:
+        else:
             start = self.column + self.index.nlevels
             end = start + len(self.columns) - 1
             offset = self.row + self.columns.nlevels
 
             for index in range(len(self)):
                 yield Range((index + offset, start), (index + offset, end), self.sheet)
-
-        else:
-            msg = "axis must be 0 or 1"  # pyright: ignore[reportUnreachable]
-            raise ValueError(msg)
 
     def add_column(
         self,

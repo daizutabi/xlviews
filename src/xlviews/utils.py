@@ -4,8 +4,8 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any
 
 import xlwings
+import xlwings.constants
 from pandas import DataFrame, Series
-from xlwings.constants import DVType, FormatConditionOperator
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
@@ -38,7 +38,7 @@ def constant(type_: str, name: str | None = None) -> int:
     if not name.startswith("xl"):
         name = "xl" + name[0].upper() + name[1:]
 
-    type_ = getattr(xlwings.constants, type_)  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
+    type_ = getattr(xlwings.constants, type_)
 
     return getattr(type_, name)
 
@@ -113,8 +113,8 @@ def add_validate_list(
     if default:
         rng.value = default
 
-    type_ = DVType.xlValidateList
-    operator = FormatConditionOperator.xlEqual
+    type_ = xlwings.constants.DVType.xlValidateList
+    operator = xlwings.constants.FormatConditionOperator.xlEqual
     formula = ",".join(map(str, value))
 
     rng.api.Validation.Add(Type=type_, Operator=operator, Formula1=formula)

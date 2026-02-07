@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from xlviews.chart.axes import Axes
 from xlviews.figure.palette import get_color_palette, get_marker_palette
@@ -10,7 +10,6 @@ from xlviews.testing.sheet_frame.pivot import Pivot
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Any
 
     from xlviews.dataframes.sheet_frame import SheetFrame
 

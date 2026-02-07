@@ -368,6 +368,7 @@ class Axes:
             if not series.label:
                 entry.Delete()
 
+        # `api.HasLegend` may be `False` after deleting entries.
         if api.HasLegend is False:  # pyright: ignore[reportUnnecessaryComparison]
             return self
 
