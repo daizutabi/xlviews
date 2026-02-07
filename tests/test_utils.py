@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews.testing import is_app_available
+from xlviews.utils import add_validate_list, constant, iter_columns
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 
 @pytest.mark.parametrize(
@@ -19,8 +26,6 @@ from xlviews.testing import is_app_available
     ],
 )
 def test_constant(name: str, value: int):
-    from xlviews.utils import constant
-
     assert constant(name) == value
     assert constant(*name.split(".")) == value
 
@@ -34,21 +39,16 @@ def test_constant(name: str, value: int):
         (["::B", "C"], ["A", "C"]),
     ],
 )
-def test_iter_columns(columns, lst):
-    from xlviews.utils import iter_columns
-
+def test_iter_columns(columns: str | list[str], lst: list[str]):
     df = DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]], columns=["A", "B", "C"])
     assert list(iter_columns(df, columns)) == lst
 
 
 @pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 def test_validate_list(sheet: Sheet):
-    from xlviews.utils import add_validate_list
-
     rng = sheet.range("a1")
     add_validate_list(rng, [1, 2, 3], 2)
     assert rng.value == 2
-
     assert rng.api.Validation.Type == 3
     assert rng.api.Validation.Operator == 3
     assert rng.api.Validation.Formula1 == "1,2,3"

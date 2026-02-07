@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import pytest
 import xlwings
 from xlwings import App, Book
+
+from xlviews.style import hide_gridlines
 
 
 @pytest.fixture(scope="session")
@@ -20,8 +24,6 @@ def book(app: App):
 
 @pytest.fixture(scope="module")
 def sheet_module(book: Book):
-    from xlviews.style import hide_gridlines
-
     sheet = book.sheets.add()
     hide_gridlines(sheet)
 

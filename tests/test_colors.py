@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import pytest
+
+from xlviews.colors import rgb
 
 
 @pytest.mark.parametrize(
@@ -18,17 +22,13 @@ import pytest
         (100, 100),
     ],
 )
-def test_rgb(name, color):
-    from xlviews.colors import rgb
-
+def test_rgb(name: str | int | tuple[int, int, int], color: int):
     assert rgb(name) == color
     if isinstance(name, tuple):
         assert rgb(*name) == color
 
 
 @pytest.mark.parametrize("name", ["invalid", (1, "x", "y")])
-def test_rgb_error(name):
-    from xlviews.colors import rgb
-
+def test_rgb_error(name: str):
     with pytest.raises(ValueError, match="Invalid color format"):
         rgb(name)
