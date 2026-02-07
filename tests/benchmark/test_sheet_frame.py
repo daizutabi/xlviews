@@ -1,12 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
+
 import numpy as np
 import pytest
 from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews.core.address import index_to_column_name
 from xlviews.dataframes.groupby import GroupBy
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from pytest_benchmark.fixture import BenchmarkFixture
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -23,7 +30,12 @@ def create_sheet_frame(df: DataFrame, sheet: Sheet) -> SheetFrame:
 
 
 @pytest.mark.parametrize(("rows", "columns"), [(10, 20), (100, 100), (1000, 100)])
-def test_create_sheet_frame(benchmark, sheet: Sheet, rows: int, columns: int):
+def test_create_sheet_frame(
+    benchmark: BenchmarkFixture,
+    sheet: Sheet,
+    rows: int,
+    columns: int,
+):
     df = create_data_frame(rows, columns)
     sf = benchmark(create_sheet_frame, df, sheet)
     assert isinstance(sf, SheetFrame)
@@ -57,24 +69,34 @@ def columns(request: pytest.FixtureRequest):
 
 
 @pytest.mark.parametrize("axis", [0, 1])
-def test_ranges(benchmark, sf: SheetFrame, shape, axis):
+def test_ranges(
+    benchmark: BenchmarkFixture,
+    sf: SheetFrame,
+    shape: tuple[int, int],
+    axis: Literal[0, 1],
+):
     x = benchmark(lambda: list(sf.iter_ranges(axis)))
     assert len(x) == shape[1 - axis] - 10 * (1 - axis)
 
 
-def test_agg(benchmark, sf: SheetFrame, columns):
+def test_agg(benchmark: BenchmarkFixture, sf: SheetFrame, columns: list[str]):
     x = benchmark(lambda: sf.agg(["sum", "count"], columns))
     assert isinstance(x, DataFrame)
     assert x.shape == (2, len(columns))
 
 
-def test_groupby(benchmark, sf: SheetFrame, columns):
+def test_groupby(benchmark: BenchmarkFixture, sf: SheetFrame, columns: list[str]):
     x = benchmark(lambda: sf.groupby(columns))
     assert isinstance(x, GroupBy)
     assert len(x) == len(sf)
 
 
-def test_groupby_agg(benchmark, sf: SheetFrame, columns, shape):
+def test_groupby_agg(
+    benchmark: BenchmarkFixture,
+    sf: SheetFrame,
+    columns: list[str],
+    shape: tuple[int, int],
+):
     x = benchmark(lambda: sf.groupby(columns).agg(["sum", "count"]))
     assert isinstance(x, DataFrame)
     assert x.shape == (len(sf), 2 * (shape[1] - 10))
