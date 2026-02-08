@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from xlviews.chart.axes import Axes
-from xlviews.figure.grid import Grid, Series
+from xlviews.figure.grid import AxesSeries, Grid
 from xlviews.testing import is_app_available
 
 if TYPE_CHECKING:
@@ -17,10 +17,10 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
 @pytest.fixture(scope="module")
 def seriesx(sheet_module: Sheet):
     ax = Axes(left=30, top=40, width=120, height=150, sheet=sheet_module)
-    return Series(ax, 3, axis=0)
+    return AxesSeries(ax, 3, axis=0)
 
 
-def test_series_len(seriesx: Series):
+def test_series_len(seriesx: AxesSeries):
     assert len(seriesx) == 3
 
 
@@ -28,7 +28,7 @@ def test_series_len(seriesx: Series):
     ("k", "left", "top"),
     [(0, 30, 40), (1, 150, 40), (2, 270, 40)],
 )
-def test_seriesx_init(seriesx: Series, k: int, left: int, top: int):
+def test_seriesx_init(seriesx: AxesSeries, k: int, left: int, top: int):
     assert seriesx[k].chart.left == left
     assert seriesx[k].chart.top == top
     assert seriesx[:][k].chart.left == left
@@ -38,21 +38,21 @@ def test_seriesx_init(seriesx: Series, k: int, left: int, top: int):
 @pytest.fixture(scope="module")
 def seriesy(sheet_module: Sheet):
     ax = Axes(left=30, top=40, width=120, height=150, sheet=sheet_module)
-    return Series(ax, 3, axis=1)
+    return AxesSeries(ax, 3, axis=1)
 
 
 @pytest.mark.parametrize(
     ("k", "left", "top"),
     [(0, 30, 40), (1, 30, 190), (2, 30, 340)],
 )
-def test_seriesy_init(seriesy: Series, k: int, left: int, top: int):
+def test_seriesy_init(seriesy: AxesSeries, k: int, left: int, top: int):
     assert seriesy[k].chart.left == left
     assert seriesy[k].chart.top == top
     assert seriesy[:][k].chart.left == left
     assert seriesy[:][k].chart.top == top
 
 
-def test_series_iter(seriesx: Series):
+def test_series_iter(seriesx: AxesSeries):
     ax = list(seriesx)[-1]
     assert ax.chart.left == 270
     assert ax.chart.top == 40

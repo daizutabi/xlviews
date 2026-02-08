@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from xlviews.chart.axes import Axes
 
 
-class Series:
+class AxesSeries:
     axes: list[Axes]
 
     def __init__(
@@ -29,13 +29,13 @@ class Series:
     def __getitem__(self, key: int) -> Axes: ...
 
     @overload
-    def __getitem__(self, key: slice) -> Series: ...
+    def __getitem__(self, key: slice) -> AxesSeries: ...
 
-    def __getitem__(self, key: int | slice) -> Axes | Series:
+    def __getitem__(self, key: int | slice) -> Axes | AxesSeries:
         if isinstance(key, int):
             return self.axes[key]
 
-        return Series(self.axes[key])
+        return AxesSeries(self.axes[key])
 
     def __len__(self) -> int:
         return len(self.axes)
@@ -81,16 +81,16 @@ class Grid:
         return 0, 0
 
     @overload
-    def __getitem__(self, key: int) -> Series: ...
+    def __getitem__(self, key: int) -> AxesSeries: ...
 
     @overload
     def __getitem__(self, key: tuple[int, int]) -> Axes: ...
 
     @overload
-    def __getitem__(self, key: tuple[slice, int]) -> Series: ...
+    def __getitem__(self, key: tuple[slice, int]) -> AxesSeries: ...
 
     @overload
-    def __getitem__(self, key: tuple[int, slice]) -> Series: ...
+    def __getitem__(self, key: tuple[int, slice]) -> AxesSeries: ...
 
     @overload
     def __getitem__(self, key: tuple[slice, slice]) -> Grid: ...
@@ -98,9 +98,9 @@ class Grid:
     def __getitem__(
         self,
         key: int | tuple[int | slice, int | slice],
-    ) -> Axes | Series | Grid:
+    ) -> Axes | AxesSeries | Grid:
         if isinstance(key, int):
-            return Series(self.axes[key])
+            return AxesSeries(self.axes[key])
 
         if len(key) == 2:
             r, c = key
@@ -108,10 +108,10 @@ class Grid:
                 return self.axes[r][c]
 
             if isinstance(r, slice) and isinstance(c, int):
-                return Series([row[c] for row in self.axes[r]])
+                return AxesSeries([row[c] for row in self.axes[r]])
 
             if isinstance(r, int) and isinstance(c, slice):
-                return Series(self.axes[r][c])
+                return AxesSeries(self.axes[r][c])
 
             if isinstance(r, slice) and isinstance(c, slice):
                 return Grid([row[c] for row in self.axes[r]])
@@ -122,6 +122,6 @@ class Grid:
     def __len__(self) -> int:
         return len(self.axes)
 
-    def __iter__(self) -> Iterator[Series]:
+    def __iter__(self) -> Iterator[AxesSeries]:
         for row in self.axes:
-            yield Series(row)
+            yield AxesSeries(row)
