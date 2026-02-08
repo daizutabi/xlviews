@@ -73,8 +73,8 @@ class Plot:
         for key, s in zip(self.keys(), self.series_collection, strict=True):
             s.set(
                 label=label and get_label(label, key),
-                color=color_palette and color_palette[key],  # pyright: ignore[reportArgumentType]
-                marker=marker_palette and marker_palette[key],  # pyright: ignore[reportArgumentType]
+                color=color_palette and color_palette[key],
+                marker=marker_palette and marker_palette[key],
                 alpha=alpha,
                 weight=weight,
                 size=size,

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Hashable, Mapping
 from itertools import cycle, islice
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, overload
 
 from pandas import MultiIndex
 
@@ -15,45 +15,69 @@ if TYPE_CHECKING:
     from pandas import DataFrame
 
 
+@overload
+def get_columns_default(
+    data: DataFrame,
+    columns: str | list[str],
+    default: None = None,
+) -> tuple[list[str], dict[Any, Any]]: ...
+
+
+@overload
 def get_columns_default[T](
     data: DataFrame,
     columns: str | list[str],
-    default: dict[Hashable, T] | list[T] | None = None,
-) -> tuple[list[str], dict[Hashable, T]]:
+    default: list[T],
+) -> tuple[list[str], dict[Any, T]]: ...
+
+
+@overload
+def get_columns_default[T, K](
+    data: DataFrame,
+    columns: str | list[str],
+    default: Mapping[K, T],
+) -> tuple[list[str], dict[K, T]]: ...
+
+
+def get_columns_default[T, K](
+    data: DataFrame,
+    columns: str | list[str],
+    default: Mapping[K, T] | list[T] | None = None,
+) -> tuple[list[str], dict[Any, Any]]:
     if isinstance(columns, str):
         columns = [columns]
 
     if default is None:
         return columns, {}
 
-    if isinstance(default, dict):
-        return columns, default
+    if isinstance(default, Mapping):
+        return columns, default if isinstance(default, dict) else dict(default)
 
     data = data[columns].drop_duplicates()
     values = [tuple(t) for t in data.itertuples(index=False)]
-    default = dict(zip(values, cycle(default), strict=False))
+    default_ = dict(zip(values, cycle(default), strict=False))
 
-    return columns, default
+    return columns, default_
 
 
 def get_index(
     data: DataFrame,
-    default: Iterable[Hashable] | None = None,
-) -> dict[tuple[Hashable, ...], int]:
+    default: Iterable[Any] | None = None,
+) -> dict[tuple[Any, ...], int]:
     data = data.drop_duplicates()
     values = [tuple(t) for t in data.itertuples(index=False)]
 
     if default is None:
         return dict(zip(values, range(len(data)), strict=True))
 
-    index: dict[tuple[Hashable, ...], int] = {}
+    index: dict[tuple[Any, ...], int] = {}
     current_index = 0
 
     for default_value in default:
         if isinstance(default_value, tuple):
             value = default_value  # pyright: ignore[reportUnknownVariableType]
         elif isinstance(default_value, list):
-            value = tuple(default_value)  # pyright: ignore[reportUnknownVariableType]
+            value = tuple(default_value)  # pyright: ignore[reportUnknownArgumentType, reportUnknownVariableType]
         else:
             value = (default_value,)
 
@@ -73,14 +97,14 @@ class Palette[T](ABC):
     """A palette of items."""
 
     columns: list[str]
-    index: dict[tuple[Hashable, ...], int]
+    index: dict[tuple[Any, ...], int]
     items: list[T]
 
     def __init__(
         self,
         data: DataFrame,
         columns: str | list[str],
-        default: dict[Hashable, T] | list[T] | None = None,
+        default: Mapping[Any, T] | list[T] | None = None,
     ) -> None:
         self.columns, default = get_columns_default(data, columns, default)
         self.index = get_index(data[self.columns], default)
@@ -93,13 +117,13 @@ class Palette[T](ABC):
     def cycle(self, defaults: Iterable[T]) -> Iterator[T]:
         """Generate an infinite iterator of items."""
 
-    def get(self, value: Hashable) -> int:
+    def get(self, value: Any) -> int:
         if not isinstance(value, tuple):
             value = (value,)
 
         return self.index[value]
 
-    def __getitem__(self, key: dict[str | None, Hashable]) -> T:
+    def __getitem__(self, key: Mapping[Any, Any]) -> T:
         if key == {None: 0}:  # from series
             return self.items[0]
 
@@ -142,15 +166,19 @@ def cycle_colors(skips: Iterable[str] | None = None) -> Iterator[str]:
 
 
 class FunctionPalette[T]:
-    columns: str | list[str]
-    func: Callable[[Hashable], T]
+    columns: Hashable | list[Hashable | None] | None
+    func: Callable[[Any], T]
 
-    def __init__(self, columns: str | list[str], func: Callable[[Hashable], T]) -> None:
+    def __init__(
+        self,
+        columns: Hashable | list[Hashable | None] | None,
+        func: Callable[[Any], T],
+    ) -> None:
         self.columns = columns
         self.func = func
 
-    def __getitem__(self, key: dict[str, Hashable]) -> T:
-        if isinstance(self.columns, str):
+    def __getitem__(self, key: Mapping[Any, Any]) -> T:
+        if not isinstance(self.columns, list):
             return self.func(key[self.columns])
 
         value = tuple(key[k] for k in self.columns)
@@ -160,16 +188,13 @@ class FunctionPalette[T]:
 type PaletteStyle[T] = (
     str
     | list[str]
-    | dict[Hashable, str]
-    | Callable[[Hashable], str]
-    | tuple[str | list[str], list[str] | dict[Hashable, str]]
-    | tuple[str | list[str], Callable[[Hashable], str]]
+    | dict[Hashable, T]
+    | Callable[[Any], T]
+    | tuple[Any, list[T] | dict[Hashable, T]]
+    | tuple[Any, Callable[[Any], T]]
     | Palette[T]
     | FunctionPalette[T]
 )
-
-# pyright: reportArgumentType=false
-# pyright: reportReturnType=false
 
 
 def get_palette[T](
@@ -211,7 +236,7 @@ def get_palette[T](
         data = data.drop_duplicates()
         values = [tuple(t) for t in data.itertuples(index=False)]
         default = dict(zip(values, cycle(columns), strict=False))
-        return cls(data, data.columns.tolist(), default)
+        return cls(data, data.columns.tolist(), default)  # pyright: ignore[reportArgumentType]
 
     return cls(data, columns)
 
@@ -220,11 +245,11 @@ def get_marker_palette(
     data: DataFrame,
     marker: PaletteStyle[str] | None,
 ) -> MarkerPalette | FunctionPalette[str] | None:
-    return get_palette(MarkerPalette, data, marker)
+    return get_palette(MarkerPalette, data, marker)  # pyright: ignore[reportReturnType]
 
 
 def get_color_palette(
     data: DataFrame,
     color: PaletteStyle[str] | None,
 ) -> ColorPalette | FunctionPalette[str] | None:
-    return get_palette(ColorPalette, data, color)
+    return get_palette(ColorPalette, data, color)  # pyright: ignore[reportReturnType]
