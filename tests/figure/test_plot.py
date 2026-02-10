@@ -1,13 +1,26 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import pytest
-from xlwings import Sheet
 from xlwings.constants import ChartType, MarkerStyle
 
 from xlviews.chart.axes import Axes
-from xlviews.dataframes.sheet_frame import SheetFrame
+from xlviews.figure.plot import Plot, get_label
 from xlviews.testing import is_app_available
 from xlviews.testing.chart import Base
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Hashable, Mapping
+
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
+
+
+def func(x: Any) -> str:
+    return f"_{x['a']}_"
 
 
 @pytest.mark.parametrize(
@@ -16,20 +29,15 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
         ("a", {}, "a"),
         ("a{b}", {"b": "B"}, "aB"),
         ("{a}{b}", {"a": "A", "b": "B"}, "AB"),
-        (lambda x: f"_{x['a']}_", {"a": "A"}, "_A_"),
+        (func, {"a": "A"}, "_A_"),
     ],
 )
-def test_get_label(label, key, expected):
-    from xlviews.figure.plot import get_label
-
+def test_get_label(
+    label: str | Callable[..., str],
+    key: Mapping[Hashable, str],
+    expected: str,
+):
     assert get_label(label, key) == expected
-
-
-def test_get_label_error():
-    from xlviews.figure.plot import get_label
-
-    with pytest.raises(ValueError, match="Invalid label"):
-        get_label(1, 1)  # type: ignore
 
 
 @pytest.fixture
@@ -44,8 +52,6 @@ def ax(sf: SheetFrame):
 
 
 def test_plot_series(ax: Axes, sf: SheetFrame):
-    from xlviews.figure.plot import Plot
-
     data = sf.agg(include_sheetname=True)
     p = (
         Plot(ax, data)
@@ -58,8 +64,6 @@ def test_plot_series(ax: Axes, sf: SheetFrame):
 
 
 def test_plot_index(ax: Axes, sf: SheetFrame):
-    from xlviews.figure.plot import Plot
-
     data = sf.groupby("b").agg(include_sheetname=True)
     p = (
         Plot(ax, data)
@@ -76,8 +80,6 @@ def test_plot_index(ax: Axes, sf: SheetFrame):
 
 
 def test_plot_multi_index(ax: Axes, sf: SheetFrame):
-    from xlviews.figure.plot import Plot
-
     data = sf.groupby(["b", "c"]).agg(include_sheetname=True)
     p = (
         Plot(ax, data)

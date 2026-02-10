@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from functools import partial
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, Literal, Self, overload
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,6 @@ from .table import Table
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-    from typing import Any, Literal, Self
 
     from numpy.typing import NDArray
 
@@ -37,7 +37,7 @@ class SheetFrame:
 
     cell: RangeImpl
     sheet: Sheet
-    index: pd.Index
+    index: pd.Index[Any]
     columns: Index
     table: Table | None = None
 
@@ -130,17 +130,11 @@ class SheetFrame:
 
         return self.columns.get_loc(column, self.column + self.index.nlevels)
 
-    @overload
-    def get_indexer(self, columns: list[str] | None) -> list[int]: ...
-
-    @overload
-    def get_indexer(self, columns: dict[str, Any]) -> NDArray[np.intp]: ...
-
     def get_indexer(
         self,
         columns: list[str] | dict[str, Any] | None = None,
-        **kwargs,
-    ) -> list[int] | NDArray[np.intp]:
+        **kwargs: Any,
+    ) -> NDArray[np.intp]:
         if isinstance(columns, dict) or (columns is None and kwargs):
             return self.columns.get_indexer(
                 columns,
@@ -153,10 +147,10 @@ class SheetFrame:
             columns = self.columns.to_list()
             start = column + self.index.nlevels
             end = start + len(columns)
-            return list(range(start, end))
+            return np.arange(start, end)
 
         cs = [*self.index.names, *self.columns]
-        return [cs.index(c) + column for c in columns]
+        return np.array([cs.index(c) + column for c in columns])
 
     @overload
     def get_range(
@@ -188,9 +182,6 @@ class SheetFrame:
             case None:
                 start = self.row + 1
                 end = start + len(self) - 1
-            case _:
-                msg = f"invalid offset: {offset}"
-                raise ValueError(msg)
 
         if isinstance(columns, str):
             loc = self.get_loc(columns)
@@ -210,16 +201,13 @@ class SheetFrame:
             for index in range(len(self.columns)):
                 yield Range((start, index + offset), (end, index + offset), self.sheet)
 
-        elif axis == 1:
+        else:
             start = self.column + self.index.nlevels
             end = start + len(self.columns) - 1
             offset = self.row + self.columns.nlevels
 
             for index in range(len(self)):
                 yield Range((index + offset, start), (index + offset, end), self.sheet)
-
-        else:
-            raise ValueError("axis must be 0 or 1")
 
     def add_column(
         self,
@@ -302,15 +290,15 @@ class SheetFrame:
         """Add a formula column.
 
         Args:
-            rng (Range): The range of the column.
-            formula (str or tuple): The formula.
+            column (str): The column.
+            formula (str): The formula.
             number_format (str, optional): The number format.
             autofit (bool): Whether to autofit the width.
         """
         if self.columns.nlevels != 1:
             raise NotImplementedError
 
-        refs = {}
+        refs: dict[str, str] = {}
         for m in re.finditer(r"{(.+?)}", formula):
             key = m.group(1)
             loc = self.get_loc(key)
@@ -325,7 +313,7 @@ class SheetFrame:
 
             refs[key] = addr
 
-        if isinstance(column, str) and column not in self.columns:
+        if column not in self.columns:
             self.add_column(column)
 
         rng = self.get_range(column).impl
@@ -400,7 +388,7 @@ class SheetFrame:
     @overload
     def agg(
         self,
-        func: Func | dict = None,
+        func: Func | Mapping[str, str | None] = None,
         columns: str | list[str] | None = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
@@ -423,7 +411,7 @@ class SheetFrame:
 
     def agg(
         self,
-        func: Func | dict | Sequence[Func] = None,
+        func: Func | Mapping[str, str | None] | Sequence[Func] = None,
         columns: str | list[str] | None = None,
         row_absolute: bool = True,
         column_absolute: bool = True,
@@ -444,16 +432,18 @@ class SheetFrame:
 
             raise NotImplementedError
 
-        if isinstance(func, dict):
+        if isinstance(func, Mapping):
             columns = list(func.keys())
         elif isinstance(columns, str):
             columns = [columns]
 
         if isinstance(func, Range | RangeImpl):
             if func.sheet.book.name != self.sheet.book.name:
-                raise ValueError("Range is from a different book")
+                msg = "Range is from a different book"
+                raise ValueError(msg)
             if func.sheet.name != self.sheet.name:
-                raise ValueError("Range is from a different sheet")
+                msg = "Range is from a different sheet"
+                raise ValueError(msg)
 
         rngs = self.get_range(columns)
 
@@ -469,7 +459,7 @@ class SheetFrame:
             formula=formula,
         )
 
-        if isinstance(func, dict):
+        if isinstance(func, Mapping):
             it = zip(rngs, func.values(), strict=True)
             return Series([agg(f, r) for r, f in it], index=columns)
 
@@ -480,7 +470,8 @@ class SheetFrame:
         values = [[agg(f, r) for r in rngs] for f in func]
         return DataFrame(values, index=list(func), columns=columns)
 
-    def _agg(self, func: Func, rng: Range, **kwargs) -> str:
+    @staticmethod
+    def _agg(func: Func, rng: Range, **kwargs: Any) -> str:
         if func == "first":
             rng = rng[0]
             func = None
@@ -561,14 +552,12 @@ class SheetFrame:
                 formula=formula,
             )
 
-        if index is None:
-            by = []
-        else:
-            by = [index] if isinstance(index, str) else index
+        by = [] if index is None else [index] if isinstance(index, str) else index
 
         if columns is None:
             if not by:
-                raise ValueError("No group keys passed!")
+                msg = "No group keys passed!"
+                raise ValueError(msg)
         else:
             by = [*by, columns] if isinstance(columns, str) else by + columns
 
@@ -582,7 +571,7 @@ class SheetFrame:
             formula=formula,
         )
 
-        return data.pivot_table(values, index, columns, aggfunc=lambda x: x)
+        return data.pivot_table(values, index, columns, aggfunc=lambda x: x)  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
 
     def groupby(self, by: str | list[str] | None, *, sort: bool = True) -> GroupBy:
         return GroupBy(self, by, sort=sort)
@@ -595,10 +584,10 @@ class SheetFrame:
 
     def number_format(
         self,
-        number_format: str | dict | None = None,
+        number_format: str | dict[str, str] | None = None,
         *,
         autofit: bool = False,
-        **columns_format,
+        **columns_format: Any,
     ) -> Self:
         if isinstance(number_format, dict):
             columns_format.update(number_format)
@@ -608,13 +597,13 @@ class SheetFrame:
 
         if self.columns.nlevels == 1:
             for column in [*self.index.names, *self.columns]:
-                if not column:
+                if not column or not isinstance(column, str):
                     continue
 
-                for pattern, number_format in columns_format.items():
-                    if re.match(pattern, column):  # type: ignore
-                        rng = self.get_range(column).impl  # type: ignore
-                        rng.number_format = number_format
+                for pattern, number_format_ in columns_format.items():
+                    if re.match(pattern, column):
+                        rng = self.get_range(column).impl
+                        rng.number_format = number_format_
                         if autofit:
                             rng.autofit()
                         break
@@ -631,7 +620,7 @@ class SheetFrame:
 
         return self
 
-    def style(self, **kwargs) -> Self:
+    def style(self, **kwargs: Any) -> Self:
         set_frame_style(self, **kwargs)
         set_wide_column_style(self)
         return self
@@ -717,7 +706,11 @@ def move(sf: SheetFrame, count: int, direction: str = "down", width: int = 0) ->
         case "right":
             return _move_right(sf, count, width)
 
-    raise ValueError("direction must be 'down' or 'right'")
+        case _:
+            pass
+
+    msg = "direction must be 'down' or 'right'"
+    raise ValueError(msg)
 
 
 def _move_down(sf: SheetFrame, count: int) -> None:

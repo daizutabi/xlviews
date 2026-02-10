@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal, Self
 
-from pandas import DataFrame, Index, MultiIndex
+import pandas as pd
+from pandas import DataFrame
 
 from xlviews.core.formula import aggregate
 from xlviews.core.range import Range
@@ -15,17 +16,15 @@ from .style import set_heat_frame_style
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator, Sequence
-    from typing import Any, Literal, Self
 
-    from pandas import Index
     from xlwings import Sheet
 
     from xlviews.colors import Color
 
 
 class HeatFrame(SheetFrame):
-    index: Index
-    columns: Index
+    index: pd.Index[Any]
+    columns: pd.Index[str]
     range: Range
 
     @suspend_screen_updates
@@ -42,7 +41,7 @@ class HeatFrame(SheetFrame):
 
         super().__init__(row, column, data, sheet)
 
-        self.columns = data.columns  # type: ignore
+        self.columns = data.columns  # pyright: ignore[reportIncompatibleVariableOverride]
 
         start = self.row + 1, self.column + 1
         end = start[0] + self.shape[0] - 1, start[1] + self.shape[1] - 1
@@ -157,10 +156,10 @@ class HeatFrame(SheetFrame):
 def clean_data(data: DataFrame) -> DataFrame:
     data = data.copy()
 
-    if isinstance(data.columns, MultiIndex):
+    if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.droplevel(list(range(1, data.columns.nlevels)))
 
-    if isinstance(data.index, MultiIndex):
+    if isinstance(data.index, pd.MultiIndex):
         data.index = data.index.droplevel(list(range(1, data.index.nlevels)))
 
     data.index.name = None
@@ -169,7 +168,7 @@ def clean_data(data: DataFrame) -> DataFrame:
 
 
 def iterrows(
-    index: Index,
+    index: pd.Index,
     levels: int | str | Sequence[int | str] | None,
     offset: int = 0,
     padding: int = 0,
@@ -198,9 +197,9 @@ def xs(
     columns: dict[Hashable, Any] | None,
 ) -> DataFrame:
     if index:
-        df = df.xs(tuple(index.values()), 0, tuple(index.keys()))  # type: ignore
+        df = df.xs(tuple(index.values()), 0, tuple(index.keys()))  # pyright: ignore[reportAssignmentType]
 
     if columns:
-        df = df.xs(tuple(columns.values()), 1, tuple(columns.keys()))  # type: ignore
+        df = df.xs(tuple(columns.values()), 1, tuple(columns.keys()))  # pyright: ignore[reportAssignmentType]
 
     return df

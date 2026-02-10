@@ -6,7 +6,7 @@ on:
   pull_request:
 
 concurrency:
-  group: test-${{ github.head_ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -20,21 +20,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v6
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+      - name: Install uv and set up Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-      - name: Install uv and ruff
-        run: pip install uv ruff
-      # - name: Ruff check
-      # run: ruff check
+          activate-environment: true
       - name: Install the project
         run: uv sync
+      - name: Run prek hooks
+        run: uv run prek run --all-files
       - name: Upload local coverage (lcov.info) if present
         if: hashFiles('lcov.info') != ''
         uses: codecov/codecov-action@v5

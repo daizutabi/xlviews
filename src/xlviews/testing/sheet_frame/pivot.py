@@ -27,7 +27,7 @@ class MultiIndex(FrameContainer):
     def dataframe(cls) -> DataFrame:
         df = Base.dataframe().reset_index()
 
-        dfs = []
+        dfs: list[DataFrame] = []
         for x in range(1, 4):
             for y in range(1, 5):
                 a = df.copy()
@@ -52,7 +52,7 @@ class Pivot(FrameContainer):
         for a, b in [(2, 1), (3, 3), (4, 1), (4, 3)]:
             df = df[~((df["Y"] == a) & (df["y"] == b))]
 
-        dfs = []
+        dfs: list[DataFrame] = []
         for x in range(1, 3):
             for y in range(1, 4):
                 if x == 1 and y == 3:

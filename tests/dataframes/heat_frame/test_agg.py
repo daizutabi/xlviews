@@ -1,9 +1,16 @@
-import pytest
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.heat_frame import HeatFrame
+from typing import TYPE_CHECKING
+
+import pytest
+
 from xlviews.testing import is_app_available
 from xlviews.testing.heat_frame.agg import AggParent, AggRange, AggStr
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.heat_frame import HeatFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -43,6 +50,6 @@ def sf_range(fc_parent: AggParent):
     ("func", "value"),
     [("min", 0), ("max", 17), ("mean", 8.5), ("count", 18)],
 )
-def test_values_func(sf_range: HeatFrame, func, value):
+def test_values_func(sf_range: HeatFrame, func: str, value: float):
     sf_range.sheet.range("$N$13").value = func
     assert sf_range.sheet.range("J9").value == value

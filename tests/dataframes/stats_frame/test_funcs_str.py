@@ -1,8 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.stats_frame import StatsFrame
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -31,5 +37,5 @@ def test_index_names(sf: SheetFrame):
         ("H3:H5", ["c", 10, 7]),
     ],
 )
-def test_value(sf: SheetFrame, cell, value):
+def test_value(sf: SheetFrame, cell: str, value: list[str | int | None]):
     assert sf.sheet[cell].value == value

@@ -2,21 +2,20 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable
 from itertools import product
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, Self
 
 import pandas as pd
-from pandas import DataFrame, Index
+from pandas import DataFrame
 
 from .palette import PaletteStyle, get_color_palette, get_marker_palette
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
-    from typing import Any, Self
+    from collections.abc import Iterator, Mapping
 
     from xlviews.chart.axes import Axes
     from xlviews.chart.series import Series
 
-Label: TypeAlias = str | Callable[[dict[str, Hashable]], str]
+type Label = str | Callable[[dict[str, Hashable]], str]
 
 
 class Plot:
@@ -32,6 +31,8 @@ class Plot:
             data = data.to_frame().T
 
         self.data = data
+        self.index = []
+        self.series_collection = []
 
     def add(
         self,
@@ -39,32 +40,29 @@ class Plot:
         y: str | list[str],
         chart_type: int | None = None,
     ) -> Self:
-        self.index = []
-        self.series_collection = []
-
         xs = x if isinstance(x, list) else [x]
         ys = y if isinstance(y, list) else [y]
 
-        for x, y in product(xs, ys):
+        for x_, y_ in product(xs, ys):
             for idx, s in self.data.iterrows():
-                series = self.axes.add_series(s[x], s[y], chart_type=chart_type)
-                index = idx if isinstance(idx, tuple) else (idx,)
+                series = self.axes.add_series(s[x_], s[y_], chart_type=chart_type)
+                index: tuple[Hashable, ...] = idx if isinstance(idx, tuple) else (idx,)  # pyright: ignore[reportUnknownVariableType]
                 self.index.append(index)
                 self.series_collection.append(series)
 
         return self
 
-    def keys(self) -> Iterator[dict[str, Hashable]]:
+    def keys(self) -> Iterator[dict[Hashable | None, Hashable]]:
         names = self.data.index.names
 
         for index in self.index:
-            yield dict(zip(names, index, strict=True))  # type: ignore
+            yield dict(zip(names, index, strict=True))
 
     def set(
         self,
         label: Label | None = None,
-        marker: PaletteStyle | None = None,
-        color: PaletteStyle | None = None,
+        marker: PaletteStyle[str] | None = None,
+        color: PaletteStyle[str] | None = None,
         alpha: float | None = None,
         weight: float | None = None,
         size: int | None = None,
@@ -113,26 +111,20 @@ class Plot:
                 yield key, cls(axes_, sub)
 
 
-def get_label(label: Label, key: dict[str, Hashable]) -> str:
-    if isinstance(label, str):
-        return label.format(**key)
-
-    if callable(label):
-        return label(key)
-
-    msg = f"Invalid label: {label}"
-    raise ValueError(msg)
+def get_label(label: Label, key: Mapping[Hashable | None, Hashable]) -> str:
+    key_ = {k: v for k, v in key.items() if isinstance(k, str)}
+    return label(key_) if callable(label) else label.format(**key_)
 
 
 def iterrows(
-    index: Index,
-    levels: int | str | Sequence[int | str] | None,
+    index: pd.Index[Any],
+    levels: str | list[str] | None,
 ) -> Iterator[dict[str, Any]]:
     if levels is None:
         yield {}
         return
 
-    if isinstance(levels, int | str):
+    if isinstance(levels, str):
         levels = [levels]
 
     if levels:
@@ -140,11 +132,11 @@ def iterrows(
         it = DataFrame(values).drop_duplicates().iterrows()
 
         for _, s in it:
-            yield s.to_dict()
+            yield s.to_dict()  # pyright: ignore[reportReturnType]
 
 
 def xs(df: DataFrame, index: dict[str, Any] | None) -> DataFrame:
     if index:
-        df = df.xs(tuple(index.values()), 0, tuple(index.keys()), drop_level=False)  # type: ignore
+        df = df.xs(tuple(index.values()), 0, tuple(index.keys()), drop_level=False)  # pyright: ignore[reportAssignmentType]
 
     return df

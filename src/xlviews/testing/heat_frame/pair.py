@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 
 from xlviews.core.range import Range
-from xlviews.dataframes.heat_frame import Colorbar, HeatFrame
+from xlviews.dataframes.colorbar import Colorbar
+from xlviews.dataframes.heat_frame import HeatFrame
 from xlviews.testing.common import create_sheet
 from xlviews.testing.sheet_frame.pivot import Pivot
 
 if TYPE_CHECKING:
     from collections.abc import Hashable, Iterator
-    from typing import Any, Literal
 
     from xlviews.dataframes.sheet_frame import SheetFrame
 

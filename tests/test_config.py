@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import pytest
 
-from xlviews.config import rcParams
+from xlviews.config import CONFIG_FILE, rcParams
 
 
 def test_config_file():
-    from xlviews.config import CONFIG_FILE
-
     assert CONFIG_FILE.exists()
 
 

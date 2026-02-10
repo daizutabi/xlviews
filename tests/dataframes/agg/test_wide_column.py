@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 from pandas import DataFrame, Series
-from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import WideColumn
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -38,9 +44,8 @@ def test_str(sf: SheetFrame, df: DataFrame, func: str):
 
 
 def test_list(sf: SheetFrame, df: DataFrame):
-    func = ["min", "max", "median", "sum"]
-    a = sf.agg(func, formula=True)
-    b = df.agg(func)  # type: ignore
+    a = sf.agg(["min", "max", "median", "sum"], formula=True)
+    b = df.agg(["min", "max", "median", "sum"])
     assert isinstance(a, DataFrame)
     assert isinstance(b, DataFrame)
     assert a.index.to_list() == b.index.to_list()

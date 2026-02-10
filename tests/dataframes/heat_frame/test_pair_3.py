@@ -1,11 +1,18 @@
-import pytest
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.heat_frame import HeatFrame
-from xlviews.dataframes.sheet_frame import SheetFrame
+from typing import TYPE_CHECKING
+
+import pytest
+
 from xlviews.testing import is_app_available
 from xlviews.testing.heat_frame.pair import pair
 from xlviews.testing.sheet_frame.pivot import Pivot
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.heat_frame import HeatFrame
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -38,5 +45,5 @@ def test_len(hfs: list[HeatFrame]):
     ("i", "v"),
     [(0, 0), (1, 241), (2, 138), (3, 333), (4, None), (5, 402)],
 )
-def test_value(hfs: list[HeatFrame], i: int, v):
+def test_value(hfs: list[HeatFrame], i: int, v: int | None):
     assert hfs[i].cell.offset(1, 1).value == v

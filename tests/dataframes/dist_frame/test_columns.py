@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews.dataframes.dist_frame import DistFrame
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_app_available
 from xlviews.testing.dist_frame import Parent
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -18,7 +24,7 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
         ("b", ["b_n", "b_v", "b_s"]),
     ],
 )
-def test_columns(columns, values, sheet: Sheet):
+def test_columns(columns: str | None, values: list[str], sheet: Sheet):
     fc = Parent(sheet, 3, 2)
     sf = DistFrame(fc.sf, columns, by=["x", "y"])
     assert sf.columns.to_list() == values

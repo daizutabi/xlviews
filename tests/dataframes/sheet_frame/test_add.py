@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -26,7 +32,7 @@ def test_add_column_value(sheet: Sheet):
     ("formula", "value"),
     [("={a}+{b}", [6, 8, 10, 12]), ("={a}*{b}", [5, 12, 21, 32])],
 )
-def test_add_formula_column(formula, value, sheet: Sheet):
+def test_add_formula_column(formula: str, value: list[int], sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     sf = SheetFrame(2, 3, data=df, sheet=sheet)
     sf.add_formula_column("c", formula)
@@ -43,7 +49,7 @@ def test_add_formula_column(formula, value, sheet: Sheet):
         ("={a}*{b}*{c}", ([5, 12, 21, 32], [20, 48, 84, 128])),
     ],
 )
-def test_formula_wide(formula, value, sheet: Sheet):
+def test_formula_wide(formula: str, value: tuple[list[int], list[int]], sheet: Sheet):
     df = DataFrame({"a": [1, 2, 3, 4], "b": [5, 6, 7, 8]})
     sf = SheetFrame(10, 3, data=df, sheet=sheet)
     sf.add_wide_column("c", [1, 2, 3, 4], number_format="0", style=True)

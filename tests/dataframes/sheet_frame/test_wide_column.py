@@ -1,9 +1,16 @@
-import pytest
-from xlwings import Sheet
+from __future__ import annotations
 
-from xlviews.dataframes.sheet_frame import SheetFrame
+from typing import TYPE_CHECKING
+
+import pytest
+
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import WideColumn
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 

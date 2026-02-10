@@ -1,7 +1,27 @@
+from __future__ import annotations
+
 from itertools import islice
+from operator import itemgetter
+from typing import TYPE_CHECKING
 
 import pytest
-from pandas import DataFrame
+from pandas import DataFrame, Series
+
+from xlviews.figure.palette import (
+    ColorPalette,
+    FunctionPalette,
+    MarkerPalette,
+    cycle_colors,
+    cycle_markers,
+    get_color_palette,
+    get_columns_default,
+    get_index,
+    get_marker_palette,
+    get_palette,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @pytest.fixture(scope="module")
@@ -16,21 +36,23 @@ def df():
 
 
 def test_get_columns_default(df: DataFrame):
-    from xlviews.figure.palette import get_columns_default
-
     columns, default = get_columns_default(df, "a")
     assert columns == ["a"]
     assert default == {}
 
 
 def test_get_columns_default_with_default_list(df: DataFrame):
-    from xlviews.figure.palette import get_columns_default
-
     columns, default = get_columns_default(df, "a", ["red", "blue"])
     assert columns == ["a"]
-    assert default[(1,)] == "red"
-    assert default[(2,)] == "blue"
-    assert default[(3,)] == "red"
+    assert default[1,] == "red"
+    assert default[2,] == "blue"
+    assert default[3,] == "red"
+
+
+def test_get_columns_default_with_default_dict(df: DataFrame):
+    columns, default = get_columns_default(df, ["a", "b"], {"x": 0})
+    assert columns == ["a", "b"]
+    assert default == {"x": 0}
 
 
 @pytest.mark.parametrize(
@@ -44,9 +66,11 @@ def test_get_columns_default_with_default_list(df: DataFrame):
         (["b", "c"], {(4, 10): 0, (5, 10): 1, (6, 11): 2, (7, 11): 3}),
     ],
 )
-def test_get_index(df: DataFrame, columns, index):
-    from xlviews.figure.palette import get_index
-
+def test_get_index(
+    df: DataFrame,
+    columns: list[str],
+    index: dict[tuple[int, ...], int],
+):
     assert get_index(df[columns]) == index
 
 
@@ -65,36 +89,31 @@ def test_get_index(df: DataFrame, columns, index):
         (["b", "c"], [], {(4, 10): 0, (5, 10): 1, (6, 11): 2, (7, 11): 3}),
     ],
 )
-def test_get_index_default(df: DataFrame, columns, default, index):
-    from xlviews.figure.palette import get_index
-
+def test_get_index_default(
+    df: DataFrame,
+    columns: list[str],
+    default: list[int] | list[Iterable[int]],
+    index: dict[tuple[int, ...], int],
+):
     assert get_index(df[columns], default) == index
 
 
 def test_cycle_colors():
-    from xlviews.figure.palette import cycle_colors
-
     x = list(islice(cycle_colors(), 3))
     assert x == ["#1f77b4", "#ff7f0e", "#2ca02c"]
 
 
 def test_cycle_colors_skips():
-    from xlviews.figure.palette import cycle_colors
-
     x = list(islice(cycle_colors(["#ff7f0e"]), 3))
     assert x == ["#1f77b4", "#2ca02c", "#d62728"]
 
 
 def test_cycle_markers():
-    from xlviews.figure.palette import cycle_markers
-
     x = list(islice(cycle_markers(), 3))
     assert x == ["o", "^", "s"]
 
 
 def test_cycle_markers_skips():
-    from xlviews.figure.palette import cycle_markers
-
     x = list(islice(cycle_markers(["o"]), 3))
     assert x == ["^", "s", "d"]
 
@@ -103,9 +122,7 @@ def test_cycle_markers_skips():
     ("key", "value"),
     [(1, 0), ((1,), 0), (3, 2), ((3,), 2)],
 )
-def test_marker_palette_get(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette_get(df: DataFrame, key: int | tuple[int], value: int):
     p = MarkerPalette(df, "a")
     assert p.get(key) == value
 
@@ -114,9 +131,7 @@ def test_marker_palette_get(df: DataFrame, key, value):
     ("key", "value"),
     [({"a": 1}, "o"), ({"a": 2}, "^"), ({"a": 3}, "s")],
 )
-def test_marker_palette(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette(df: DataFrame, key: dict[str, int], value: str):
     p = MarkerPalette(df, "a")
     assert p[key] == value
 
@@ -125,9 +140,7 @@ def test_marker_palette(df: DataFrame, key, value):
     ("key", "value"),
     [({"a": 1, "b": 0}, "o"), ({"x": 0, "a": 2}, "^"), ({"a": 3}, "s")],
 )
-def test_marker_palette_dict(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette_dict(df: DataFrame, key: dict[str, int], value: str):
     p = MarkerPalette(df, "a")
     assert p[key] == value
 
@@ -136,9 +149,7 @@ def test_marker_palette_dict(df: DataFrame, key, value):
     ("key", "value"),
     [({"a": 1, "b": 0}, "^"), ({"a": 2, "b": 0}, "o"), ({"a": 3, "b": 0}, "x")],
 )
-def test_marker_palette_default(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette_default(df: DataFrame, key: dict[str, int], value: str):
     p = MarkerPalette(df, "a", {2: "o", 3: "x"})
     assert p[key] == value
 
@@ -147,9 +158,7 @@ def test_marker_palette_default(df: DataFrame, key, value):
     ("key", "value"),
     [({"a": 1, "b": 4}, "o"), ({"a": 2, "b": 5}, "^"), ({"a": 2, "b": 6}, "s")],
 )
-def test_marker_palette_multi(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette_multi(df: DataFrame, key: dict[str, int], value: str):
     p = MarkerPalette(df, ["a", "b"])
     assert p[key] == value
 
@@ -158,9 +167,11 @@ def test_marker_palette_multi(df: DataFrame, key, value):
     ("key", "value"),
     [({"a": 1, "b": 4}, "o"), ({"a": 2, "b": 5}, "x"), ({"a": 2, "b": 6}, "o")],
 )
-def test_marker_palette_multi_default_list(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette_multi_default_list(
+    df: DataFrame,
+    key: dict[str, int],
+    value: str,
+):
     p = MarkerPalette(df, ["a", "b"], ["o", "x"])
     assert p[key] == value
 
@@ -173,38 +184,28 @@ def test_marker_palette_multi_default_list(df: DataFrame, key, value):
         ({"a": 2, "b": 6, "c": 2}, "s"),
     ],
 )
-def test_marker_palette_multi_dict(df: DataFrame, key, value):
-    from xlviews.figure.palette import MarkerPalette
-
+def test_marker_palette_multi_dict(df: DataFrame, key: dict[str, int], value: str):
     p = MarkerPalette(df, ["a", "b"])
     assert p[key] == value
 
 
 @pytest.mark.parametrize(("key", "value"), [(4, "#1f77b4"), (5, "red"), (6, "blue")])
-def test_color_palette(df: DataFrame, key, value):
-    from xlviews.figure.palette import ColorPalette
-
+def test_color_palette(df: DataFrame, key: int, value: str):
     p = ColorPalette(df, "b", {5: "red", 6: "blue", 7: "green"})
     assert p[{"b": key}] == value
 
 
 @pytest.mark.parametrize(("key", "value"), [(4, "red"), (5, "blue"), (6, "red")])
-def test_color_palette_default_list(df: DataFrame, key, value):
-    from xlviews.figure.palette import ColorPalette
-
+def test_color_palette_default_list(df: DataFrame, key: int, value: str):
     p = ColorPalette(df, "b", ["red", "blue"])
     assert p[{"b": key}] == value
 
 
 def test_get_palette_none(df: DataFrame):
-    from xlviews.figure.palette import MarkerPalette, get_palette
-
     assert get_palette(MarkerPalette, df, None) is None
 
 
 def test_get_palette(df: DataFrame):
-    from xlviews.figure.palette import MarkerPalette, get_palette
-
     p = get_palette(MarkerPalette, df, "a")
     assert isinstance(p, MarkerPalette)
     assert p[{"a": 1}] == "o"
@@ -215,8 +216,6 @@ def test_get_palette(df: DataFrame):
 
 
 def test_get_palette_dict(df: DataFrame):
-    from xlviews.figure.palette import MarkerPalette, get_palette
-
     p = get_palette(MarkerPalette, df, {(1, 4, 10): "x"})
     assert isinstance(p, MarkerPalette)
     assert p[{"a": 1, "b": 4, "c": 10}] == "x"
@@ -224,8 +223,6 @@ def test_get_palette_dict(df: DataFrame):
 
 
 def test_get_palette_tuple_list(df: DataFrame):
-    from xlviews.figure.palette import MarkerPalette, get_palette
-
     p = get_palette(MarkerPalette, df, ("b", ["o", "x"]))
     assert isinstance(p, MarkerPalette)
     assert p[{"b": 4}] == "o"
@@ -235,8 +232,6 @@ def test_get_palette_tuple_list(df: DataFrame):
 
 
 def test_get_palette_tuple_dict(df: DataFrame):
-    from xlviews.figure.palette import MarkerPalette, get_palette
-
     p = get_palette(MarkerPalette, df, ("b", {"4": "X", "5": "Y"}))
     assert isinstance(p, MarkerPalette)
     assert p[{"b": 4}] == "X"
@@ -246,10 +241,6 @@ def test_get_palette_tuple_dict(df: DataFrame):
 
 
 def test_series():
-    from pandas import Series
-
-    from xlviews.figure.palette import MarkerPalette, get_palette
-
     s = Series([1, 2, 3], index=["a", "b", "c"])
     data = s.to_frame().T
     p = get_palette(MarkerPalette, data, "x")
@@ -258,8 +249,6 @@ def test_series():
 
 
 def test_get_palette_new_default(df: DataFrame):
-    from xlviews.figure.palette import ColorPalette, get_palette
-
     p = get_palette(ColorPalette, df, "red")
     assert p
     assert p[{"a": 1, "b": 4, "c": 10}] == "red"
@@ -267,8 +256,6 @@ def test_get_palette_new_default(df: DataFrame):
 
 
 def test_get_palette_new_default_list(df: DataFrame):
-    from xlviews.figure.palette import ColorPalette, get_palette
-
     p = get_palette(ColorPalette, df, ["red", "blue", "green"])
     assert p
     assert p[{"a": 1, "b": 4, "c": 10}] == "red"
@@ -278,49 +265,37 @@ def test_get_palette_new_default_list(df: DataFrame):
 
 
 def test_function_palette_str():
-    from xlviews.figure.palette import FunctionPalette
-
     p = FunctionPalette("a", lambda x: x)
     assert p[{"a": 1}] == 1
 
 
 def test_function_palette_list():
-    from xlviews.figure.palette import FunctionPalette
-
-    p = FunctionPalette(["a"], lambda x: x[0])  # type: ignore
+    p = FunctionPalette(["a"], itemgetter(0))
     assert p[{"a": 1}] == 1
 
 
 def test_get_palette_callable_str(df: DataFrame):
-    from xlviews.figure.palette import ColorPalette, get_palette
-
     df = df.set_index("a")
-    p = get_palette(ColorPalette, df, lambda x: str(x))
+    p = get_palette(ColorPalette, df, str)
     assert p
     assert p[{"a": 1}] == "1"
 
 
 def test_get_palette_callable_list(df: DataFrame):
-    from xlviews.figure.palette import ColorPalette, get_palette
-
     df = df.set_index(["a", "b"])
-    p = get_palette(ColorPalette, df, lambda x: str(x))
+    p = get_palette(ColorPalette, df, str)
     assert p
     assert p[{"a": 1, "b": 4}] == "(1, 4)"
 
 
 def test_get_palette_callable_multi_index(df: DataFrame):
-    from xlviews.figure.palette import ColorPalette, get_palette
-
     df = df.set_index(["a", "b"])
-    p = get_palette(ColorPalette, df, ("a", lambda x: str(x)))
+    p = get_palette(ColorPalette, df, ("a", str))
     assert p
     assert p[{"a": 1, "b": 4}] == "1"
 
 
 def test_get_marker_palette_callable(df: DataFrame):
-    from xlviews.figure.palette import get_marker_palette
-
     df = df.set_index(["a", "b"])
     p = get_marker_palette(df, "a")
     assert p
@@ -330,8 +305,6 @@ def test_get_marker_palette_callable(df: DataFrame):
 
 
 def test_get_color_palette_callable(df: DataFrame):
-    from xlviews.figure.palette import get_color_palette
-
     df = df.set_index(["a", "b"])
     p = get_color_palette(df, "b")
     assert p

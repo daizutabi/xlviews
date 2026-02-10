@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import xlwings
+import xlwings.constants
 from pandas import DataFrame, Series
-from xlwings.constants import DVType, FormatConditionOperator
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
+    import numpy as np
     from numpy.typing import NDArray
     from pandas import Index
     from xlwings import Range as RangeImpl
@@ -43,7 +44,7 @@ def constant(type_: str, name: str | None = None) -> int:
 
 
 def iter_columns(
-    iterable: Iterable | DataFrame,
+    iterable: Iterable[Any] | DataFrame,
     columns: str | list[str],
 ) -> Iterator[str]:
     """Yield the columns in the order of appearance with colon notation.
@@ -73,7 +74,7 @@ def iter_columns(
 
 
 def iter_group_locs(
-    index: list | NDArray | Index | Series,
+    index: list[int] | NDArray[np.integer] | Index | Series,
     offset: int = 0,
     padding: int = 0,
 ) -> Iterator[tuple[int, int]]:
@@ -112,18 +113,14 @@ def add_validate_list(
     if default:
         rng.value = default
 
-    type_ = DVType.xlValidateList
-    operator = FormatConditionOperator.xlEqual
+    type_ = xlwings.constants.DVType.xlValidateList
+    operator = xlwings.constants.FormatConditionOperator.xlEqual
     formula = ",".join(map(str, value))
 
     rng.api.Validation.Add(Type=type_, Operator=operator, Formula1=formula)
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
-
-
-def suspend_screen_updates(func: Callable[P, R]) -> Callable[P, R]:
+def suspend_screen_updates[**P, R](func: Callable[P, R]) -> Callable[P, R]:
     """Suspend screen updates to speed up operations."""
 
     @wraps(func)

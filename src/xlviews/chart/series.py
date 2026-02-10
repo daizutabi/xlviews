@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Self
 
 from xlwings import Range as RangeImpl
 from xlwings.constants import ChartType
@@ -12,8 +12,6 @@ from xlviews.core.range_collection import RangeCollection
 from .style import get_line_style, get_marker_style
 
 if TYPE_CHECKING:
-    from typing import Any, Self
-
     from .axes import Axes
 
 
@@ -53,15 +51,15 @@ class Series:
 
     @property
     def chart_type(self) -> int:
-        return self.api.ChartType  # type: ignore
+        return self.api.ChartType
 
     @chart_type.setter
     def chart_type(self, chart_type: int) -> None:
         self.api.ChartType = chart_type
 
     @property
-    def x(self) -> tuple:
-        return self.api.XValues  # type: ignore
+    def x(self) -> tuple[Any, ...]:
+        return self.api.XValues
 
     @x.setter
     def x(self, x: Any) -> None:
@@ -71,8 +69,8 @@ class Series:
             self.api.XValues = x
 
     @property
-    def y(self) -> tuple:
-        return self.api.Values  # type: ignore
+    def y(self) -> tuple[Any, ...]:
+        return self.api.Values
 
     @y.setter
     def y(self, y: Any) -> None:

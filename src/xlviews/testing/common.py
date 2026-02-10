@@ -69,7 +69,7 @@ class FrameContainer:
         row: int = 0,
         column: int = 0,
         style: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self.df = self.dataframe()
         self.row = row or self.row
@@ -84,7 +84,7 @@ class FrameContainer:
         )
         self.init()
 
-    def kwargs(self, **kwargs) -> dict[str, Any]:
+    def kwargs(self, **kwargs: Any) -> dict[str, Any]:  # noqa: PLR6301
         return kwargs
 
     def init(self) -> None:

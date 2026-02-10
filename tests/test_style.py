@@ -1,21 +1,52 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 from xlwings.constants import BordersIndex
 
 from xlviews.config import rcParams
 from xlviews.core.range import Range
+from xlviews.core.range_collection import RangeCollection
+from xlviews.style import (
+    hide_gridlines,
+    hide_succession,
+    hide_unique,
+    set_alignment,
+    set_banding,
+    set_border,
+    set_border_edge,
+    set_border_inside,
+    set_border_line,
+    set_fill,
+    set_font,
+    set_number_format,
+)
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from xlwings import Range as RangeImpl
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
 
 @pytest.mark.parametrize(("index", "value"), [("Vertical", 11), ("Horizontal", 12)])
-def test_border_index(index, value):
+def test_border_index(index: str, value: int):
     assert getattr(BordersIndex, f"xlInside{index}") == value
 
 
-@pytest.fixture(params=[lambda x: x, Range.from_range], ids=["RangeImpl", "Range"])
-def cls(request: pytest.FixtureRequest):
+type Cls = Callable[[RangeImpl], RangeImpl | Range]
+
+
+def identity(x: RangeImpl) -> RangeImpl:
+    return x
+
+
+@pytest.fixture(params=[identity, Range.from_range], ids=["RangeImpl", "Range"])
+def cls(request: pytest.FixtureRequest) -> Cls:
     return request.param
 
 
@@ -23,9 +54,12 @@ def cls(request: pytest.FixtureRequest):
     ("weight", "value"),
     [((1, 2, 3, 4), (1, 2, -4138, 4)), (2, (2, 2, 2, 2))],
 )
-def test_border_edge(weight, value, cls, sheet: Sheet):
-    from xlviews.style import set_border_edge
-
+def test_border_edge(
+    weight: tuple[int, int, int, int] | int,
+    value: tuple[int, int, int, int],
+    cls: Cls,
+    sheet: Sheet,
+):
     set_border_edge(cls(sheet["C3:E5"]), weight, color="red")
     assert sheet["B3:C5"].api.Borders(11).Weight == value[0]
     assert sheet["B3:C5"].api.Borders(11).Color == 255
@@ -37,9 +71,7 @@ def test_border_edge(weight, value, cls, sheet: Sheet):
     assert sheet["C5:E6"].api.Borders(12).Color == 255
 
 
-def test_border_inside(cls, sheet: Sheet):
-    from xlviews.style import set_border_inside
-
+def test_border_inside(cls: Cls, sheet: Sheet):
     set_border_inside(cls(sheet["C3:E5"]), weight=2, color="red")
     assert sheet["C3:E5"].api.Borders(11).Weight == 2
     assert sheet["C3:E5"].api.Borders(11).Color == 255
@@ -47,32 +79,24 @@ def test_border_inside(cls, sheet: Sheet):
     assert sheet["C3:E5"].api.Borders(12).Color == 255
 
 
-def test_border(cls, sheet: Sheet):
-    from xlviews.style import set_border
-
+def test_border(cls: Cls, sheet: Sheet):
     set_border(cls(sheet["C3:E5"]), edge_weight=2, inside_weight=1)
     assert sheet["B3:C5"].api.Borders(11).Weight == 2
     assert sheet["C3:E5"].api.Borders(11).Weight == 1
 
 
-def test_border_zero(cls, sheet: Sheet):
-    from xlviews.style import set_border_line
-
+def test_border_zero(cls: Cls, sheet: Sheet):
     set_border_line(cls(sheet["C3:D5"]), "xlInsideVertical", weight=0, color="red")
     assert sheet["C3:D5"].api.Borders(11).Weight == 2
     assert sheet["C3:D5"].api.Borders(12).Weight == 2
 
 
-def test_fill(cls, sheet: Sheet):
-    from xlviews.style import set_fill
-
+def test_fill(cls: Cls, sheet: Sheet):
     set_fill(cls(sheet["C3:E5"]), color="pink")
     assert sheet["C3:E5"].api.Interior.Color == 13353215
 
 
-def test_font(cls, sheet: Sheet):
-    from xlviews.style import set_font
-
+def test_font(cls: Cls, sheet: Sheet):
     rng = cls(sheet["C3"])
     rng.value = "abc"
     set_font(rng, "Times", size=24, bold=True, italic=True, color="green")
@@ -84,9 +108,6 @@ def test_font(cls, sheet: Sheet):
 
 
 def test_font_collection(sheet: Sheet):
-    from xlviews.core.range_collection import RangeCollection
-    from xlviews.style import set_font
-
     rc = RangeCollection([(2, 3), (6, 7)], 2, sheet)
     set_font(rc, "Times", size=24, bold=True, italic=True, color="green")
 
@@ -103,9 +124,7 @@ def test_font_collection(sheet: Sheet):
         assert rng.api.Font.Size != 24
 
 
-def test_font_without_name(cls, sheet: Sheet):
-    from xlviews.style import set_font
-
+def test_font_without_name(cls: Cls, sheet: Sheet):
     rng = cls(sheet["C3"])
     rng.value = "abc"
     set_font(rng)
@@ -116,9 +135,7 @@ def test_font_without_name(cls, sheet: Sheet):
     ("align", "value"),
     [("right", -4152), ("left", -4131), ("center", -4108)],
 )
-def test_alignment_horizontal(align, value, cls, sheet: Sheet):
-    from xlviews.style import set_alignment
-
+def test_alignment_horizontal(align: str, value: int, cls: Cls, sheet: Sheet):
     rng = cls(sheet["C3"])
     rng.value = "a"
     set_alignment(rng, horizontal_alignment=align)
@@ -129,27 +146,20 @@ def test_alignment_horizontal(align, value, cls, sheet: Sheet):
     ("align", "value"),
     [("top", -4160), ("bottom", -4107), ("center", -4108)],
 )
-def test_alignment_vertical(align, value, cls, sheet: Sheet):
-    from xlviews.style import set_alignment
-
+def test_alignment_vertical(align: str, value: int, cls: Cls, sheet: Sheet):
     rng = cls(sheet["C3"])
     rng.value = "a"
     set_alignment(rng, vertical_alignment=align)
     assert rng.api.VerticalAlignment == value
 
 
-def test_number_format(cls, sheet: Sheet):
-    from xlviews.style import set_number_format
-
+def test_number_format(cls: Cls, sheet: Sheet):
     rng = cls(sheet["C3"])
     set_number_format(rng, "0.0%")
     assert rng.api.NumberFormat == "0.0%"
 
 
 def test_number_format_collection(sheet: Sheet):
-    from xlviews.core.range_collection import RangeCollection
-    from xlviews.style import set_number_format
-
     rc = RangeCollection([(2, 3), (6, 7)], 3, sheet)
     set_number_format(rc, "0.0%")
 
@@ -166,18 +176,14 @@ def test_number_format_collection(sheet: Sheet):
     ("axis", "even_color", "odd_color"),
     [(0, 100, 200), (1, 300, 400)],
 )
-def test_banding(axis, even_color, odd_color, cls, sheet: Sheet):
-    from xlviews.style import set_banding
-
+def test_banding(axis: int, even_color: int, odd_color: int, cls: Cls, sheet: Sheet):
     rng = cls(sheet["C3:F6"])
     set_banding(rng, axis, even_color, odd_color)
     assert rng.api.FormatConditions(1).Interior.Color == even_color
     assert rng.api.FormatConditions(2).Interior.Color == odd_color
 
 
-def test_hide_succession(cls, sheet: Sheet):
-    from xlviews.style import hide_succession
-
+def test_hide_succession(cls: Cls, sheet: Sheet):
     rng = sheet["C3:C8"]
     rng.options(transpose=True).value = [1, 1, 2, 2, 3, 3]
     rng = sheet["D3:D8"]
@@ -187,9 +193,7 @@ def test_hide_succession(cls, sheet: Sheet):
     assert rng.api.FormatConditions(1).Font.Color == 255
 
 
-def test_hide_unique(cls, sheet: Sheet):
-    from xlviews.style import hide_unique
-
+def test_hide_unique(cls: Cls, sheet: Sheet):
     rng = sheet["C3:C8"]
     rng.options(transpose=True).value = [1, 1, 2, 2, 3, 3]
     rng = sheet["D3:D8"]
@@ -201,7 +205,5 @@ def test_hide_unique(cls, sheet: Sheet):
 
 
 def test_hide_gridlines(sheet: Sheet):
-    from xlviews.style import hide_gridlines
-
     hide_gridlines(sheet)
     assert sheet.book.app.api.ActiveWindow.DisplayGridlines is False

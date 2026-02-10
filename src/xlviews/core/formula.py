@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from xlwings import Range as RangeImpl
 
@@ -10,7 +10,8 @@ from .range_collection import RangeCollection
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-Func: TypeAlias = str | Range | RangeImpl | None
+# Used for `isinstance` in `sheet_frame.py`
+Func: TypeAlias = str | Range | RangeImpl | None  # noqa: UP040
 
 NONCONST_VALUE = "*"
 
@@ -52,7 +53,7 @@ def _aggregate(
     func: Func,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int,
-    **kwargs,
+    **kwargs: Any,
 ) -> str:
     if func == "soa":
         std = aggregate("std", ranges, option, **kwargs)
@@ -87,6 +88,7 @@ def aggregate(
     func: Func,
     ranges: Range | RangeCollection | Iterable[Range | RangeCollection] | str,
     option: int = 7,  # ignore hidden rows and error values
+    *,
     row_absolute: bool = True,
     column_absolute: bool = True,
     include_sheetname: bool = False,
@@ -173,7 +175,7 @@ def aggregate(
 #         cell = ref.range(column, 0)
 #         cell = cell.get_address(include_sheetname=include_sheetname)
 #         formula = (
-#             f"INDIRECT(ADDRESS({formula},COLUMN({cell}),1,1," + f'"{ref.sheet.name}"))'
+#             f"INDIRECT(ADDRESS({formula},COLUMN({cell}),1,1,"+f'"{ref.sheet.name}"))'
 #         )
 #         if error is not False:
 #             formula = f"IFERROR({formula},{error})"

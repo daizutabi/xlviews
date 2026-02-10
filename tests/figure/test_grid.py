@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 
 from xlviews.chart.axes import Axes
-from xlviews.figure.grid import Grid, Series
+from xlviews.figure.grid import AxesSeries, Grid
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -11,10 +17,10 @@ pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not instal
 @pytest.fixture(scope="module")
 def seriesx(sheet_module: Sheet):
     ax = Axes(left=30, top=40, width=120, height=150, sheet=sheet_module)
-    return Series(ax, 3, axis=0)
+    return AxesSeries(ax, 3, axis=0)
 
 
-def test_series_len(seriesx: Series):
+def test_series_len(seriesx: AxesSeries):
     assert len(seriesx) == 3
 
 
@@ -22,7 +28,7 @@ def test_series_len(seriesx: Series):
     ("k", "left", "top"),
     [(0, 30, 40), (1, 150, 40), (2, 270, 40)],
 )
-def test_seriesx_init(seriesx: Series, k: int, left, top):
+def test_seriesx_init(seriesx: AxesSeries, k: int, left: int, top: int):
     assert seriesx[k].chart.left == left
     assert seriesx[k].chart.top == top
     assert seriesx[:][k].chart.left == left
@@ -32,35 +38,24 @@ def test_seriesx_init(seriesx: Series, k: int, left, top):
 @pytest.fixture(scope="module")
 def seriesy(sheet_module: Sheet):
     ax = Axes(left=30, top=40, width=120, height=150, sheet=sheet_module)
-    return Series(ax, 3, axis=1)
+    return AxesSeries(ax, 3, axis=1)
 
 
 @pytest.mark.parametrize(
     ("k", "left", "top"),
     [(0, 30, 40), (1, 30, 190), (2, 30, 340)],
 )
-def test_seriesy_init(seriesy: Series, k: int, left, top):
+def test_seriesy_init(seriesy: AxesSeries, k: int, left: int, top: int):
     assert seriesy[k].chart.left == left
     assert seriesy[k].chart.top == top
     assert seriesy[:][k].chart.left == left
     assert seriesy[:][k].chart.top == top
 
 
-def test_series_getitem_error(seriesx: Series):
-    with pytest.raises(ValueError, match="Invalid key: abc"):
-        seriesx["abc"]  # type: ignore
-
-
-def test_series_iter(seriesx: Series):
+def test_series_iter(seriesx: AxesSeries):
     ax = list(seriesx)[-1]
     assert ax.chart.left == 270
     assert ax.chart.top == 40
-
-
-def test_series_axis_error(seriesx):
-    ax = seriesx[0]
-    with pytest.raises(ValueError, match="Invalid axis: 2"):
-        Series(ax, 1, axis=2)  # type: ignore
 
 
 @pytest.fixture(scope="module")
@@ -86,7 +81,7 @@ def grid(sheet_module: Sheet):
         (2, 3, 390, 340),
     ],
 )
-def test_grid_init(grid: Grid, r: int, c: int, left, top):
+def test_grid_init(grid: Grid, r: int, c: int, left: int, top: int):
     assert grid[r, c].chart.left == left
     assert grid[r, c].chart.top == top
     assert grid[r][c].chart.left == left
@@ -113,7 +108,7 @@ def test_grid_shape_empty():
 
 def test_grid_getitem_error(grid: Grid):
     with pytest.raises(ValueError, match="Invalid key: abc"):
-        grid["abc"]  # type: ignore
+        grid["abc"]  # pyright: ignore[reportCallIssue, reportArgumentType]
 
 
 def test_grid_iter(grid: Grid):

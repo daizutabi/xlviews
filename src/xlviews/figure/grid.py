@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Literal
 
     from xlviews.chart.axes import Axes
 
 
-class Series:
+class AxesSeries:
     axes: list[Axes]
 
     def __init__(
@@ -23,37 +22,26 @@ class Series:
             self.axes = ax
             return
 
-        if axis == 0:
-            series = Grid(ax, 1, n)[0, :]
-        elif axis == 1:
-            series = Grid(ax, n, 1)[:, 0]
-        else:
-            msg = f"Invalid axis: {axis}"
-            raise ValueError(msg)
-
+        series = Grid(ax, 1, n)[0, :] if axis == 0 else Grid(ax, n, 1)[:, 0]
         self.axes = list(series)
 
     @overload
     def __getitem__(self, key: int) -> Axes: ...
 
     @overload
-    def __getitem__(self, key: slice) -> Series: ...
+    def __getitem__(self, key: slice) -> AxesSeries: ...
 
-    def __getitem__(self, key: int | slice) -> Axes | Series:
+    def __getitem__(self, key: int | slice) -> Axes | AxesSeries:
         if isinstance(key, int):
             return self.axes[key]
 
-        if isinstance(key, slice):
-            return Series(self.axes[key])
-
-        msg = f"Invalid key: {key}"
-        raise ValueError(msg)
+        return AxesSeries(self.axes[key])
 
     def __len__(self) -> int:
         return len(self.axes)
 
     def __iter__(self) -> Iterator[Axes]:
-        return iter(self.axes)
+        yield from self.axes
 
 
 class Grid:
@@ -74,9 +62,9 @@ class Grid:
         width = ax.chart.width
         height = ax.chart.height
 
-        axes = []
+        axes: list[list[Axes]] = []
         for r in range(nrows):
-            row = []
+            row: list[Axes] = []
             for c in range(ncols):
                 if r == 0 and c == 0:
                     row.append(ax)
@@ -93,34 +81,37 @@ class Grid:
         return 0, 0
 
     @overload
-    def __getitem__(self, key: int) -> Series: ...
+    def __getitem__(self, key: int) -> AxesSeries: ...
 
     @overload
     def __getitem__(self, key: tuple[int, int]) -> Axes: ...
 
     @overload
-    def __getitem__(self, key: tuple[slice, int]) -> Series: ...
+    def __getitem__(self, key: tuple[slice, int]) -> AxesSeries: ...
 
     @overload
-    def __getitem__(self, key: tuple[int, slice]) -> Series: ...
+    def __getitem__(self, key: tuple[int, slice]) -> AxesSeries: ...
 
     @overload
     def __getitem__(self, key: tuple[slice, slice]) -> Grid: ...
 
-    def __getitem__(self, key: int | tuple) -> Axes | Series | Grid:
+    def __getitem__(
+        self,
+        key: int | tuple[int | slice, int | slice],
+    ) -> Axes | AxesSeries | Grid:
         if isinstance(key, int):
-            return Series(self.axes[key])
+            return AxesSeries(self.axes[key])
 
-        if isinstance(key, tuple) and len(key) == 2:
+        if len(key) == 2:
             r, c = key
             if isinstance(r, int) and isinstance(c, int):
                 return self.axes[r][c]
 
             if isinstance(r, slice) and isinstance(c, int):
-                return Series([row[c] for row in self.axes[r]])
+                return AxesSeries([row[c] for row in self.axes[r]])
 
             if isinstance(r, int) and isinstance(c, slice):
-                return Series(self.axes[r][c])
+                return AxesSeries(self.axes[r][c])
 
             if isinstance(r, slice) and isinstance(c, slice):
                 return Grid([row[c] for row in self.axes[r]])
@@ -131,6 +122,6 @@ class Grid:
     def __len__(self) -> int:
         return len(self.axes)
 
-    def __iter__(self) -> Iterator[Series]:
+    def __iter__(self) -> Iterator[AxesSeries]:
         for row in self.axes:
-            yield Series(row)
+            yield AxesSeries(row)

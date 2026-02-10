@@ -1,19 +1,19 @@
 from __future__ import annotations
 
+from collections import UserDict
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Hashable, Iterable, Iterator
 
     from numpy.typing import NDArray
     from pandas import DataFrame
-    from pandas._typing import Axes
 
 
-class WideIndex(dict[str, list[Any]]):
+class WideIndex(UserDict[str, list[Any]]):
     """Represent a wide index."""
 
     def __len__(self) -> int:
@@ -45,7 +45,7 @@ class Index:
 
     def __init__(
         self,
-        index: Axes,
+        index: pd.Index | Iterable[Any],
         wide_index: WideIndex | dict[str, Any] | None = None,
     ) -> None:
         self.index = index if isinstance(index, pd.Index) else pd.Index(index)
@@ -61,8 +61,8 @@ class Index:
         return len(self.index) + len(self.wide_index)
 
     @property
-    def names(self) -> list[str]:
-        return self.index.names  # type: ignore
+    def names(self) -> list[Hashable | None]:
+        return self.index.names
 
     @property
     def nlevels(self) -> int:
@@ -170,7 +170,7 @@ class Index:
         self,
         columns: dict[str, Any] | None = None,
         offset: int = 0,
-        **kwargs,
+        **kwargs: Any,
     ) -> NDArray[np.intp]:
         if self.index.nlevels == 1:
             raise NotImplementedError
@@ -182,5 +182,5 @@ class Index:
 
         return np.where(np.all(idx, axis=0))[0] + offset
 
-    def to_frame(self, index: bool = True) -> DataFrame:
+    def to_frame(self, *, index: bool = True) -> DataFrame:
         return self.index.to_frame(index=index)

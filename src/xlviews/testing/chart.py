@@ -55,7 +55,7 @@ if __name__ == "__main__":
     ax = Axes(chart_type=ChartType.xlXYScatterLinesNoMarkers)
     df = sf.groupby(["b", "c"]).agg(include_sheetname=True)
     for key, s in df.iterrows():
-        x = ax.add_series(s["x"], s["y"], label=f"{key[0]}_{key[1]}")  # type: ignore
+        x = ax.add_series(s["x"], s["y"], label=f"{key}")
         x.set(marker="o")
 
     ax.set(

@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 from pandas import DataFrame
 
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.dataframes.stats_frame import StatsFrame
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -45,7 +51,7 @@ def test_index_names(sf: StatsFrame):
         ("median", "c", [18, 30, 2, 7]),
     ],
 )
-def test_value_float(df: DataFrame, func, column, value):
+def test_value_float(df: DataFrame, func: str, column: str, value: list[float]):
     np.testing.assert_allclose(df.loc[func][column], value)
 
 
@@ -57,6 +63,6 @@ def test_value_float(df: DataFrame, func, column, value):
         ("c", [[20, 22, 24, 12, 14, 16, 18], [28, 30, 34]]),
     ],
 )
-def test_value_soa(df: DataFrame, column, value):
+def test_value_soa(df: DataFrame, column: str, value: list[list[int]]):
     soa = [np.std(x) / np.median(x) for x in value]
     np.testing.assert_allclose(df.loc["soa"][column][:2], soa)

@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import string
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pandas import DataFrame
-from xlwings import Sheet
 
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import MultiColumn
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -66,9 +72,9 @@ def test_value(sf: SheetFrame, df: DataFrame):
         ({"t": "c", "i": "x"}, [12, 14, 20, 22]),
     ],
 )
-def test_get_indexer(sf: SheetFrame, columns, indexer):
-    assert all(sf.get_indexer(columns) == indexer)
-    assert all(sf.get_indexer(**columns) == indexer)
+def test_get_indexer(sf: SheetFrame, columns: dict[str, Any], indexer: list[int]):
+    assert sf.get_indexer(columns).tolist() == indexer
+    assert sf.get_indexer(**columns).tolist() == indexer
 
 
 def test_iter_ranges(sf: SheetFrame):
@@ -101,7 +107,7 @@ def test_melt_columns(df_melt: DataFrame):
         (15, ["b", "d", 8, "y", "=$AA$6:$AA$11"]),
     ],
 )
-def test_melt_value(df_melt: DataFrame, i, v):
+def test_melt_value(df_melt: DataFrame, i: int, v: list[str | int]):
     assert df_melt.iloc[i].to_list() == v
 
 

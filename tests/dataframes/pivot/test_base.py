@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import pytest
-from pandas import DataFrame
-from xlwings import Sheet
 
 from xlviews import SheetFrame
 from xlviews.testing import is_app_available
 from xlviews.testing.sheet_frame.pivot import Base
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -40,7 +46,13 @@ def columns(request: pytest.FixtureRequest):
 
 
 @pytest.fixture
-def sf(sf_parent: SheetFrame, values, index, columns, sheet):
+def sf(
+    sf_parent: SheetFrame,
+    values: str | list[str] | None,
+    index: str | list[str],
+    columns: str | list[str],
+    sheet: Sheet,
+):
     df = sf_parent.pivot_table(
         values,
         index,
@@ -52,8 +64,13 @@ def sf(sf_parent: SheetFrame, values, index, columns, sheet):
 
 
 @pytest.fixture
-def df(df_parent: DataFrame, values, index, columns):
-    return df_parent.pivot_table(values, index, columns, aggfunc=lambda x: x)
+def df(
+    df_parent: DataFrame,
+    values: str | list[str] | None,
+    index: str | list[str],
+    columns: str | list[str],
+):
+    return df_parent.pivot_table(values, index, columns, aggfunc=lambda x: x)  # pyright: ignore[reportUnknownArgumentType, reportUnknownLambdaType]
 
 
 def test_index(sf: SheetFrame, df: DataFrame):
@@ -79,7 +96,13 @@ def aggfunc(request: pytest.FixtureRequest):
 
 
 @pytest.fixture
-def sf_agg(sf_parent: SheetFrame, values, index_columns, aggfunc, sheet):
+def sf_agg(
+    sf_parent: SheetFrame,
+    values: str | list[str] | None,
+    index_columns: tuple[str | None, str | None],
+    aggfunc: Any,
+    sheet: Sheet,
+):
     index, columns = index_columns
     df = sf_parent.pivot_table(
         values,
@@ -93,7 +116,12 @@ def sf_agg(sf_parent: SheetFrame, values, index_columns, aggfunc, sheet):
 
 
 @pytest.fixture
-def df_agg(df_parent: DataFrame, values, index_columns, aggfunc):
+def df_agg(
+    df_parent: DataFrame,
+    values: str | list[str] | None,
+    index_columns: tuple[str | None, str | None],
+    aggfunc: Any,
+):
     index, columns = index_columns
     return df_parent.pivot_table(values, index, columns, aggfunc)
 
@@ -115,6 +143,6 @@ def test_agg_values(sf_agg: SheetFrame, df_agg: DataFrame):
 
 
 @pytest.mark.parametrize("aggfunc", [None, "mean"])
-def test_error(sf_parent: SheetFrame, aggfunc):
+def test_error(sf_parent: SheetFrame, aggfunc: str | None):
     with pytest.raises(ValueError, match="No group keys passed!"):
         sf_parent.pivot_table(None, None, None, aggfunc, formula=True)

@@ -1,9 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 from xlwings.constants import ChartType, LineStyle, MarkerStyle
 
 from xlviews.chart.axes import Axes
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
+
+    from xlviews.core.range import Range
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -43,7 +51,14 @@ def ax(sheet_module: Sheet):
         ("*", MarkerStyle.xlMarkerStyleStar, 2),
     ],
 )
-def test_series_style_marker(ax: Axes, x, y, style, value, size):
+def test_series_style_marker(
+    ax: Axes,
+    x: Range,
+    y: Range,
+    style: str,
+    value: int,
+    size: int,
+):
     series = ax.add_series(x, y, label="a")
     series.marker(style, size=size)
     assert series.api.MarkerStyle == value
@@ -61,14 +76,21 @@ def test_series_style_marker(ax: Axes, x, y, style, value, size):
         (".", LineStyle.xlDot, 2),
     ],
 )
-def test_series_style_line(ax: Axes, x, y, style, value, weight):
+def test_series_style_line(
+    ax: Axes,
+    x: Range,
+    y: Range,
+    style: str,
+    value: int,
+    weight: int,
+):
     series = ax.add_series(x, y, label="a")
     series.line(style, weight=weight)
     assert series.api.Border.LineStyle == value
     series.delete()
 
 
-def test_series_style_line_none(x, y, sheet: Sheet):
+def test_series_style_line_none(x: Range, y: Range, sheet: Sheet):
     ct = ChartType.xlXYScatterLines
     ax = Axes(300, 10, chart_type=ct, sheet=sheet)
     series = ax.add_series(x, y, label="a")
@@ -86,7 +108,14 @@ def test_series_style_line_none(x, y, sheet: Sheet):
         ("lime", 65280, 0.7),
     ],
 )
-def test_series_style_color(ax: Axes, x, y, color, value, alpha):
+def test_series_style_color(
+    ax: Axes,
+    x: Range,
+    y: Range,
+    color: str,
+    value: int,
+    alpha: float,
+):
     series = ax.add_series(x, y, label="a")
     series.line("-", color=color, alpha=alpha)
     assert value == series.api.Format.Line.ForeColor.RGB

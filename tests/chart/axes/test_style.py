@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
-from xlwings import Sheet
 from xlwings.constants import ChartType
 
 from xlviews.chart.axes import Axes
 from xlviews.testing import is_app_available
+
+if TYPE_CHECKING:
+    from xlwings import Sheet
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -156,7 +162,7 @@ def ax2(sheet: Sheet):
         ((1, -1), 145, 148),
     ],
 )
-def test_legend_position(ax2: Axes, loc, left, top):
+def test_legend_position(ax2: Axes, loc: tuple[int, int], left: int, top: int):
     ax2.set(legend=loc)
     assert ax2.chart.api[1].HasLegend
     legend = ax2.chart.api[1].Legend

@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
+
 import pytest
 from pandas import DataFrame, Series
-from xlwings import App, Sheet
 
 from xlviews.core.range import Range
-from xlviews.dataframes.sheet_frame import SheetFrame
 from xlviews.testing import FrameContainer, is_app_available
 from xlviews.testing.sheet_frame.base import NoIndex
+
+if TYPE_CHECKING:
+    from xlwings import App, Sheet
+
+    from xlviews.dataframes.sheet_frame import SheetFrame
 
 pytestmark = pytest.mark.skipif(not is_app_available(), reason="Excel not installed")
 
@@ -45,7 +52,7 @@ def test_len(sf: SheetFrame):
 
 
 @pytest.mark.parametrize(("x", "b"), [("a", True), ("x", False), (0, False)])
-def test_contains(sf: SheetFrame, x, b):
+def test_contains(sf: SheetFrame, x: str, b: bool):
     assert (x in sf) is b
 
 
@@ -61,7 +68,7 @@ def test_value(sf: SheetFrame, df: DataFrame):
 
 
 @pytest.mark.parametrize(("column", "loc"), [("a", 3), ("b", 4)])
-def test_loc(sf: SheetFrame, column, loc):
+def test_loc(sf: SheetFrame, column: str, loc: int):
     assert sf.get_loc(column) == loc
 
 
@@ -69,8 +76,8 @@ def test_loc(sf: SheetFrame, column, loc):
     ("columns", "indexer"),
     [(["a"], [3]), (["b"], [4]), (None, [3, 4])],
 )
-def test_get_indexer(sf: SheetFrame, columns, indexer):
-    assert sf.get_indexer(columns) == indexer
+def test_get_indexer(sf: SheetFrame, columns: list[str] | None, indexer: list[int]):
+    assert sf.get_indexer(columns).tolist() == indexer
 
 
 @pytest.mark.parametrize(
@@ -82,32 +89,27 @@ def test_get_indexer(sf: SheetFrame, columns, indexer):
         ("a", None, "$C$3:$C$6"),
     ],
 )
-def test_get_range(sf: SheetFrame, column: str, offset, address):
+def test_get_range(
+    sf: SheetFrame,
+    column: str,
+    offset: Literal[0, -1] | None,
+    address: str,
+):
     assert sf.get_range(column, offset).get_address() == address
-
-
-def test_get_range_error(sf: SheetFrame):
-    with pytest.raises(ValueError, match="invalid offset"):
-        sf.get_range(None, offset=1)  # type: ignore
 
 
 @pytest.mark.parametrize(
     ("axis", "v0", "v1"),
     [(0, [1, 2, 3, 4], [5, 6, 7, 8]), (1, [1, 5], [2, 6])],
 )
-def test_iter_ranges(sf: SheetFrame, axis, v0, v1):
+def test_iter_ranges(sf: SheetFrame, axis: Literal[0, 1], v0: list[int], v1: list[int]):
     values = list(sf.iter_ranges(axis))
     assert values[0].value == v0
     assert values[1].value == v1
 
 
-def test_iter_ranges_error(sf: SheetFrame):
-    with pytest.raises(ValueError, match="axis must be 0 or 1"):
-        list(sf.iter_ranges(axis=2))  # type: ignore
-
-
 @pytest.mark.parametrize("columns", [["a", "b"], None])
-def test_get_address_none(sf: SheetFrame, columns):
+def test_get_address_none(sf: SheetFrame, columns: list[str] | None):
     df = sf.get_address(columns)
     assert df.columns.to_list() == ["a", "b"]
     assert df.index.to_list() == [0, 1, 2, 3]
