@@ -35,7 +35,7 @@ jobs:
         run: uv run prek run --all-files
       - name: Upload local coverage (lcov.info) if present
         if: hashFiles('lcov.info') != ''
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
@@ -45,7 +45,7 @@ jobs:
         run: uv run pytest --cov-report=lcov:github-lcov.info
       - name: Upload CI coverage (github-lcov.info) if present
         if: success() && hashFiles('github-lcov.info') != ''
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: github-lcov.info
